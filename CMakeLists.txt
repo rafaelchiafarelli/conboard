@@ -6,6 +6,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 file(GLOB SOURCES "src/*.cpp")
  
 add_executable(conboard ${SOURCES})
+link_libraries(lstdc++fs)
 
 set_target_properties(conboard PROPERTIES
             CXX_STANDARD 17
