@@ -14,6 +14,8 @@ void drv::outFunction(devActions d)
         break;
         case keyboard:
         break;
+        case midi:
+        break;
     }
     if(d.delay != 0)
         std::this_thread::sleep_for(std::chrono::microseconds(d.delay));
