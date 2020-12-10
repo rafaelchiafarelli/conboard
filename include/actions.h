@@ -10,14 +10,11 @@ typedef enum{
 }devType;
 
 
-class midiSignal{
-    public:
-        //midi
-        union{
-            unsigned char byte[3];
-            unsigned int asInt;
-        }
+typedef union midiSignal{
+    unsigned char byte[3];
+    unsigned int asInt;
 };
+
 
 class devActions{
     private: 
