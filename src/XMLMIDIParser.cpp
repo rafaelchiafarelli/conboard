@@ -131,25 +131,25 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 	} else if(!strncmp(in_type, "midi",4))
 	{
 		ret.tp = midi;
-		ret.b0 = 0;
-		ret.b1 = 0;
-		ret.b2 = 0;
+		ret.midi.byte[0] = 0;
+		ret.midi.byte[1] = 0;
+		ret.midi.byte[2] = 0;
 		char *ptr; //do not use
 		if (nodes->first_attribute("b0", 2, true))
 		{
-			ret.b0 = (unsigned char) strtol(nodes->first_attribute("b0", 2, true)->value(),
+			ret.midi.byte[0] = (unsigned char) strtol(nodes->first_attribute("b0", 2, true)->value(),
 				&ptr, 16);
 		}
 
 		if (nodes->first_attribute("b1", 2, true))
 		{
-			ret.b1 = (unsigned char)strtol(nodes->first_attribute("b1", 2, true)->value(),
+			ret.midi.byte[1] = (unsigned char)strtol(nodes->first_attribute("b1", 2, true)->value(),
 				&ptr, 16);
 		}
 
 		if (nodes->first_attribute("b2", 2, true))
 		{
-			ret.b2 = (unsigned char)strtol(nodes->first_attribute("b2", 2, true)->value(),
+			ret.midi.byte[2] = (unsigned char)strtol(nodes->first_attribute("b2", 2, true)->value(),
 				&ptr, 16);
 		}
 	}
