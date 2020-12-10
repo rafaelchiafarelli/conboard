@@ -2,6 +2,7 @@
 #define ACTIONS_H
 #include "string"
 #include <vector>
+
 typedef enum{
     midi,
     keyboard,
@@ -9,30 +10,49 @@ typedef enum{
 }devType;
 
 
+class midiSignal{
+    public:
+        //midi
+        union{
+            unsigned char byte[3];
+            unsigned int asInt;
+        }
+};
 
-typedef struct{
-    devType tp; /* type of the output, either feyboard or mouse ou a midi response*/
+class devActions{
+    private: 
+        unsigned int index;
+    public:
+        devType tp; /* type of the output, either feyboard or mouse ou a midi response*/
 
-    //keyboard
-    std::string data; /* data to be sent to the output*/
+        //keyboard
+        std::string data; /* data to be sent to the output*/
 
-    //mouse
-    long dx = 0;
-    long gotox = 0;
-    long dy = 0;
-    long gotoy = 0;
-    unsigned int wheel_move = 0;
-    bool click = 0;
-    bool right_click = 0;
+        //mouse
+        long dx = 0;
+        long gotox = 0;
+        long dy = 0;
+        long gotoy = 0;
+        unsigned int wheel_move = 0;
+        bool click = 0;
+        bool right_click = 0;
 
-    //midi
-    unsigned char b0 = 0;
-	unsigned char b1 = 0;
-	unsigned char b2 = 0;
+        //midi
+        midiSignal midi;
 
-    //delay
-    unsigned int delay; /* delay in microsseconds to wait after data was sent */
-}devActions;
+        //delay
+        unsigned int delay; /* delay in microsseconds to wait after data was sent */
+        
+        
+        devActions(unsigned char b0, unsigned char b1, unsigned char b2){
+            index = ((unsigned int)b2)<<16 + ((unsigned int)b1)<<8 + b0;
+        };
+        devActions(){index = 0;}
+        unsigned int GetIndex(){return index;}
+        void SetIndex(int idx){index = idx;}
+        bool operator < (const devActions &rhs) const {return midi.asInt<rhs.midi.asInt;}
+
+};
 
 
 

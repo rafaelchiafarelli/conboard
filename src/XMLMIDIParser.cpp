@@ -2,7 +2,9 @@
 #include "XMLMIDIParser.h"
 
 
-XMLMIDIParser::XMLMIDIParser(std::string FileName) {
+XMLMIDIParser::XMLMIDIParser(std::string FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
+	header_actions = h;
+	modes = Mode;
 	loaded = false;
 	if (loadFile(FileName)) 
 	{
@@ -19,7 +21,6 @@ XMLMIDIParser::XMLMIDIParser(std::string FileName) {
 			xmlDoc.parse<PARSE_FLAGS>(const_cast<char*>(raw_xml.data()));
 			if (xmlDoc.first_node("DEVICE", 6, true))
 			{
-
 				loaded = Initializer();
 			}
 		}
@@ -29,32 +30,44 @@ XMLMIDIParser::XMLMIDIParser(std::string FileName) {
 
 XMLMIDIParser::~XMLMIDIParser()
 {
-		header_actions.clear();
-		body_actions.clear();
+
 }
 
 void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 {
 	if (Body)
 	{
-		for (rapidxml::xml_node<>* action_nodes = Body->first_node("action", 6, true)
-			; action_nodes
-			; action_nodes = Body->next_sibling("action", 6, true))
-		{
-			rapidxml::xml_node<>* in_nodes = action_nodes->first_node("input",5,true);
-			Actions action;
-			if(in_nodes)
+		for (rapidxml::xml_node<>* xmlmodes = Body->first_node("mode", 4, true)
+			; xmlmodes
+			; xmlmodes = Body->next_sibling("mode", 4, true))
+		{		
+			char *idtag = xmlmodes->first_attribute("id",2,true)->value();
+			unsigned int idx;
+			if(idtag)
 			{
-				action.in = parseIO(in_nodes);
+				idx = atoi(idtag);
 			}
-
-			for (rapidxml::xml_node<>* out_nodes = action_nodes->first_node("output", 6, true)
-				; out_nodes
-				; out_nodes = action_nodes->next_sibling("output", 6, true))
+			std::vector<Actions> body_actions;
+			for (rapidxml::xml_node<>* action_nodes = xmlmodes->first_node("action", 6, true)
+				; action_nodes
+				; action_nodes = xmlmodes->next_sibling("action", 6, true))
 			{
-				action.out.push_back(parseIO(out_nodes));
+				rapidxml::xml_node<>* in_nodes = action_nodes->first_node("input",5,true);
+				Actions action;
+				
+				if(in_nodes)
+				{
+					action.in = parseIO(in_nodes);
+				}
+				for (rapidxml::xml_node<>* out_nodes = action_nodes->first_node("output", 6, true)
+					; out_nodes
+					; out_nodes = action_nodes->next_sibling("output", 6, true))
+				{
+					action.out.push_back(parseIO(out_nodes));
+				}
+				body_actions.push_back(action);
 			}
-			body_actions.push_back(action);
+			modes->push_back(ModeType(body_actions,idx));
 		}
 	}
 }
@@ -117,6 +130,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 
 	} else if(!strncmp(in_type, "midi",4))
 	{
+		ret.tp = midi;
 		ret.b0 = 0;
 		ret.b1 = 0;
 		ret.b2 = 0;
@@ -163,7 +177,7 @@ void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 			{
 				action.out.push_back(parseIO(out_nodes));
 			}
-			header_actions.push_back(action);
+			header_actions->push_back(action);
 		}
 	}
 }
@@ -174,6 +188,19 @@ bool XMLMIDIParser::Initializer()
 	rapidxml::xml_node<> *Device = xmlDoc.first_node("DEVICE", 6, true);
 	if(Device)
 	{
+		if (Device->first_attribute("type", 4, true))
+		{
+			char *dType = Device->first_attribute("type", 4, true)->value(); 
+			if(dType){
+				if(!strncmp(dType,"midi",4)){
+					type=midi;
+				}else if(!strncmp(dType,"keyboard",8)){
+					type=keyboard;
+				}else if(!strncmp(dType,"mouse",5)){
+					type=mouse;
+				}
+			}
+		}
 		if (Device->first_attribute("name", 4, true))
 		{
 			DevName = std::string(Device->first_attribute("name", 4, true)->value(), 
@@ -197,7 +224,7 @@ bool XMLMIDIParser::Initializer()
 	rapidxml::xml_node<> *Body = xmlDoc.first_node("body", 4, true);
 	if(Body)
 		ProcessMainBody(Body);
-		
+
 	ret = true;
 	}
 	return ret;

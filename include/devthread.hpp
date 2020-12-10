@@ -11,11 +11,11 @@
 using namespace std;
 
 
-class output{
+class externalOUT{
 private:
     string outputPath;
 public:
-    output(string out){outputPath=out;};
+    externalOUT(string out){outputPath=out;};
 };
 
 class input{
@@ -32,8 +32,9 @@ class drv
         
         string confPath;
         input in;
-        output outKeyboard;
-        output outMouse;
+        externalOUT outKeyboard;
+        externalOUT outMouse;
+        
 
     public:
 

@@ -36,7 +36,7 @@ void signalHandler( int signum ) {
  * 
     //main mgr -- pool de resources from /dev/input and fires the threads
 
-    //listen to SIGTERM and other SIGNALS in orther to kill the threads
+    //listen to SIGTERM and other SIGNALS in orther to kill the threads with no devices attached
 
     //keep listening for newly added devices
 
@@ -49,14 +49,6 @@ int main(int argc, char **argv)
 {
     int ret = 0;
     XMLMIDIParser device("/home/pi/MIDI_DJTech4Mix.xml");
-    /*
-    cout<<"here we are again!"<<endl;
-    keys *k1;
-    k1 = new keys();
-
-    keys k2(string("this is new"),string("this is new"),string("not so new"));
-    k2.translate();
-    */
 
     ctx.dead = false;
     signal(SIGINT, signalHandler);  
