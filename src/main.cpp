@@ -11,7 +11,7 @@
 #include <filesystem>
 #include <string_view>
 #include <vector>
-
+#include "midithread.hpp"
 #include "keythread.hpp"
 #include "devthread.hpp"
 #include "XMLMIDIParser.h"
@@ -48,7 +48,10 @@ void signalHandler( int signum ) {
 int main(int argc, char **argv)
 {
     int ret = 0;
-    XMLMIDIParser device("/home/pi/MIDI_DJTech4Mix.xml");
+    MIDI One(string("/home/pi/MIDI_DJTech4Mix.xml"), 
+            string("/home/pi/MIDI_DJTech4Mix.xml"), 
+            string("/home/pi/MIDI_DJTech4Mix.xml"),
+            string("/home/pi/MIDI_DJTech4Mix.xml"));
 
     ctx.dead = false;
     signal(SIGINT, signalHandler);  

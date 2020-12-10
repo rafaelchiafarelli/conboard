@@ -10,7 +10,7 @@ typedef enum{
 }devType;
 
 
-typedef union midiSignal{
+union midiSignal{
     unsigned char byte[3];
     unsigned int asInt;
 };
