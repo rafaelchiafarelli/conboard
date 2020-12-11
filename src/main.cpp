@@ -228,7 +228,7 @@ static void rawmidi_list(void)
 static void load_file(void)
 {
 	int fd;
-	off_t length;
+	int length;
 
 	fd = open(send_file_name, O_RDONLY);
 	if (fd == -1) {
@@ -240,7 +240,7 @@ static void load_file(void)
 		error("cannot determine length of %s: %s", send_file_name, strerror(errno));
 		goto _error;
 	}
-	send_data = my_malloc(length);
+	send_data = (char*)my_malloc(length);
 	lseek(fd, 0, SEEK_SET);
 	if (read(fd, send_data, length) != length) {
 		error("cannot read from %s: %s", send_file_name, strerror(errno));
@@ -276,7 +276,7 @@ static void parse_data(void)
 	const char *p;
 	int i, value;
 
-	send_data = my_malloc(strlen(send_hex)); /* guesstimate */
+	send_data =(char *) my_malloc(strlen(send_hex)); /* guesstimate */
 	i = 0;
 	value = -1; /* value is >= 0 when the first hex digit of a byte has been read */
 	for (p = send_hex; *p; ++p) {
@@ -392,7 +392,7 @@ static void add_send_hex_data(const char *str)
 	char *s;
 
 	length = (send_hex ? strlen(send_hex) + 1 : 0) + strlen(str) + 1;
-	s = my_malloc(length);
+	s = (char*)my_malloc(length);
 	if (send_hex) {
 		strcpy(s, send_hex);
 		strcat(s, " ");
@@ -551,7 +551,7 @@ int main(int argc, char *argv[])
 
 		timeout *= 1000;
 		npfds = snd_rawmidi_poll_descriptors_count(input);
-		pfds = alloca(npfds * sizeof(struct pollfd));
+		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
 		signal(SIGINT, sig_handler);
 		for (;;) {
