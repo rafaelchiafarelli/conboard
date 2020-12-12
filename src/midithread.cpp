@@ -65,7 +65,7 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
     }
 }
 
-int MIDI::processInput(midiSignal *midiS)
+int MIDI::processInput(midiSignal midiS)
 {
     l_mode.index = SelectedMode;
     l_action.in.midi = &midiS;
@@ -167,7 +167,7 @@ void MIDI::in_func()
                 continue;                
             }
             //each buf[i] has one of the bytes
-            midiSignal *midiS = static_cast<midiSignal> &buf[0];
+            midiSignal midiS = static_cast<midiSignal> &buf[0];
             processInput(midiS);
 		}
 	}
