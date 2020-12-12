@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<DEVICE type="midi" name="DJ-Tech 4-Mix" input="DJ-Tech 4-Mix" output="DJ-Tech 4-Mix">
+<header>
+
+<action>
+	<input type="mouse" dx="+12" dy="-12" wheel_move="+12" gotox="23" gotoy="10" click="true" right_click="true" delay="2000"></input>
+	<output type="midi" b0="80" b1="22" b2="12"></output>
+	<output type="keyboard" data="+{LEFT}" delay="2555"></output>
+	<output type="mouse" dx="+12" dy="-12" wheel_move="+12" gotox="23" gotoy="10" click="true" right_click="true" delay="2000"></output>
+</action>
+
+<action >
+	<input type="mouse" dx="+12" dy="-12" wheel_move="+12" gotox="23" gotoy="10" click="true" right_click="true" delay="2000"></input>
+	<output type="midi" b0="80" b1="22" b2="12"></output>
+	<output type="midi" b0="80" b1="22" b2="12"></output>
+</action>
+
+</header>
+
+<body>
+	<mode id="0">
+		<action >
+		<input type="midi" b0="80" b1="22" b2="12"></input>
+		<output type="keyboard" data="+{PLUS}" delay="2555"></output>
+		<output type="midi" b0="80" b1="22" b2="12"></output>
+		</action>
+		<action >
+		<input type="midi" b0="80" b1="22" b2="11"></input>
+		<output type="keyboard" data="+{MINUS}" delay="2555"></output>
+		<output type="midi" b0="80" b1="22" b2="12"></output>
+		</action>
+	</mode>
+	<mode id="1">
+		<action >
+		<input type="midi" b0="80" b1="22" b2="12"></input>
+		<output type="keyboard" data="^{PLUS}" delay="2555"></output>
+		<output type="keyboard" data="!{MINUS}" delay="2555"></output>
+		<output type="midi" b0="80" b1="22" b2="12"></output>
+		</action>
+	</mode>
+</body>
+
+</DEVICE>

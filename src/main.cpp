@@ -16,6 +16,14 @@
 #include "aconfig.h"
 #include "version.h"
 
+
+
+#include "midithread.hpp"
+#include <chrono>
+#include <string>
+
+using namespace std;
+
 /**
  * This is the main module of the system
  *  It is responsible for reading all the devices that are connected to the system - and keep reading it.
@@ -437,6 +445,41 @@ int main(int argc, char *argv[])
 		{"active-sensing", 0, NULL, 'a'},
 		{ }
 	};
+    //============================================================================================================================
+
+    
+    device_list();
+    char port_name[] = {"hw:1,0,0"};
+    string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml")
+    MIDI testMIDI(port_name, xmlFileName);
+	signal(SIGINT, sig_handler);
+    while(!stop)
+    {
+         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //============================================================================================================================
 	int c, err, ok = 0;
 	int ignore_active_sensing = 1;
 	int do_send_hex = 0;

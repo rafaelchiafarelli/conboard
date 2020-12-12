@@ -9,6 +9,7 @@ add_executable(conboard ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC "/usr/include")
 target_link_libraries(conboard stdc++fs)
 target_link_libraries(conboard asound)
+target_link_libraries(conboard pthread)
 set_target_properties(conboard PROPERTIES
             CXX_STANDARD 17
 	    CXX_STANDARD_REQUIRED ON
