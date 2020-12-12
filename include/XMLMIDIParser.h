@@ -26,6 +26,9 @@ public:
 		body_actions = b;
 		index = idx;
 	}
+	ModeType(unsigned int idx){
+		index = idx;
+	}
 	bool operator > ( const ModeType &rhs) const {return index>rhs.index;}
 };
 

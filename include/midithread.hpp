@@ -47,6 +47,8 @@ class MIDI{
 
         atomic_bool stop;
         int timeout;
+        ModeType l_mode;
+        Actions l_action;
 
         std::vector<Actions> header;
         std::set<ModeType,std::greater<ModeType>> modes;
