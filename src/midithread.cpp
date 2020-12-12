@@ -19,7 +19,7 @@ MIDI::MIDI(char *p_name):xml(string("filename"),&modes,&header)
     memcpy(port_name,p_name,strlen(p_name));
     int err = 0;
 	if ((err = snd_rawmidi_open(input, output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
-		error("cannot open port \"%s\": %s", port_name, snd_strerror(err));
+		//error("cannot open port \"%s\": %s", port_name, snd_strerror(err));
 	}
 }
 
@@ -41,10 +41,10 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
 {
     	if (send_data) {
 		if ((err = snd_rawmidi_nonblock(output, 0)) < 0) {
-			error("cannot set blocking mode: %s", snd_strerror(err));
+			//error("cannot set blocking mode: %s", snd_strerror(err));
 		}
 		if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) {
-			error("cannot send data: %s", snd_strerror(err));
+			//error("cannot send data: %s", snd_strerror(err));
 		}
 	}
 }
@@ -57,6 +57,7 @@ int MIDI::processInput()
 void MIDI::thread_func()
 {
 	int ok = 0;
+    int err;
     int lTimeOut = timeout;
 	if (input)
 		snd_rawmidi_read(input, NULL, 0); /* trigger reading */
@@ -81,7 +82,7 @@ void MIDI::thread_func()
 				break;
 			if (err < 0) {
 				ok=-1;
-                error("poll failed: %s", strerror(errno));
+                //error("poll failed: %s", strerror(errno));
 				break;
 			}
 			if (err == 0) {
@@ -95,7 +96,7 @@ void MIDI::thread_func()
 			}
 			if ((err = snd_rawmidi_poll_descriptors_revents(input, pfds, npfds, &revents)) < 0) {
                 ok = -1;
-				error("cannot get poll events: %s", snd_strerror(errno));
+				//error("cannot get poll events: %s", snd_strerror(errno));
 				break;
 			}
 			if (revents & (POLLERR | POLLHUP))
@@ -110,7 +111,7 @@ void MIDI::thread_func()
 				continue;
 			if (err < 0) {
                 ok = -1;
-				error("cannot read from port \"%s\": %s", port_name, snd_strerror(err));
+				//error("cannot read from port \"%s\": %s", port_name, snd_strerror(err));
 				break;
 			}
 
@@ -125,6 +126,6 @@ void MIDI::thread_func()
 	if (output)
 		snd_rawmidi_close(output);
 
-	return ok;
+	
 }
 
