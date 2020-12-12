@@ -32,7 +32,7 @@ void MIDI::execHeader(){
             devIt != it->out.end();
             devIt++)
         {
-            devthread::outFunction(*devIt);
+            outFunction(*devIt);
         }
     }
 }
