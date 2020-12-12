@@ -75,15 +75,19 @@ int MIDI::processInput(midiSignal midiS)
     std::cout<<"processInput"<<std::endl;
     std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
     std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(l_action);
-    if(it_act != it_mode->body_actions.end())
+    if(it_mode != modes.end())
     {
-        for(auto it_out = it_act->out.begin();
-            it_out != it_act->out.end();
-            it_out++)
+        if(it_act != it_mode->body_actions.end())
         {
-            send_midi((char *)it_out->midi.byte,sizeof(midiSignal));
-            if(it_out->delay > 0)
-                std::this_thread::sleep_for(std::chrono::milliseconds(it_out->delay));
+
+            for(auto it_out = it_act->out.begin();
+                it_out != it_act->out.end();
+                it_out++)
+            {
+                send_midi((char *)it_out->midi.byte,sizeof(midiSignal));
+                if(it_out->delay > 0)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(it_out->delay));
+            }
         }
     }
 }
