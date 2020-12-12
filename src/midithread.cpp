@@ -167,7 +167,11 @@ void MIDI::in_func()
                 continue;                
             }
             //each buf[i] has one of the bytes
-            midiSignal midiS = &(static_cast<midiSignal *> buf[0]);
+            midiSignal midiS;
+            midiS.byte[0] = buf[0];
+            midiS.byte[1] = buf[1];
+            midiS.byte[2] = buf[2];
+            midiS.byte[4] = 0;
             processInput(midiS);
 		}
 	}
