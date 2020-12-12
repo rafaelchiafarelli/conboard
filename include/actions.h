@@ -62,7 +62,7 @@ public:
     std::vector<devActions> out;
     Actions(){};
     ~Actions(){};
-    bool operator > (const midiSignal &rhs) const {return in.midi.asInt>rhs.midi.asInt;}
+    bool operator > (const Actions &rhs) const {return in.midi.asInt>rhs.in.midi.asInt;}
 };
 
 #endif
