@@ -13,7 +13,7 @@ typedef enum{
 
 
 typedef union midiSignal{
-    unsigned char byte[4];
+    char byte[4];
     uint32_t asInt;
 };
 

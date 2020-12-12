@@ -67,8 +67,10 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
 
 int MIDI::processInput(midiSignal *midiS)
 {
-    std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(SelectedMode);
-    std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(&midiS);
+    l_mode.index = SelectedMode;
+    l_action.in.midi = &midiS;
+    std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
+    std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(l_action);
     if(it_act)
     {
         for(std::vector<devActions>::iterator it_out = it_act->out.begin();
