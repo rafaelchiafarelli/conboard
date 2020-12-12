@@ -73,7 +73,7 @@ int MIDI::processInput(midiSignal midiS)
     l_mode.index = SelectedMode;
     l_action.in.midi = midiS;
     std::cout<<"processInput"<<std::endl;
-    std::cout<<"processInput midiS.b0"<<itoa(midiS.byte[0])<<"midiS.b1"<<itoa(midiS.byte[1])<<"midiS.b2"<<itoa(midiS.byte[2])<<"midiS.b3"<<itoa(midiS.byte[3])<<std::endl;
+    std::cout<<"processInput midiS.b0"<<std::itoa(midiS.byte[0])<<"midiS.b1"<<std::itoa(midiS.byte[1])<<"midiS.b2"<<std::itoa(midiS.byte[2])<<"midiS.b3"<<std::itoa(midiS.byte[3])<<std::endl;
     std::cout<<"processInput modes size:"<<modes.size()<<std::endl;
     
     std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
@@ -131,9 +131,7 @@ void MIDI::in_func()
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
 		execHeader(); //execute the commands in the header
 		while(!stop){
-			std::cout<<"polling"<<std::endl;
             unsigned char buf[256];
-
 			int i, length;
 			unsigned short revents;
 
