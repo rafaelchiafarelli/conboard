@@ -37,7 +37,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 	{
 		for (rapidxml::xml_node<>* xmlmodes = Body->first_node("mode", 4, true)
 			; xmlmodes
-			; xmlmodes = Body->next_sibling("mode", 4, true))
+			; xmlmodes = xmlmodes->next_sibling("mode", 4, true))
 		{		
 			char *idtag = xmlmodes->first_attribute("id",2,true)->value();
 			unsigned int idx;
@@ -48,7 +48,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 			std::set<Actions,std::greater<Actions>> body_actions;
 			for (rapidxml::xml_node<>* action_nodes = xmlmodes->first_node("action", 6, true)
 				; action_nodes
-				; action_nodes = xmlmodes->next_sibling("action", 6, true))
+				; action_nodes = action_nodes->next_sibling("action", 6, true))
 			{
 				rapidxml::xml_node<>* in_nodes = action_nodes->first_node("input",5,true);
 				Actions action;
@@ -59,7 +59,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 				}
 				for (rapidxml::xml_node<>* out_nodes = action_nodes->first_node("output", 6, true)
 					; out_nodes
-					; out_nodes = action_nodes->next_sibling("output", 6, true))
+					; out_nodes = out_nodes->next_sibling("output", 6, true))
 				{
 					action.out.push_back(parseIO(out_nodes));
 				}
@@ -161,7 +161,7 @@ void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 	{
 		for (rapidxml::xml_node<>* action_nodes = Header->first_node("action", 6, true)
 			; action_nodes
-			; action_nodes = Header->next_sibling("action", 6, true))
+			; action_nodes = action_nodes->next_sibling("action", 6, true))
 		{
 			rapidxml::xml_node<>* in_nodes = action_nodes->first_node("input",5,true);
 			Actions action;
@@ -172,7 +172,7 @@ void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 
 			for (rapidxml::xml_node<>* out_nodes = action_nodes->first_node("output", 6, true)
 				; out_nodes
-				; out_nodes = action_nodes->next_sibling("output", 6, true))
+				; out_nodes = out_nodes->next_sibling("output", 6, true))
 			{
 				action.out.push_back(parseIO(out_nodes));
 			}
