@@ -220,15 +220,15 @@ bool XMLMIDIParser::Initializer()
 				Device->first_attribute("output", 6, true)->value_size());
 		}
 
-	rapidxml::xml_node<> *Header = xmlDoc.first_node("header", 6, true);
-	if(Header)
-		ProcessHeader(Header);
+		rapidxml::xml_node<> *Header = Device->first_node("header", 6, true);
+		if(Header)
+			ProcessHeader(Header);
 
-	rapidxml::xml_node<> *Body = xmlDoc.first_node("body", 4, true);
-	if(Body)
-		ProcessMainBody(Body);
+		rapidxml::xml_node<> *Body = Device->first_node("body", 4, true);
+		if(Body)
+			ProcessMainBody(Body);
 
-	ret = true;
+		ret = true;
 	}
 	return ret;
 }
