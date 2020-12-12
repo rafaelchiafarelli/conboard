@@ -20,9 +20,9 @@
 
 class ModeType{
 public:
-	std::vector<Actions> body_actions;
+	std::set<Actions,std::greater<Actions>> body_actions;
 	unsigned int index;
-	ModeType(std::vector<Actions> b, unsigned int idx){
+	ModeType(std::set<Actions,std::greater<Actions>> b, unsigned int idx){
 		body_actions = b;
 		index = idx;
 	}

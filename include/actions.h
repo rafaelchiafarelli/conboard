@@ -7,12 +7,13 @@
 typedef enum{
     midi,
     keyboard,
-    mouse
+    mouse,
+    joystick
 }devType;
 
 
-union midiSignal{
-    uint8_t byte[4];
+typedef union midiSignal{
+    unsigned char byte[4];
     uint32_t asInt;
 };
 
@@ -48,7 +49,7 @@ class devActions{
         devActions(){index = 0;}
         unsigned int GetIndex(){return index;}
         void SetIndex(int idx){index = idx;}
-        bool operator > (const devActions &rhs) const {return midi.asInt>rhs.midi.asInt;}
+        
 
 };
 
@@ -58,9 +59,10 @@ class Actions{
 
 public:
     devActions in;
-    std::set<devActions,std::greater<devActions>> out;
+    std::vector<devActions> out;
     Actions(){};
     ~Actions(){};
+    bool operator > (const midiSignal &rhs) const {return in.midi.asInt>rhs.midi.asInt;}
 };
 
 #endif

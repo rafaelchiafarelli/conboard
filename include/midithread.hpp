@@ -6,51 +6,69 @@
  * As the device sends input signals, these becomes actions and responses could
  * could be output to the keyboard or mouse, or midi responses to the sender.
  * 
- * 
+ * features:
+ *  - change mode: When a specific action happens (as defined in the xml). We must change
+ *  the current mode (all the actions are descripted by another mode). More than that, 
+ *  mode can be changed by increase, decrease or specific.
+ *  - delay: a time waited in milliseconds, as described in the xml, for the next output to be executed
+ *  - action queue: since delay stop the output of this thread, a queue must be exacted.
+ *  - blink: an outputn special type. It will send the midi on and than send the midi off
  */ 
 
 #ifndef KEYTHREAD_HPP
 #define KEYTHREAD_HPP
 
-#include "std_translation_table.hpp"
-#include "pthread.h"
 #include "stdio.h"
-#include "fstream"
-#include "string.h"
-#include <vector>
 #include "actions.h"
 #include "XMLMIDIParser.h"
-#include <alsa/asoundlib.h>
 
+#include <alsa/asoundlib.h>
+#include <thread>
 #include <set>
 #include <atomic>
+#include <string>
+#include <vector>
+#include <queue>
 
 
 using namespace std;
 #define PORT_NAME_SIZE 10
-
+#define MILLISECONDS_TIMEOUT 10
 class MIDI{
 
     private:
         
+        std::thread *in_thread;
+        std::thread *out_thread;
+        std::queue<Actions> oQueue;
+        void in_func(); //midi input handler
+        void out_func(); //keyboard and mouse handler
+
+
+        atomic_bool stop;
+        int timeout;
+
         std::vector<Actions> header;
         std::set<ModeType,std::greater<ModeType>> modes;
         XMLMIDIParser xml;
+
+        unsigned int SelectedMode;
+
         snd_rawmidi_t *input;
         snd_rawmidi_t *output;
-        atomic_bool stop;
         char port_name[PORT_NAME_SIZE];
-        int timeout;
+
+        
         void execHeader();
-        void sig_handler(int dummy);
         void parse();
-        int processInput();
+        int processInput(midiSignal *midiS);
         void send_midi(char *send_data, size_t send_data_length);
 
     public:
-        void thread_func();
-        MIDI(char *port_name);
-        ~MIDI(){};
+        void Stop();
+        
+        MIDI(char *port_name, string xmlFileName);
+        ~MIDI();
 
 };
 

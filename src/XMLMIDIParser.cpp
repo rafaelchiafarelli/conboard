@@ -1,5 +1,6 @@
 
 #include "XMLMIDIParser.h"
+#include <set>
 
 
 XMLMIDIParser::XMLMIDIParser(std::string FileName, std::set<ModeType,std::greater<ModeType>> *Mode,std::vector<Actions> *h) {
@@ -14,10 +15,6 @@ XMLMIDIParser::XMLMIDIParser(std::string FileName, std::set<ModeType,std::greate
 			enum {
 				PARSE_FLAGS = rapidxml::parse_non_destructive
 			};
-
-			// NOTE : There is a `const_cast<>`, but `rapidxml::parse_non_destructive`
-			//        guarantees `data` is not overwritten.
-			
 			xmlDoc.parse<PARSE_FLAGS>(const_cast<char*>(raw_xml.data()));
 			if (xmlDoc.first_node("DEVICE", 6, true))
 			{
@@ -47,7 +44,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 			{
 				idx = atoi(idtag);
 			}
-			std::vector<Actions> body_actions;
+			std::set<Actions,std::greater<Actions>> body_actions;
 			for (rapidxml::xml_node<>* action_nodes = xmlmodes->first_node("action", 6, true)
 				; action_nodes
 				; action_nodes = xmlmodes->next_sibling("action", 6, true))
@@ -63,9 +60,9 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 					; out_nodes
 					; out_nodes = action_nodes->next_sibling("output", 6, true))
 				{
-					action.out.insert(parseIO(out_nodes));
+					action.out.push_back(parseIO(out_nodes));
 				}
-				body_actions.push_back(action);
+				body_actions.insert(action);
 			}
 			modes->insert(ModeType(body_actions,idx));
 		}
@@ -175,7 +172,7 @@ void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 				; out_nodes
 				; out_nodes = action_nodes->next_sibling("output", 6, true))
 			{
-				action.out.insert(parseIO(out_nodes));
+				action.out.push_back(parseIO(out_nodes));
 			}
 			header_actions->push_back(action);
 		}

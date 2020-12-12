@@ -1,19 +1,28 @@
 #include "midithread.hpp"
+#include <iostream>
+#include <chrono>
+#include <thread>
 #include <alsa/asoundlib.h>
 
 
 
-void MIDI::sig_handler(int dummy){
+
+void MIDI::Stop()
+{
     stop =true;
 }
-
 void MIDI::parse()
 {
 
 }
+MIDI::~MIDI(){
+    in_thread->join();
+    out_thread->join();
+    delete in_thread;
+    delete out_thread;
+}
 
-
-MIDI::MIDI(char *p_name):xml(string("filename"),&modes,&header)
+MIDI::MIDI(char *p_name, string xmlFileName):xml(xmlFileName,&modes,&header)
 {
     memset(port_name,0,PORT_NAME_SIZE);
     memcpy(port_name,p_name,strlen(p_name));
@@ -21,41 +30,75 @@ MIDI::MIDI(char *p_name):xml(string("filename"),&modes,&header)
 	if ((err = snd_rawmidi_open(&input, &output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
 		//error("cannot open port \"%s\": %s", port_name, snd_strerror(err));
 	}
+    SelectedMode = 0;
+    in_thread = new thread(&MIDI::in_func,this);
+    out_thread = new thread(&MIDI::out_func,this);
 }
 
-void MIDI::execHeader(){
+void MIDI::execHeader()
+{
     for(std::vector<Actions>::iterator it = header.begin();
         it != header.end();
         it++)
     {
-        for(std::set<devActions,std::greater<devActions>>::iterator devIt = it->out.begin();
+        for(std::vector<devActions>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
         {
-            //outFunction(*devIt);
+            send_midi(devIt->midi,sizeof(midiSignal));
+            if(devIt->delay > 0)
+                std::this_thread::sleep_for(std::chrono::milliseconds(devIt->delay));
         }
     }
 }
 
 void MIDI::send_midi(char *send_data, size_t send_data_length)
 {
-    	if (send_data) {
-            int err = 0;
-		if ((err = snd_rawmidi_nonblock(output, 0)) < 0) {
-			//error("cannot set blocking mode: %s", snd_strerror(err));
-		}
-		if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) {
-			//error("cannot send data: %s", snd_strerror(err));
-		}
-	}
+    int err = 0;
+    if ((err = snd_rawmidi_nonblock(output, 0)) < 0) 
+    {
+        //error("cannot set blocking mode: %s", snd_strerror(err));
+    }
+    if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) 
+    {
+        //error("cannot send data: %s", snd_strerror(err));
+    }
 }
 
-int MIDI::processInput()
+int MIDI::processInput(midiSignal *midiS)
 {
-
+    std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(SelectedMode);
+    std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(&midiS);
+    if(it_act)
+    {
+        for(std::vector<devActions>::iterator it_out = it_act->out.begin();
+            it_out != it_act->out.end();
+            it_out++)
+        {
+            send_midi(it_out->midi,sizeof(midiSignal));
+            if(it_out->delay > 0)
+                std::this_thread::sleep_for(std::chrono::milliseconds(it_out->delay));
+        }
+    }
 }
 
-void MIDI::thread_func()
+void MIDI::out_func()
+{
+    while(!stop)
+    {
+        //read from queue and launch it to the device.
+        //sleeps otherwise
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+}
+/**
+ * 
+ * This is the thread that will read the input's from user and queue the outputs
+ *      Start by connecting to the device and sending information present at the header section of the XML file.
+ * 
+ * 
+ */ 
+void MIDI::in_func()
 {
 	int ok = 0;
     int err;
@@ -68,17 +111,16 @@ void MIDI::thread_func()
 		int npfds, time = 0;
 		struct pollfd *pfds;
 
-		lTimeOut *= 1000;
 		npfds = snd_rawmidi_poll_descriptors_count(input);
 		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
-		
+		execHeader(); //execute the commands in the header
 		while(!stop){
 			unsigned char buf[256];
 			int i, length;
 			unsigned short revents;
 
-			err = poll(pfds, npfds, 200);
+			err = poll(pfds, npfds, MILLISECONDS_TIMEOUT);
 			if (stop || (err < 0 && errno == EINTR))
 				break;
 			if (err < 0) {
@@ -87,8 +129,8 @@ void MIDI::thread_func()
 				break;
 			}
 			if (err == 0) {
-				time += 200;
-				if (lTimeOut && time >= lTimeOut)
+				time += MILLISECONDS_TIMEOUT;
+				if (time >= lTimeOut)
                 {
                     ok = -1;
 					break;
@@ -117,8 +159,14 @@ void MIDI::thread_func()
 			}
 
 			time = 0;
+            if(err > sizeof(midiSignal))
+            {
+                //investigate this to see if the number of bytes is constant.
+                continue;                
+            }
             //each buf[i] has one of the bytes
-            processInput();
+            midiSignal *midiS = static_cast<midiSignal> &buf[0];
+            processInput(midiS);
 		}
 	}
 

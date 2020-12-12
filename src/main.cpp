@@ -1,24 +1,3 @@
-/*
- *  amidi.c - read from/write to RawMIDI ports
- *
- *  Copyright (c) Clemens Ladisch <clemens@ladisch.de>
- *
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
- */
-
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,6 +16,43 @@
 #include "aconfig.h"
 #include "version.h"
 
+/**
+ * This is the main module of the system
+ *  It is responsible for reading all the devices that are connected to the system - and keep reading it.
+ *  launch all threads related to device inputs - one thread for device
+ *  kill threads of devices that are no longer connected.
+ *  
+ *  setup
+ *  The system will read the config file and evaluate the existence of the folders xml folders (/conboard/xml)
+ *  the config file also contains:
+ *   - the timeout information
+ *   - the connection with the external world (keyboard and mouse that will launch events to the PC)
+ *   - the maximum number of thread's this code can generate
+ *  then, this function can start by openning file descriptors and other tasks related to the output
+ *  
+ *  start of a thread (dispatcher)
+ *  when a device is connected, an event will be called. this event will read information from the device (
+ *  such as type, file descriptors, name, input, output, etc) then, this event code, will enqueue a new dispatch
+ *  order. The starter will read this information and capture the xmlfile assossiated with the device. 
+ *  start a thread of the type of the device inserted with the 
+ *  information available.
+ *      information required:
+ *  - Human Readable name for input and output;
+ *  - type (midi, keyboard, mouse or joystick)
+ *  - xmlfile and xsdfile
+ *  
+ *  end of a thread (dispatcher)
+ *  When a xmlfile changes, or a device is removed, this module mus handle the death of the thread.
+ *  First it will send the kill command to the thread than it will "join" with the thread. 
+ *  If the event if just a change in the xml, a new thread will be launched, however, if it is a device disconnected
+ *  then just kill the thread.
+ *  
+ *  
+ * 
+ * 
+ **/ 
+
+
 static int do_device_list, do_rawmidi_list;
 static char *port_name = "default";
 static char *send_file_name;
@@ -51,7 +67,7 @@ static int stop;
 static snd_rawmidi_t *input, **inputp;
 static snd_rawmidi_t *output, **outputp;
 
-void error(const char *format, ...)
+static void error(const char *format, ...)
 {
 	va_list ap;
 
@@ -61,7 +77,7 @@ void error(const char *format, ...)
 	putc('\n', stderr);
 }
 
-void usage(void)
+static void usage(void)
 {
 	printf(
 		"Usage: amidi options\n"
@@ -80,12 +96,12 @@ void usage(void)
 		"-a, --active-sensing   don't ignore active sensing bytes\n");
 }
 
-void version(void)
+static void version(void)
 {
 	puts("amidi version " SND_UTIL_VERSION_STR);
 }
 
-void *my_malloc(size_t size)
+static void *my_malloc(size_t size)
 {
 	void *p = malloc(size);
 	if (!p) {
@@ -95,7 +111,7 @@ void *my_malloc(size_t size)
 	return p;
 }
 
-void list_device(snd_ctl_t *ctl, int card, int device)
+static void list_device(snd_ctl_t *ctl, int card, int device)
 {
 	snd_rawmidi_info_t *info;
 	const char *name;
@@ -156,7 +172,7 @@ void list_device(snd_ctl_t *ctl, int card, int device)
 	}
 }
 
-void list_card_devices(int card)
+static void list_card_devices(int card)
 {
 	snd_ctl_t *ctl;
 	char name[32];
@@ -181,7 +197,7 @@ void list_card_devices(int card)
 	snd_ctl_close(ctl);
 }
 
-void device_list(void)
+static void device_list(void)
 {
 	int card, err;
 
@@ -204,7 +220,7 @@ void device_list(void)
 	} while (card >= 0);
 }
 
-void rawmidi_list(void)
+static void rawmidi_list(void)
 {
 	snd_output_t *output;
 	snd_config_t *config;
@@ -225,10 +241,10 @@ void rawmidi_list(void)
 	snd_output_close(output);
 }
 
-void load_file(void)
+static void load_file(void)
 {
 	int fd;
-	int length;
+	off_t length;
 
 	fd = open(send_file_name, O_RDONLY);
 	if (fd == -1) {
@@ -240,7 +256,7 @@ void load_file(void)
 		error("cannot determine length of %s: %s", send_file_name, strerror(errno));
 		goto _error;
 	}
-	send_data = (char*)my_malloc(length);
+	send_data = my_malloc(length);
 	lseek(fd, 0, SEEK_SET);
 	if (read(fd, send_data, length) != length) {
 		error("cannot read from %s: %s", send_file_name, strerror(errno));
@@ -271,12 +287,12 @@ static int hex_value(char c)
 	return -1;
 }
 
-void parse_data(void)
+static void parse_data(void)
 {
 	const char *p;
 	int i, value;
 
-	send_data =(char *) my_malloc(strlen(send_hex)); /* guesstimate */
+	send_data = my_malloc(strlen(send_hex)); /* guesstimate */
 	i = 0;
 	value = -1; /* value is >= 0 when the first hex digit of a byte has been read */
 	for (p = send_hex; *p; ++p) {
@@ -308,7 +324,7 @@ void parse_data(void)
 /*
  * prints MIDI commands, formatting them nicely
  */
-void print_byte(unsigned char byte)
+static void print_byte(unsigned char byte)
 {
 	static enum {
 		STATE_UNKNOWN,
@@ -381,18 +397,18 @@ void print_byte(unsigned char byte)
 	printf("%c%02X", newline ? '\n' : ' ', byte);
 }
 
-void sig_handler(int dummy)
+static void sig_handler(int dummy)
 {
 	stop = 1;
 }
 
-void add_send_hex_data(const char *str)
+static void add_send_hex_data(const char *str)
 {
 	int length;
 	char *s;
 
 	length = (send_hex ? strlen(send_hex) + 1 : 0) + strlen(str) + 1;
-	s = (char*)my_malloc(length);
+	s = my_malloc(length);
 	if (send_hex) {
 		strcpy(s, send_hex);
 		strcat(s, " ");
@@ -551,7 +567,7 @@ int main(int argc, char *argv[])
 
 		timeout *= 1000;
 		npfds = snd_rawmidi_poll_descriptors_count(input);
-		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
+		pfds = alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
 		signal(SIGINT, sig_handler);
 		for (;;) {
