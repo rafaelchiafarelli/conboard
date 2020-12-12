@@ -45,7 +45,7 @@ void MIDI::execHeader()
             devIt != it->out.end();
             devIt++)
         {
-            send_midi(devIt->midi,sizeof(midiSignal));
+            send_midi(devIt->midi.byte,sizeof(midiSignal));
             if(devIt->delay > 0)
                 std::this_thread::sleep_for(std::chrono::milliseconds(devIt->delay));
         }
@@ -75,7 +75,7 @@ int MIDI::processInput(midiSignal *midiS)
             it_out != it_act->out.end();
             it_out++)
         {
-            send_midi(it_out->midi,sizeof(midiSignal));
+            send_midi(it_out->midi.byte,sizeof(midiSignal));
             if(it_out->delay > 0)
                 std::this_thread::sleep_for(std::chrono::milliseconds(it_out->delay));
         }

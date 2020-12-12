@@ -101,14 +101,14 @@ static void version(void)
 	puts("amidi version " SND_UTIL_VERSION_STR);
 }
 
-static void *my_malloc(size_t size)
+static char *my_malloc(size_t size)
 {
 	void *p = malloc(size);
 	if (!p) {
 		error("out of memory");
 		exit(EXIT_FAILURE);
 	}
-	return p;
+	return (char *)p;
 }
 
 static void list_device(snd_ctl_t *ctl, int card, int device)
@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
 
 		timeout *= 1000;
 		npfds = snd_rawmidi_poll_descriptors_count(input);
-		pfds = alloca(npfds * sizeof(struct pollfd));
+		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
 		signal(SIGINT, sig_handler);
 		for (;;) {
