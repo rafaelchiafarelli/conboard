@@ -13,7 +13,7 @@ void MIDI::parse()
 }
 
 
-MIDI::MIDI(char *p_name)
+MIDI::MIDI(char *p_name):xml(string("filename"),&modes,&header)
 {
     memset(port_name,0,PORT_NAME_SIZE);
     memcpy(port_name,p_name,strlen(p_name));
@@ -28,7 +28,7 @@ void MIDI::execHeader(){
         it != header.end();
         it++)
     {
-        for(std::vector<devActions>::iterator devIt = it->out.begin();
+        for(std::set<devActions,std::greater<devActions>>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
         {
@@ -54,7 +54,7 @@ int MIDI::processInput()
 
 }
 
-int MIDI::thread_func()
+void MIDI::thread_func()
 {
 	int ok = 0;
     int lTimeOut = timeout;

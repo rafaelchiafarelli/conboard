@@ -44,6 +44,8 @@ class MIDI{
         void execHeader();
         void sig_handler(int dummy);
         void parse();
+        int processInput();
+        void send_midi(char *send_data, size_t send_data_length);
 
     public:
         void thread_func();
