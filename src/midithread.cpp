@@ -73,7 +73,7 @@ int MIDI::processInput(midiSignal midiS)
     std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(l_action);
     if(it_act != it_mode->body_actions.end())
     {
-        for(std::vector<devActions>::iterator it_out = it_act->out.begin();
+        for(auto it_out = it_act->out.begin();
             it_out != it_act->out.end();
             it_out++)
         {
