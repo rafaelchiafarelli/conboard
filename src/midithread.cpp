@@ -1,5 +1,7 @@
 #include "midithread.hpp"
 #include <iostream>
+#include "stdlib.h"
+#include "stdio.h"
 #include <chrono>
 #include <thread>
 #include <alsa/asoundlib.h>
@@ -28,7 +30,7 @@ MIDI::MIDI(char *p_name, string xmlFileName):xml(xmlFileName,&modes,&header)
     memcpy(port_name,p_name,strlen(p_name));
     int err = 0;
 	if ((err = snd_rawmidi_open(&input, &output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
-		//error("cannot open port \"%s\": %s", port_name, snd_strerror(err));
+		std::cout<<"here"<<std::endl;
 	}
     SelectedMode = 0;
     in_thread = new thread(&MIDI::in_func,this);
@@ -127,7 +129,7 @@ void MIDI::in_func()
 				break;
 			if (err < 0) {
 				ok=-1;
-                //error("poll failed: %s", strerror(errno));
+                std::cout<<"poll failed: "<<strerror(errno)<<std::endl;
 				break;
 			}
 			if (err == 0) {
@@ -141,7 +143,7 @@ void MIDI::in_func()
 			}
 			if ((err = snd_rawmidi_poll_descriptors_revents(input, pfds, npfds, &revents)) < 0) {
                 ok = -1;
-				//error("cannot get poll events: %s", snd_strerror(errno));
+				std::cout<<"cannot get poll events: "<<snd_strerror(errno)<<std::endl;
 				break;
 			}
 			if (revents & (POLLERR | POLLHUP))
@@ -156,7 +158,7 @@ void MIDI::in_func()
 				continue;
 			if (err < 0) {
                 ok = -1;
-				//error("cannot read from port \"%s\": %s", port_name, snd_strerror(err));
+				std::cout<<"cannot read from port "<<port_name<<" , "<<snd_strerror(err)<<std::endl;
 				break;
 			}
 
