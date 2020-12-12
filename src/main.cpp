@@ -447,17 +447,17 @@ int main(int argc, char *argv[])
 	};
     //============================================================================================================================
 
-    
+    stop = 0;
     device_list();
-    char port_name[] = {"hw:1,0,0"};
-    string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml")
-    MIDI testMIDI(port_name, xmlFileName);
+    char p_name[] = {"hw:1,0,0"};
+    string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml");
+    MIDI testMIDI(p_name, xmlFileName);
 	signal(SIGINT, sig_handler);
     while(!stop)
     {
          std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-
+    testMIDI.Stop();
 
 
 
