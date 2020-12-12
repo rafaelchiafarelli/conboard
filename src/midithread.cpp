@@ -39,6 +39,7 @@ MIDI::MIDI(char *p_name, string xmlFileName):xml(xmlFileName,&modes,&header)
 
 void MIDI::execHeader()
 {
+    std::cout<<"execHeader"<<std::endl;
     for(std::vector<Actions>::iterator it = header.begin();
         it != header.end();
         it++)
@@ -59,11 +60,11 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
     int err = 0;
     if ((err = snd_rawmidi_nonblock(output, 0)) < 0) 
     {
-        //error("cannot set blocking mode: %s", snd_strerror(err));
+        std::cout<<"cannot set blocking mode: "<<snd_strerror(err)<<std::endl;
     }
     if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) 
     {
-        //error("cannot send data: %s", snd_strerror(err));
+        std::cout<<"cannot send data: "<<snd_strerror(err)<<std::endl;
     }
 }
 
@@ -104,6 +105,7 @@ void MIDI::out_func()
  */ 
 void MIDI::in_func()
 {
+    std::cout<<"begin in_func"<<std::endl;
 	int ok = 0;
     int err;
     int lTimeOut = timeout;
@@ -120,7 +122,9 @@ void MIDI::in_func()
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
 		execHeader(); //execute the commands in the header
 		while(!stop){
-			unsigned char buf[256];
+			std::cout<<"polling"<<std::endl;
+            unsigned char buf[256];
+
 			int i, length;
 			unsigned short revents;
 
