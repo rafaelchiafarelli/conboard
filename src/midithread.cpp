@@ -73,7 +73,7 @@ int MIDI::processInput(midiSignal midiS)
     l_mode.index = SelectedMode;
     l_action.in.midi = midiS;
     std::cout<<"processInput"<<std::endl;
-    std::cout<<"processInput midiS.b0"<<midiS.byte[0]<<"midiS.b1"<<midiS.byte[1]<<"midiS.b2"<<midiS.byte[2]<<"midiS.b3"<<midiS.byte[3]<<std::endl;
+    std::cout<<"processInput midiS.b0"<<itoa(midiS.byte[0])<<"midiS.b1"<<itoa(midiS.byte[1])<<"midiS.b2"<<itoa(midiS.byte[2])<<"midiS.b3"<<itoa(midiS.byte[3])<<std::endl;
     std::cout<<"processInput modes size:"<<modes.size()<<std::endl;
     
     std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
