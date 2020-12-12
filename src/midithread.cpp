@@ -72,6 +72,7 @@ int MIDI::processInput(midiSignal midiS)
 {
     l_mode.index = SelectedMode;
     l_action.in.midi = midiS;
+    std::cout<<
     std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
     std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(l_action);
     if(it_act != it_mode->body_actions.end())
@@ -130,7 +131,10 @@ void MIDI::in_func()
 
 			err = poll(pfds, npfds, MILLISECONDS_TIMEOUT);
 			if (stop || (err < 0 && errno == EINTR))
+            {
+                std::cout<<"poll failed: "<<stop<<" "<<err<<std::endl;
 				break;
+            }
 			if (err < 0) {
 				ok=-1;
                 std::cout<<"poll failed: "<<strerror(errno)<<std::endl;
@@ -140,10 +144,11 @@ void MIDI::in_func()
 				time += MILLISECONDS_TIMEOUT;
 				if (time >= lTimeOut)
                 {
-                    ok = -1;
-					break;
+                    
+                    std::cout<<"poll timedout"<<std::endl;
+					continue;
                 }
-				continue;
+				
 			}
 			if ((err = snd_rawmidi_poll_descriptors_revents(input, pfds, npfds, &revents)) < 0) {
                 ok = -1;
@@ -178,6 +183,7 @@ void MIDI::in_func()
             midiS.byte[1] = buf[1];
             midiS.byte[2] = buf[2];
             midiS.byte[4] = 0;
+            
             processInput(midiS);
 		}
 	}
