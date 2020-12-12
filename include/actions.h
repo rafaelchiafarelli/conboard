@@ -12,10 +12,10 @@ typedef enum{
 }devType;
 
 
-typedef union midiSignal{
+typedef union {
     char byte[4];
     uint32_t asInt;
-};
+}midiSignal;
 
 
 class devActions{
