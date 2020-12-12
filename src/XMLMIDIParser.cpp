@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include "XMLMIDIParser.h"
 #include <set>
 
@@ -64,6 +65,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 				}
 				body_actions.insert(action);
 			}
+			std::cout<<"insert of a mode"<<std::endl;
 			modes->insert(ModeType(body_actions,idx));
 		}
 	}
