@@ -17,7 +17,7 @@ MIDI::MIDI(char *p_name)
 {
     memset(port_name,0,PORT_NAME_SIZE);
     memcpy(port_name,p_name,strlen(p_name));
-    count = 0;
+    int err = 0;
 	if ((err = snd_rawmidi_open(input, output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
 		error("cannot open port \"%s\": %s", port_name, snd_strerror(err));
 	}

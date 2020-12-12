@@ -27,7 +27,7 @@
 
 
 using namespace std;
-#define PORT_NAME_SIZE 10;
+#define PORT_NAME_SIZE 10
 
 class MIDI{
 
