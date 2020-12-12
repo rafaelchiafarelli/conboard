@@ -5,6 +5,7 @@
 #include <chrono>
 #include <thread>
 #include <alsa/asoundlib.h>
+#include <string>
 
 
 
@@ -73,7 +74,7 @@ int MIDI::processInput(midiSignal midiS)
     l_mode.index = SelectedMode;
     l_action.in.midi = midiS;
     std::cout<<"processInput"<<std::endl;
-    std::cout<<"processInput midiS.b0"<<std::itoa(midiS.byte[0])<<"midiS.b1"<<std::itoa(midiS.byte[1])<<"midiS.b2"<<std::itoa(midiS.byte[2])<<"midiS.b3"<<std::itoa(midiS.byte[3])<<std::endl;
+    std::cout<<"processInput midiS.b0"<<std::to_string(midiS.byte[0])<<"midiS.b1"<<std::to_string(midiS.byte[1])<<"midiS.b2"<<std::to_string(midiS.byte[2])<<"midiS.b3"<<std::to_string(midiS.byte[3])<<std::endl;
     std::cout<<"processInput modes size:"<<modes.size()<<std::endl;
     
     std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
