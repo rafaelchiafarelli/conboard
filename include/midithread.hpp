@@ -11,7 +11,7 @@
 
 #ifndef KEYTHREAD_HPP
 #define KEYTHREAD_HPP
-#include "devthread.hpp"
+
 #include "std_translation_table.hpp"
 #include "pthread.h"
 #include "stdio.h"
@@ -20,22 +20,34 @@
 #include <vector>
 #include "actions.h"
 #include "XMLMIDIParser.h"
+#include <alsa/asoundlib.h>
+
+#include <set>
+#include <atomic>
+
+
 using namespace std;
+#define PORT_NAME_SIZE 10;
 
-
-class MIDI : public drv {
+class MIDI{
 
     private:
-        int count;
+        
         std::vector<Actions> header;
-        std::vector<ModeType> modes;
+        std::set<ModeType,std::greater<ModeType>> modes;
         XMLMIDIParser xml;
+        snd_rawmidi_t *input;
+        snd_rawmidi_t *output;
+        atomic_bool stop;
+        char port_name[PORT_NAME_SIZE];
+        int timeout;
         void execHeader();
-        int  a;
+        void sig_handler(int dummy);
         void parse();
-        void run();
+
     public:
-        MIDI(string config, string inputPath, string outputPath, string confPath);
+        void thread_func();
+        MIDI(char *port_name);
         ~MIDI(){};
 
 };

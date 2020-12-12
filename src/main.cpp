@@ -51,7 +51,7 @@ static int stop;
 static snd_rawmidi_t *input, **inputp;
 static snd_rawmidi_t *output, **outputp;
 
-static void error(const char *format, ...)
+void error(const char *format, ...)
 {
 	va_list ap;
 
@@ -61,7 +61,7 @@ static void error(const char *format, ...)
 	putc('\n', stderr);
 }
 
-static void usage(void)
+void usage(void)
 {
 	printf(
 		"Usage: amidi options\n"
@@ -80,12 +80,12 @@ static void usage(void)
 		"-a, --active-sensing   don't ignore active sensing bytes\n");
 }
 
-static void version(void)
+void version(void)
 {
 	puts("amidi version " SND_UTIL_VERSION_STR);
 }
 
-static void *my_malloc(size_t size)
+void *my_malloc(size_t size)
 {
 	void *p = malloc(size);
 	if (!p) {
@@ -95,7 +95,7 @@ static void *my_malloc(size_t size)
 	return p;
 }
 
-static void list_device(snd_ctl_t *ctl, int card, int device)
+void list_device(snd_ctl_t *ctl, int card, int device)
 {
 	snd_rawmidi_info_t *info;
 	const char *name;
@@ -156,7 +156,7 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 	}
 }
 
-static void list_card_devices(int card)
+void list_card_devices(int card)
 {
 	snd_ctl_t *ctl;
 	char name[32];
@@ -181,7 +181,7 @@ static void list_card_devices(int card)
 	snd_ctl_close(ctl);
 }
 
-static void device_list(void)
+void device_list(void)
 {
 	int card, err;
 
@@ -204,7 +204,7 @@ static void device_list(void)
 	} while (card >= 0);
 }
 
-static void rawmidi_list(void)
+void rawmidi_list(void)
 {
 	snd_output_t *output;
 	snd_config_t *config;
@@ -225,7 +225,7 @@ static void rawmidi_list(void)
 	snd_output_close(output);
 }
 
-static void load_file(void)
+void load_file(void)
 {
 	int fd;
 	int length;
@@ -271,7 +271,7 @@ static int hex_value(char c)
 	return -1;
 }
 
-static void parse_data(void)
+void parse_data(void)
 {
 	const char *p;
 	int i, value;
@@ -308,7 +308,7 @@ static void parse_data(void)
 /*
  * prints MIDI commands, formatting them nicely
  */
-static void print_byte(unsigned char byte)
+void print_byte(unsigned char byte)
 {
 	static enum {
 		STATE_UNKNOWN,
@@ -381,12 +381,12 @@ static void print_byte(unsigned char byte)
 	printf("%c%02X", newline ? '\n' : ' ', byte);
 }
 
-static void sig_handler(int dummy)
+void sig_handler(int dummy)
 {
 	stop = 1;
 }
 
-static void add_send_hex_data(const char *str)
+void add_send_hex_data(const char *str)
 {
 	int length;
 	char *s;

@@ -1,5 +1,11 @@
 #include "midithread.hpp"
+#include <alsa/asoundlib.h>
 
+
+
+void MIDI::sig_handler(int dummy){
+    stop =true;
+}
 
 void MIDI::parse()
 {
@@ -7,23 +13,14 @@ void MIDI::parse()
 }
 
 
-/**
- * Function to read the input, filter the events and generate outputs as defined in XML 
- * 
- */ 
-void MIDI::run(){
-
-}
-
-MIDI::MIDI(string actionPath, 
-            string inputPath, 
-            string outputPath, 
-            string confPath):drv(inputPath,outputPath,confPath), 
-                             xml(confPath,
-                                &modes,
-                                &header)
+MIDI::MIDI(char *p_name)
 {
+    memset(port_name,0,PORT_NAME_SIZE);
+    memcpy(port_name,p_name,strlen(p_name));
     count = 0;
+	if ((err = snd_rawmidi_open(input, output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
+		error("cannot open port \"%s\": %s", port_name, snd_strerror(err));
+	}
 }
 
 void MIDI::execHeader(){
@@ -35,7 +32,99 @@ void MIDI::execHeader(){
             devIt != it->out.end();
             devIt++)
         {
-            drv::outFunction(*devIt);
+            devthread::outFunction(*devIt);
         }
     }
 }
+
+void MIDI::send_midi(char *send_data, size_t send_data_length)
+{
+    	if (send_data) {
+		if ((err = snd_rawmidi_nonblock(output, 0)) < 0) {
+			error("cannot set blocking mode: %s", snd_strerror(err));
+		}
+		if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) {
+			error("cannot send data: %s", snd_strerror(err));
+		}
+	}
+}
+
+int MIDI::processInput()
+{
+
+}
+
+int MIDI::thread_func()
+{
+	int ok = 0;
+    int lTimeOut = timeout;
+	if (input)
+		snd_rawmidi_read(input, NULL, 0); /* trigger reading */
+
+	if (input) {
+		
+		int npfds, time = 0;
+		struct pollfd *pfds;
+
+		lTimeOut *= 1000;
+		npfds = snd_rawmidi_poll_descriptors_count(input);
+		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
+		snd_rawmidi_poll_descriptors(input, pfds, npfds);
+		
+		while(!stop){
+			unsigned char buf[256];
+			int i, length;
+			unsigned short revents;
+
+			err = poll(pfds, npfds, 200);
+			if (stop || (err < 0 && errno == EINTR))
+				break;
+			if (err < 0) {
+				ok=-1;
+                error("poll failed: %s", strerror(errno));
+				break;
+			}
+			if (err == 0) {
+				time += 200;
+				if (lTimeOut && time >= lTimeOut)
+                {
+                    ok = -1;
+					break;
+                }
+				continue;
+			}
+			if ((err = snd_rawmidi_poll_descriptors_revents(input, pfds, npfds, &revents)) < 0) {
+                ok = -1;
+				error("cannot get poll events: %s", snd_strerror(errno));
+				break;
+			}
+			if (revents & (POLLERR | POLLHUP))
+            {
+                ok = -1;
+				break;
+            }
+			if (!(revents & POLLIN))
+				continue;
+			err = snd_rawmidi_read(input, buf, sizeof(buf));
+			if (err == -EAGAIN)
+				continue;
+			if (err < 0) {
+                ok = -1;
+				error("cannot read from port \"%s\": %s", port_name, snd_strerror(err));
+				break;
+			}
+
+			time = 0;
+            //each buf[i] has one of the bytes
+            processInput()
+		}
+	}
+
+	if (input)
+		snd_rawmidi_close(input);
+	if (output)
+		snd_rawmidi_close(output);
+
+	return ok;
+}
+
