@@ -2,6 +2,7 @@
 #define ACTIONS_H
 #include "string"
 #include <vector>
+#include <set>
 
 typedef enum{
     midi,
@@ -11,8 +12,8 @@ typedef enum{
 
 
 union midiSignal{
-    unsigned char byte[3];
-    unsigned int asInt;
+    uint8_t byte[4];
+    uint32_t asInt;
 };
 
 
@@ -47,7 +48,7 @@ class devActions{
         devActions(){index = 0;}
         unsigned int GetIndex(){return index;}
         void SetIndex(int idx){index = idx;}
-        bool operator < (const devActions &rhs) const {return midi.asInt<rhs.midi.asInt;}
+        bool operator > (const devActions &rhs) const {return midi.asInt>rhs.midi.asInt;}
 
 };
 
@@ -57,7 +58,7 @@ class Actions{
 
 public:
     devActions in;
-    std::vector<devActions> out;
+    std::set<devActions,std::greater<devActions>> out;
     Actions(){};
     ~Actions(){};
 };

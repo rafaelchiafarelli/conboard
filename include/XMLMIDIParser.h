@@ -16,6 +16,7 @@
 //#define RAPIDXML_NO_EXCEPTIONS
 #include "rapidxml.hpp"
 #include "actions.h"
+#include <set>
 
 class ModeType{
 public:
@@ -25,6 +26,7 @@ public:
 		body_actions = b;
 		index = idx;
 	}
+	bool operator > ( const ModeType &rhs) const {return index>rhs.index;}
 };
 
 class XMLMIDIParser
@@ -37,9 +39,10 @@ class XMLMIDIParser
 		std::vector<char> raw_xml;
 		std::vector<Actions> *header_actions;
 		
-		std::vector<ModeType> *modes;
+		std::set<ModeType,std::greater<ModeType>> *modes;
 		rapidxml::xml_document<> xmlDoc;
 		devType type;
+		unsigned int timeout;
 		devActions parseIO(rapidxml::xml_node<> *nodes);
 		bool Initializer();
 		
@@ -48,7 +51,9 @@ class XMLMIDIParser
 		void ProcessHeader(rapidxml::xml_node<> *Device);
 		void ProcessMainBody(rapidxml::xml_node<> *Device);
 	public:
-		XMLMIDIParser(std::string FileName,std::vector<ModeType> *Mode,std::vector<Actions> *h);
+		devType GetType(){return type;};
+		unsigned int GetTimeOut(){return timeout;};
+		XMLMIDIParser(std::string FileName,std::set<ModeType,std::greater<ModeType>>  *Mode,std::vector<Actions> *h);
 		~XMLMIDIParser();
 };
 

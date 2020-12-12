@@ -2,7 +2,7 @@
 #include "XMLMIDIParser.h"
 
 
-XMLMIDIParser::XMLMIDIParser(std::string FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
+XMLMIDIParser::XMLMIDIParser(std::string FileName, std::set<ModeType,std::greater<ModeType>> *Mode,std::vector<Actions> *h) {
 	header_actions = h;
 	modes = Mode;
 	loaded = false;
@@ -63,11 +63,11 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 					; out_nodes
 					; out_nodes = action_nodes->next_sibling("output", 6, true))
 				{
-					action.out.push_back(parseIO(out_nodes));
+					action.out.insert(parseIO(out_nodes));
 				}
 				body_actions.push_back(action);
 			}
-			modes->push_back(ModeType(body_actions,idx));
+			modes->insert(ModeType(body_actions,idx));
 		}
 	}
 }
@@ -175,7 +175,7 @@ void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 				; out_nodes
 				; out_nodes = action_nodes->next_sibling("output", 6, true))
 			{
-				action.out.push_back(parseIO(out_nodes));
+				action.out.insert(parseIO(out_nodes));
 			}
 			header_actions->push_back(action);
 		}
@@ -200,6 +200,10 @@ bool XMLMIDIParser::Initializer()
 					type=mouse;
 				}
 			}
+		}
+		if (Device->first_attribute("timeout", 7, true))
+		{
+			timeout = (unsigned int) atoi(Device->first_attribute("timeout", 7, true)->value());
 		}
 		if (Device->first_attribute("name", 4, true))
 		{
