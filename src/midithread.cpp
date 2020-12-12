@@ -40,6 +40,7 @@ void MIDI::execHeader(){
 void MIDI::send_midi(char *send_data, size_t send_data_length)
 {
     	if (send_data) {
+            int err = 0;
 		if ((err = snd_rawmidi_nonblock(output, 0)) < 0) {
 			//error("cannot set blocking mode: %s", snd_strerror(err));
 		}
@@ -117,7 +118,7 @@ void MIDI::thread_func()
 
 			time = 0;
             //each buf[i] has one of the bytes
-            processInput()
+            processInput();
 		}
 	}
 

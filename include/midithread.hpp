@@ -36,8 +36,8 @@ class MIDI{
         std::vector<Actions> header;
         std::set<ModeType,std::greater<ModeType>> modes;
         XMLMIDIParser xml;
-        snd_rawmidi_t *input;
-        snd_rawmidi_t *output;
+        snd_rawmidi_t **input;
+        snd_rawmidi_t **output;
         atomic_bool stop;
         char port_name[PORT_NAME_SIZE];
         int timeout;
