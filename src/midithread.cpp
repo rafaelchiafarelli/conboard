@@ -71,7 +71,7 @@ int MIDI::processInput(midiSignal midiS)
     l_action.in.midi = midiS;
     std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
     std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(l_action);
-    if(it_act)
+    if(it_act != it_mode->body_actions.end())
     {
         for(std::vector<devActions>::iterator it_out = it_act->out.begin();
             it_out != it_act->out.end();
@@ -167,7 +167,7 @@ void MIDI::in_func()
                 continue;                
             }
             //each buf[i] has one of the bytes
-            midiSignal midiS = static_cast<midiSignal> &buf[0];
+            midiSignal midiS = &(static_cast<midiSignal *> buf[0]);
             processInput(midiS);
 		}
 	}
