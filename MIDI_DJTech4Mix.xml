@@ -48,11 +48,11 @@
 		</action>
 		<action >
 			<input type="midi" b0="91" b1="42" b2="7f" ></input>
-			<output type="midi" b0="91" b1="42" b2="7f" ></output>
+			<output type="midi" b0="91" b1="02" b2="7f" ></output>
 		</action>
 		<action >
 			<input type="midi" b0="91" b1="42" b2="00" ></input>
-			<output type="midi" b0="91" b1="42" b2="00" ></output>
+			<output type="midi" b0="91" b1="02" b2="00" ></output>
 		</action>
 		<action >
 			<input type="midi" b0="93" b1="02" b2="7f" ></input>
@@ -64,11 +64,11 @@
 		</action>
 		<action >
 			<input type="midi" b0="93" b1="42" b2="7f" ></input>
-			<output type="midi" b0="93" b1="42" b2="7f" ></output>
+			<output type="midi" b0="93" b1="02" b2="7f" ></output>
 		</action>
 		<action >
 			<input type="midi" b0="93" b1="42" b2="00" ></input>
-			<output type="midi" b0="93" b1="42" b2="00" ></output>
+			<output type="midi" b0="93" b1="02" b2="00" ></output>
 		</action>
 
 	</mode>
