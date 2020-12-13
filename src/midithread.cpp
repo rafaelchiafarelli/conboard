@@ -46,11 +46,12 @@ void MIDI::execHeader()
         it != header.end();
         it++)
     {
+        
         for(std::vector<devActions>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
         {
-            std::cout<<"devIt:  "<<devIt.tp<<std::endl;
+            std::cout<<"devIt:  "<<devIt->tp<<std::endl;
             if(devIt->tp == midi)
             {
                 
