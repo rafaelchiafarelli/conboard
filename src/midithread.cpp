@@ -83,10 +83,7 @@ int MIDI::processInput(midiSignal midiS)
 {
     l_mode.index = SelectedMode;
     l_action.in.midi = midiS;
-    std::cout<<"processInput"<<std::endl;
-    std::cout<<"processInput midiS.b0"<<std::to_string(midiS.byte[0])<<"midiS.b1"<<std::to_string(midiS.byte[1])<<"midiS.b2"<<std::to_string(midiS.byte[2])<<"midiS.b3"<<std::to_string(midiS.byte[3])<<std::endl;
-    std::cout<<"processInput modes size:"<<modes.size()<<std::endl;
-    
+
     std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
 
     std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(l_action);
@@ -125,7 +122,7 @@ void MIDI::out_func()
  */ 
 void MIDI::in_func()
 {
-    std::cout<<"begin in_func"<<std::endl;
+    
 	int ok = 0;
     int err;
     int lTimeOut = timeout;
@@ -136,7 +133,7 @@ void MIDI::in_func()
 		
 		int npfds, time = 0;
 		struct pollfd *pfds;
-        std::cout<<"valid input"<<std::endl;
+        
 		npfds = snd_rawmidi_poll_descriptors_count(input);
 		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
@@ -189,7 +186,7 @@ void MIDI::in_func()
 				break;
 			}
 
-            std::cout<<"b0: "<<(unsigned int)buf[0]<<" b1:"<<(unsigned int)buf[1]<<" b2:"<<(unsigned int)buf[2]<<std::endl;
+            std::cout<<"b0: "<<std::hex<<(unsigned int)buf[0]<<" b1:"<<std::hex<<(unsigned int)buf[1]<<" b2:"<<std::hex<<(unsigned int)buf[2]<<std::endl;
 
 			time = 0;
             if(err > sizeof(midiSignal))
