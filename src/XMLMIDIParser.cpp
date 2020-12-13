@@ -79,10 +79,10 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 	rapidxml::xml_attribute<> *in_type;
 	in_type = nodes->first_attribute("type",4,true);
 
-	if(!in_type)
+	if(!in_type)   //there must be a type
 		return ret;
-
-	char *type = in_type->value();	
+	std::cout<<"parseIO"<<std::endl;
+	char *type = in_type->value();
 
 	if(!strncmp(type, "mouse",5))
 	{
@@ -98,6 +98,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 
 		if(dx)
 		{
+			std::cout<<"parseIO dx"<<dx<<std::endl;
 			ret.dx = atoi(dx);
 		}
 		if(dy)
@@ -145,20 +146,17 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		char *ptr; //do not use
 		if (nodes->first_attribute("b0", 2, true))
 		{
-			ret.midi.byte[0] = (unsigned char) strtol(nodes->first_attribute("b0", 2, true)->value(),
-				&ptr, 16);
+			ret.midi.byte[0] = (unsigned char)strtol(nodes->first_attribute("b0", 2, true)->value(),NULL, 16);
 		}
 
 		if (nodes->first_attribute("b1", 2, true))
 		{
-			ret.midi.byte[1] = (unsigned char)strtol(nodes->first_attribute("b1", 2, true)->value(),
-				&ptr, 16);
+			ret.midi.byte[1] = (unsigned char)strtol(nodes->first_attribute("b1", 2, true)->value(),NULL, 16);
 		}
 
 		if (nodes->first_attribute("b2", 2, true))
 		{
-			ret.midi.byte[2] = (unsigned char)strtol(nodes->first_attribute("b2", 2, true)->value(),
-				&ptr, 16);
+			ret.midi.byte[2] = (unsigned char)strtol(nodes->first_attribute("b2", 2, true)->value(),NULL, 16);
 		}
 	}
 	return ret;
