@@ -152,33 +152,38 @@ void MIDI::in_func()
 				time += MILLISECONDS_TIMEOUT;
 				if (time >= lTimeOut)
                 {
-                    
                     std::cout<<"poll timedout"<<std::endl;
 					continue;
                 }
-				
 			}
 			if ((err = snd_rawmidi_poll_descriptors_revents(input, pfds, npfds, &revents)) < 0) {
                 ok = -1;
 				std::cout<<"cannot get poll events: "<<snd_strerror(errno)<<std::endl;
 				break;
 			}
+            std::cout<<"revents"<<std::endl;
 			if (revents & (POLLERR | POLLHUP))
             {
                 ok = -1;
 				break;
             }
+            std::cout<<"revents 2"<<std::endl;
 			if (!(revents & POLLIN))
 				continue;
 			err = snd_rawmidi_read(input, buf, sizeof(buf));
+            std::cout<<"read: "<<err<<std::endl;
 			if (err == -EAGAIN)
 				continue;
+            
 			if (err < 0) {
                 ok = -1;
 				std::cout<<"cannot read from port "<<port_name<<" , "<<snd_strerror(err)<<std::endl;
 				break;
 			}
-
+            std::cout<<"size midiSignal"<<sizeof(midiSignal)<<std::endl;
+            for (int i = 0; i < err; ++i)
+                sdt::cout << hex << setfill('0') << setw(2) << ar[i] << " ";
+            std::cout << std::endl;
 			time = 0;
             if(err > sizeof(midiSignal))
             {
