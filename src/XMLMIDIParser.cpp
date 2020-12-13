@@ -8,6 +8,7 @@ XMLMIDIParser::XMLMIDIParser(std::string FileName, std::set<ModeType,std::greate
 	header_actions = h;
 	modes = Mode;
 	loaded = false;
+	std::cout<<"filename:"<<FileName.c_str()<<std::endl;
 	if (loadFile(FileName)) 
 	{
 		if(!raw_xml.empty())
@@ -176,6 +177,7 @@ void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 			{
 				action.out.push_back(parseIO(out_nodes));
 			}
+			std::cout<<"ProcessHeader size:"<<action.out.size()<<std::endl;
 			header_actions->push_back(action);
 		}
 	}
@@ -204,23 +206,28 @@ bool XMLMIDIParser::Initializer()
 		{
 			timeout = (unsigned int) atoi(Device->first_attribute("timeout", 7, true)->value());
 		}
+
+		std::cout<<"timeout: "<<timeout<<std::endl;
 		if (Device->first_attribute("name", 4, true))
 		{
 			DevName = std::string(Device->first_attribute("name", 4, true)->value(), 
 				Device->first_attribute("name", 4, true)->value_size());
 		}
+		std::cout<<"name: "<<DevName.c_str()<<std::endl;
 		if (Device->first_attribute("input", 5, true))
 		{
 			DevInput = std::string(Device->first_attribute("input", 5, true)->value(), 
 				Device->first_attribute("input", 5, true)->value_size());
 		}
+		std::cout<<"input: "<<DevInput.c_str()<<std::endl;
 		if (Device->first_attribute("output", 6, true))
 		{
 			DevOutput = std::string(Device->first_attribute("output", 6, true)->value(), 
 				Device->first_attribute("output", 6, true)->value_size());
 		}
-
+		std::cout<<"output: "<<DevOutput.c_str()<<std::endl;
 		rapidxml::xml_node<> *Header = Device->first_node("header", 6, true);
+		std::cout<<"parse header"<<std::endl;
 		if(Header)
 			ProcessHeader(Header);
 
@@ -238,6 +245,7 @@ bool XMLMIDIParser::loadFile(const std::string &filename) {
 	std::ifstream is( filename, std::ifstream::binary | std::ifstream::ate);
 	
 	if (is) {
+		std::cout<<"file exists"<<std::endl;
 		ret = true;
 		raw_xml.resize(static_cast<size_t>(is.tellg()));
 		is.seekg(0);
