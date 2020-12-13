@@ -457,12 +457,11 @@ int main(int argc, char *argv[])
     {
          std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
     testMIDI.Stop();
+
+    /*
     stop = 0;
-
-
-
-
     //============================================================================================================================
 	int c, err, ok = 0;
 	int ignore_active_sensing = 1;
@@ -512,7 +511,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	if (do_send_hex) {
-		/* data for -S can be specified as multiple arguments */
+		
 		if (!send_hex && !argv[optind]) {
 			error("Please specify some data for --send-hex.");
 			return 1;
@@ -574,7 +573,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (inputp)
-		snd_rawmidi_read(input, NULL, 0); /* trigger reading */
+		snd_rawmidi_read(input, NULL, 0); // trigger reading 
 
 	if (send_data) {
 		if ((err = snd_rawmidi_nonblock(output, 0)) < 0) {
@@ -660,5 +659,8 @@ _exit2:
 	if (receive_file != -1)
 		close(receive_file);
 	return !ok;
+
+    */
+   return 0;
 }
 
