@@ -83,7 +83,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		return ret;
 	std::cout<<"parseIO"<<std::endl;
 	char *type = in_type->value();
-
+	std::cout<<"parseIO: "<<type<<std::endl;
 	if(!strncmp(type, "mouse",5))
 	{
 		ret.tp = mouse;
