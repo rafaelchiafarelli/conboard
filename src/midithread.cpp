@@ -134,7 +134,7 @@ void MIDI::in_func()
 		npfds = snd_rawmidi_poll_descriptors_count(input);
 		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
-		execHeader(); //execute the commands in the header
+		//execHeader(); //execute the commands in the header
 		while(!stop){
             unsigned char buf[256];
 			int i, length;
