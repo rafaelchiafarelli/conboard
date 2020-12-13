@@ -127,7 +127,7 @@ void MIDI::in_func()
 		
 		int npfds, time = 0;
 		struct pollfd *pfds;
-
+        std::cout<<"valid input"<<std::endl;
 		npfds = snd_rawmidi_poll_descriptors_count(input);
 		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
