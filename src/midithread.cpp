@@ -56,7 +56,7 @@ void MIDI::execHeader()
                 send_midi(devIt->midi.byte,sizeof(midiSignal));
                 if(devIt->delay > 0)
                 {
-                    std::cout<<"thi is a sleep"<<std::endl;
+                    std::cout<<"thi is a sleep:"<<devIt->delay<<std::endl;
                     std::this_thread::sleep_for(std::chrono::milliseconds(devIt->delay));
                 }
             }
