@@ -50,9 +50,11 @@ void MIDI::execHeader()
             devIt != it->out.end();
             devIt++)
         {
+            std::cout<<"devIt:  "<<devIt.tp<<std::endl;
             if(devIt->tp == midi)
             {
-                send_midi((char *)devIt->midi.byte,sizeof(midiSignal));
+                
+                send_midi(devIt->midi.byte,sizeof(midiSignal));
                 if(devIt->delay > 0)
                     std::this_thread::sleep_for(std::chrono::milliseconds(devIt->delay));
             }
@@ -67,10 +69,12 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
     {
         std::cout<<"cannot set blocking mode: "<<snd_strerror(err)<<std::endl;
     }
+    std::cout<<"err: "<<err<<std::endl;
     if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) 
     {
         std::cout<<"cannot send data: "<<snd_strerror(err)<<std::endl;
     }
+    std::cout<<"err: "<<err<<std::endl;
 }
 
 int MIDI::processInput(midiSignal midiS)
@@ -134,7 +138,7 @@ void MIDI::in_func()
 		npfds = snd_rawmidi_poll_descriptors_count(input);
 		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
-		//execHeader(); //execute the commands in the header
+		execHeader(); //execute the commands in the header
 		while(!stop){
             unsigned char buf[256];
 			int i, length;
