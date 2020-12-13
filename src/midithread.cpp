@@ -7,7 +7,7 @@
 #include <alsa/asoundlib.h>
 #include <string>
 
-
+#include <iomanip>
 
 
 void MIDI::Stop()
@@ -182,7 +182,7 @@ void MIDI::in_func()
 			}
             std::cout<<"size midiSignal"<<sizeof(midiSignal)<<std::endl;
             for (int i = 0; i < err; ++i)
-                sdt::cout << hex << setfill('0') << setw(2) << ar[i] << " ";
+                sdt::cout << std::hex << std::setfill('0') << std::setw(2) << buff[i] << " ";
             std::cout << std::endl;
 			time = 0;
             if(err > sizeof(midiSignal))
