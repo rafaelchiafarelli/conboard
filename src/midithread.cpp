@@ -50,9 +50,12 @@ void MIDI::execHeader()
             devIt != it->out.end();
             devIt++)
         {
-            send_midi((char *)devIt->midi.byte,sizeof(midiSignal));
-            if(devIt->delay > 0)
-                std::this_thread::sleep_for(std::chrono::milliseconds(devIt->delay));
+            if(devIt->tp == midi)
+            {
+                send_midi((char *)devIt->midi.byte,sizeof(midiSignal));
+                if(devIt->delay > 0)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(devIt->delay));
+            }
         }
     }
 }
@@ -152,7 +155,6 @@ void MIDI::in_func()
 				time += MILLISECONDS_TIMEOUT;
 				if (time >= lTimeOut)
                 {
-                    std::cout<<"poll timedout"<<std::endl;
 					continue;
                 }
 			}
@@ -161,17 +163,17 @@ void MIDI::in_func()
 				std::cout<<"cannot get poll events: "<<snd_strerror(errno)<<std::endl;
 				break;
 			}
-            std::cout<<"revents"<<std::endl;
+
 			if (revents & (POLLERR | POLLHUP))
             {
                 ok = -1;
 				break;
             }
-            std::cout<<"revents 2"<<std::endl;
+
 			if (!(revents & POLLIN))
 				continue;
 			err = snd_rawmidi_read(input, buf, sizeof(buf));
-            std::cout<<"read: "<<err<<std::endl;
+
 			if (err == -EAGAIN)
 				continue;
             
@@ -180,10 +182,9 @@ void MIDI::in_func()
 				std::cout<<"cannot read from port "<<port_name<<" , "<<snd_strerror(err)<<std::endl;
 				break;
 			}
-            std::cout<<"size midiSignal"<<sizeof(midiSignal)<<std::endl;
-            for (int i = 0; i < err; ++i)
-                sdt::cout << std::hex << std::setfill('0') << std::setw(2) << buff[i] << " ";
-            std::cout << std::endl;
+
+            std::cout<<"b0: "<<(unsigned int)buf[0]<<" b1:"<<(unsigned int)buf[1]<<" b2:"<<(unsigned int)buf[2]<<std::endl;
+
 			time = 0;
             if(err > sizeof(midiSignal))
             {
