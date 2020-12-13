@@ -22,7 +22,7 @@ class devActions{
     private: 
         unsigned int index;
     public:
-        devType tp; /* type of the output, either feyboard or mouse ou a midi response*/
+        devType tp=midi; /* type of the output, either feyboard or mouse ou a midi response*/
 
         //keyboard
         std::string data; /* data to be sent to the output*/
@@ -40,7 +40,7 @@ class devActions{
         midiSignal midi;
 
         //delay
-        unsigned int delay; /* delay in microsseconds to wait after data was sent */
+        unsigned int delay=0; /* delay in microsseconds to wait after data was sent */
         
         
         devActions(unsigned char b0, unsigned char b1, unsigned char b2){
