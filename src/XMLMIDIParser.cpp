@@ -87,50 +87,82 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 	if(!strncmp(type, "mouse",5))
 	{
 		ret.tp = mouse;
-		char *dx = nodes->first_attribute("dx",2,true)->value();
-		char *dy = nodes->first_attribute("dy",2,true)->value();
-		char *wheel_move = nodes->first_attribute("wheel_move",10,true)->value();
-		char *gotox = nodes->first_attribute("gotox",5,true)->value();
-		char *gotoy = nodes->first_attribute("gotoy",5,true)->value();
-		char *click = nodes->first_attribute("click",5,true)->value();
-		char *right_click = nodes->first_attribute("right_click",11,true)->value();
-		char *delay = nodes->first_attribute("delay",6,true)->value();
-
-		if(dx)
+		rapidxml::xml_attribute<> *xml_dx = nodes->first_attribute("dx",2,true);
+		if(xml_dx)
 		{
+			char *dx = xml_dx->value();
 			std::cout<<"parseIO dx"<<dx<<std::endl;
+			if(dx)
+			{
 			ret.dx = atoi(dx);
+			}
 		}
-		if(dy)
+		rapidxml::xml_attribute<> *xml_dy = nodes->first_attribute("dy",2,true);
+		if(xml_dy)
 		{
-			ret.dy = atoi(dy);
-		}
-		if(wheel_move)
-		{
-			ret.wheel_move = atoi(wheel_move);
-		}
-		if(gotox)
-		{
-			ret.gotox = atoi(gotox);
-		}
-		if(gotoy)
-		{
-			ret.gotoy = atoi(gotoy);
-		}
-		if(click)
-		{
-			ret.click = atoi(click);
-		}
-		if(right_click)
-		{
-			ret.right_click = atoi(right_click);
-		}
+		char *dy = xml_dy->value();
+			if(dy)
+			{
+				ret.dy = atoi(dy);
+			}		
+		}	
 
-		if(delay)
-		{
-			ret.delay = atoi(delay);
-		}
 
+		rapidxml::xml_attribute<> *xml_wm = nodes->first_attribute("wheel_move",10,true);
+		if(xml_dy)
+		{
+		char *wheel_move = xml_wm->value();
+			if(wheel_move)
+			{
+				ret.wheel_move = atoi(wheel_move);
+			}		
+		}	
+
+		
+		rapidxml::xml_attribute<> *xml_gotox = nodes->first_attribute("gotox",5,true);
+		if(xml_gotox){
+			char *gotox = xml_gotox->value();
+			if(gotox)
+			{
+				ret.gotox = atoi(gotox);
+			}
+		}
+		rapidxml::xml_attribute<> *xml_gotoy = nodes->first_attribute("gotoy",5,true);
+		if(xml_gotoy)
+		{
+			char *gotoy = xml_gotoy->value();
+			if(gotoy)
+			{
+				ret.gotoy = atoi(gotoy);
+			}
+		}
+		rapidxml::xml_attribute<> *xml_click = nodes->first_attribute("click",5,true);
+		if(xml_click)
+		{
+			char *click = xml_click->value();
+			if(click)
+			{
+				ret.click = atoi(click);
+			}
+		}
+		rapidxml::xml_attribute<> *xml_rc = nodes->first_attribute("right_click",11,true);
+		if(xml_rc)
+		{
+			char *right_click = xml_rc->value();
+			if(right_click)
+			{
+				ret.right_click = atoi(right_click);
+			}
+		}
+		rapidxml::xml_attribute<> *xml_delay = nodes->first_attribute("delay",6,true);
+		if(xml_delay)
+		{
+			char *delay = xml_delay->value();
+			if(delay)
+			{
+				ret.delay = atoi(delay);
+			}
+		}
 	} else if(!strncmp(type, "keyboard",8))
 	{
 		ret.tp = keyboard;
