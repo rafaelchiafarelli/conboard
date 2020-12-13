@@ -39,13 +39,38 @@
 <body>
 	<mode id="0">
 		<action >
-		<input type="midi" b0="91" b1="02" b2="7f" delay="250"></input>
-		<output type="midi" b0="91" b1="02" b2="7f" delay="250"></output>
+			<input type="midi" b0="91" b1="02" b2="7f" delay="250"></input>
+			<output type="midi" b0="91" b1="02" b2="7f" delay="250"></output>
 		</action>
 		<action >
-		<input type="midi" b0="91" b1="02" b2="00" delay="250"></input>
-		<output type="midi" b0="91" b1="02" b2="00" delay="250"></output>
+			<input type="midi" b0="91" b1="02" b2="00" delay="250"></input>
+			<output type="midi" b0="91" b1="02" b2="00" delay="250"></output>
 		</action>
+		<action >
+			<input type="midi" b0="91" b1="42" b2="7f" delay="250"></input>
+			<output type="midi" b0="91" b1="42" b2="7f" delay="250"></output>
+		</action>
+		<action >
+			<input type="midi" b0="91" b1="42" b2="00" delay="250"></input>
+			<output type="midi" b0="91" b1="42" b2="00" delay="250"></output>
+		</action>
+		<action >
+			<input type="midi" b0="93" b1="02" b2="7f" delay="250"></input>
+			<output type="midi" b0="93" b1="02" b2="7f" delay="250"></output>
+		</action>
+		<action >
+			<input type="midi" b0="93" b1="02" b2="00" delay="250"></input>
+			<output type="midi" b0="93" b1="02" b2="00" delay="250"></output>
+		</action>
+		<action >
+			<input type="midi" b0="93" b1="42" b2="7f" delay="250"></input>
+			<output type="midi" b0="93" b1="42" b2="7f" delay="250"></output>
+		</action>
+		<action >
+			<input type="midi" b0="93" b1="42" b2="00" delay="250"></input>
+			<output type="midi" b0="93" b1="42" b2="00" delay="250"></output>
+		</action>
+
 	</mode>
 	<mode id="1">
 		<action >
