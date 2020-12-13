@@ -41,12 +41,11 @@ MIDI::MIDI(char *p_name, string xmlFileName):xml(xmlFileName,&modes,&header)
 
 void MIDI::execHeader()
 {
-    
     for(std::vector<Actions>::iterator it = header.begin();
         it != header.end();
         it++)
     {
-        
+        std::cout<<"header"<<std::endl;
         for(std::vector<devActions>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
@@ -54,10 +53,12 @@ void MIDI::execHeader()
             std::cout<<"devIt:  "<<devIt->tp<<std::endl;
             if(devIt->tp == midi)
             {
-                
                 send_midi(devIt->midi.byte,sizeof(midiSignal));
                 if(devIt->delay > 0)
+                {
+                    std::cout<<"thi is a sleep"<<std::endl;
                     std::this_thread::sleep_for(std::chrono::milliseconds(devIt->delay));
+                }
             }
         }
     }
