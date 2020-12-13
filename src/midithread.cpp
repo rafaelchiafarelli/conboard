@@ -29,6 +29,7 @@ MIDI::MIDI(char *p_name, string xmlFileName):xml(xmlFileName,&modes,&header)
 {
     memset(port_name,0,PORT_NAME_SIZE);
     memcpy(port_name,p_name,strlen(p_name));
+    stop = false;
     int err = 0;
 	if ((err = snd_rawmidi_open(&input, &output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
 		std::cout<<"here"<<std::endl;
@@ -40,7 +41,7 @@ MIDI::MIDI(char *p_name, string xmlFileName):xml(xmlFileName,&modes,&header)
 
 void MIDI::execHeader()
 {
-    std::cout<<"execHeader"<<std::endl;
+    
     for(std::vector<Actions>::iterator it = header.begin();
         it != header.end();
         it++)
