@@ -20,9 +20,12 @@
 #include "midithread.hpp"
 #include <chrono>
 #include <string>
+#include <atomic>
+
 
 using namespace std;
 
+atomic_bool stop;
 /**
  * This is the main module of the system
  *  It is responsible for reading all the devices that are connected to the system - and keep reading it.
@@ -189,7 +192,7 @@ static void device_list(void)
 
 static void sig_handler(int dummy)
 {
-	stop = 1;
+	stop = true;
 }
 
 int main(int argc, char *argv[])
@@ -211,7 +214,7 @@ int main(int argc, char *argv[])
 	};
     //============================================================================================================================
 
-    stop = 0;
+    stop = false;
     device_list();
     char p_name[] = {"hw:1,0,0"};
     string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml");
