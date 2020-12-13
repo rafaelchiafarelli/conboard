@@ -74,9 +74,17 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 
 devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 {
+	std::cout<<"parseIO"<<std::endl;
 	devActions ret;
-	char *in_type = nodes->first_attribute("type",4,true)->value();
-	if(!strncmp(in_type, "mouse",5))
+	rapidxml::xml_attribute<> *in_type;
+	in_type = nodes->first_attribute("type",4,true);
+
+	if(!in_type)
+		return ret;
+
+	char *type = in_type->value();	
+
+	if(!strncmp(type, "mouse",5))
 	{
 		ret.tp = mouse;
 		char *dx = nodes->first_attribute("dx",2,true)->value();
@@ -122,13 +130,13 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 			ret.delay = atoi(delay);
 		}
 
-	} else if(!strncmp(in_type, "keyboard",8))
+	} else if(!strncmp(type, "keyboard",8))
 	{
 		ret.tp = keyboard;
 		char *data = nodes->first_attribute("data",4,true)->value();
 		ret.data = std::string(data,nodes->first_attribute("data",4,true)->value_size());
 
-	} else if(!strncmp(in_type, "midi",4))
+	} else if(!strncmp(type, "midi",4))
 	{
 		ret.tp = midi;
 		ret.midi.byte[0] = 0;
@@ -158,8 +166,10 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 
 void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 {
+	std::cout<<"ProcessHeader"<<std::endl;
 	if (Header)
 	{
+		std::cout<<"ProcessHeader in header"<<std::endl;
 		for (rapidxml::xml_node<>* action_nodes = Header->first_node("action", 6, true)
 			; action_nodes
 			; action_nodes = action_nodes->next_sibling("action", 6, true))
