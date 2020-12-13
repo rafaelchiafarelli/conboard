@@ -22,7 +22,7 @@ class devActions{
     private: 
         unsigned int index;
     public:
-        devType tp=midi; /* type of the output, either feyboard or mouse ou a midi response*/
+        devType tp; /* type of the output, either keyboard or mouse ou a midi response*/
 
         //keyboard
         std::string data; /* data to be sent to the output*/
@@ -45,8 +45,12 @@ class devActions{
         
         devActions(unsigned char b0, unsigned char b1, unsigned char b2){
             index = ((unsigned int)b2)<<16 + ((unsigned int)b1)<<8 + b0;
+            tp = devType::midi;
         };
-        devActions(){index = 0;}
+        devActions(){
+            index = 0;
+            tp = devType::midi;
+            }
         unsigned int GetIndex(){return index;}
         void SetIndex(int idx){index = idx;}
         
