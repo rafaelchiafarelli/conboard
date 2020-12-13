@@ -71,15 +71,13 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
     {
         std::cout<<"cannot set blocking mode: "<<snd_strerror(err)<<std::endl;
     }
-    std::cout<<"err: "<<err<<std::endl;
     if ((err = snd_rawmidi_write(output, send_data, send_data_length)) < 0) 
     {
         std::cout<<"cannot send data: "<<snd_strerror(err)<<std::endl;
     }
-    std::cout<<"err: "<<err<<std::endl;
 }
 
-int MIDI::processInput(midiSignal midiS)
+void MIDI::processInput(midiSignal midiS)
 {
     l_mode.index = SelectedMode;
     l_action.in.midi = midiS;
@@ -186,7 +184,7 @@ void MIDI::in_func()
 				break;
 			}
 
-            std::cout<<"b0: "<<std::hex<<(unsigned int)buf[0]<<" b1:"<<std::hex<<(unsigned int)buf[1]<<" b2:"<<std::hex<<(unsigned int)buf[2]<<std::endl;
+            std::cout<<std::hex<<(unsigned int)buf[0]<<" "<<std::hex<<(unsigned int)buf[1]<<" "<<std::hex<<(unsigned int)buf[2]<<std::endl;
 
 			time = 0;
             if(err > sizeof(midiSignal))

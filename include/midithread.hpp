@@ -63,7 +63,7 @@ class MIDI{
         
         void execHeader();
         void parse();
-        int processInput(midiSignal midiS);
+        void processInput(midiSignal midiS);
         void send_midi(char *send_data, size_t send_data_length);
 
     public:
