@@ -40,11 +40,11 @@ class MIDI{
         
         std::thread *in_thread;
         std::thread *out_thread;
-        std::queue<Actions> oQueue;
+        std::queue<std::vector<devActions> > oQueue;
         void in_func(); //midi input handler
-        
+        void out_func(); //keyboard and mouse handler
 
-
+        atomic_bool send;
         atomic_bool stop;
         int timeout;
         ModeType l_mode;
@@ -64,7 +64,7 @@ class MIDI{
         void execHeader();
         void parse();
         void processInput(midiSignal midiS);
-        void send_midi(char *send_data, size_t send_data_length); //midi is always back to the sender.
+        void send_midi(char *send_data, size_t send_data_length);
         void send_keyboard(string data);
         void send_mouse(mouseActions mouse);
         void send_joystick(){};

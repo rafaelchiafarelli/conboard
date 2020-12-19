@@ -1,7 +1,6 @@
 #ifndef KEYTHREAD_HPP
 #define KEYTHREAD_HPP
 
-#include "std_translation_table.hpp"
 #include "pthread.h"
 #include "stdio.h"
 #include "iostream"
