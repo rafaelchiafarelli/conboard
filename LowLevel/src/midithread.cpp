@@ -33,6 +33,7 @@ MIDI::MIDI(char *p_name, string xmlFileName):xml(xmlFileName,&modes,&header)
     memset(port_name,0,PORT_NAME_SIZE);
     memcpy(port_name,p_name,strlen(p_name));
     stop = false;
+    send = false;
     int err = 0;
 	if ((err = snd_rawmidi_open(&input, &output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
 		std::cout<<"here"<<std::endl;
@@ -102,37 +103,58 @@ void MIDI::processInput(midiSignal midiS)
     {
         if(it_act != it_mode->body_actions.end())
         {
-
-            for(auto it_out = it_act->out.begin();
-                it_out != it_act->out.end();
-                it_out++)
-            {
-                switch(it_out->tp)
-                {
-                    case keyboard:
-                        send_keyboard(it_out->data);
-                        break;
-                    case midi:
-                        send_midi((char *)it_out->midi.byte,sizeof(midiSignal));
-                        break;
-                    case mouse:
-                        send_mouse(it_out->mouse);
-                        break;
-                    case joystick:
-                        send_joystick();
-                        break;
-                    default:
-                        break;
-                }
-
-                if(it_out->delay > 0)
-                    std::this_thread::sleep_for(std::chrono::milliseconds(it_out->delay));
-            }
+            oQueue.push(it_act->out);
+            send = true;
         }
     }
 }
 
+void MIDI::out_func()
+{
+    while(!stop)
+    {
+        //read from queue and launch it to the device.
+        //sleeps otherwise
+        if(send)
+        {
+            std::vector<devActions> to_send = oQueue.front();
+            for(std::vector<devActions>::iterator out = to_send.begin();
+                out != to_send.end();
+                out++)
+                {
+                    switch(out->tp)
+                        {
+                            case keyboard:
+                                send_keyboard(out->data);
+                                break;
+                            case midi:
+                                send_midi((char *)out->midi.byte,sizeof(midiSignal));
+                                break;
+                            case mouse:
+                                send_mouse(out->mouse);
+                                break;
+                            case joystick:
+                                send_joystick();
+                                break;
+                            default:
+                                break;
+                        }
 
+                        if(out->delay > 0)
+                            std::this_thread::sleep_for(std::chrono::milliseconds(out->delay));
+                    }
+                oQueue.pop();
+                if(oQueue.empty())
+                {
+                    send = false;
+                }
+        }    
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+}
 /**
  * 
  * This is the thread that will read the input's from user and queue the outputs
