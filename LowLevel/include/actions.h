@@ -1,6 +1,8 @@
 #ifndef ACTIONS_H
 #define ACTIONS_H
 #include "string"
+#include <iostream>
+#include <ostream>
 #include <vector>
 #include <set>
 
@@ -17,6 +19,20 @@ typedef union {
     uint32_t asInt;
 }midiSignal;
 
+class mouseActions{
+    public:
+            long dx = 0;
+        long gotox = 0;
+        long dy = 0;
+        long gotoy = 0;
+        unsigned int wheel_move = 0;
+        bool click = 0;
+        bool right_click = 0;
+    friend std::ostream& operator<<(std::ostream &os, const mouseActions &dt){
+        os<<"dx:"<<dt.dx<<" dy:"<<dt.dy<<" gotox:"<<dt.gotox<<" gotoy:"<<dt.gotoy<<" whm:"<<dt.wheel_move<<" click:"<<dt.click<<" rclick"<<dt.right_click;
+        return os;
+    };
+};
 
 class devActions{
     private: 
@@ -28,13 +44,7 @@ class devActions{
         std::string data; /* data to be sent to the output*/
 
         //mouse
-        long dx = 0;
-        long gotox = 0;
-        long dy = 0;
-        long gotoy = 0;
-        unsigned int wheel_move = 0;
-        bool click = 0;
-        bool right_click = 0;
+        mouseActions mouse;
 
         //midi
         midiSignal midi;

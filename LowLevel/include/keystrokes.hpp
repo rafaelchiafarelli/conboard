@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "std_translation_table.hpp"
+
 #include "scancodes.hpp"
 #include "pthread.h"
 #include "stdio.h"
@@ -50,7 +50,7 @@ class keystrokes {
         errors send_unicode (FILE* hid_dev, unsigned int unicode, uni_m method, kbdl layout);
         void key_manager(string data, uni_m mode);
         keystrokes(string outputPath, kbdl klayout);
-        ~keystrokes(){};
+        ~keystrokes();
 
 };
 

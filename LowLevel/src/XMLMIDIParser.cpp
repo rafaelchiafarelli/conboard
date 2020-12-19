@@ -94,7 +94,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 			
 			if(dx)
 			{
-			ret.dx = atoi(dx);
+			ret.mouse.dx = atoi(dx);
 			}
 		}
 		rapidxml::xml_attribute<> *xml_dy = nodes->first_attribute("dy",2,true);
@@ -103,7 +103,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		char *dy = xml_dy->value();
 			if(dy)
 			{
-				ret.dy = atoi(dy);
+				ret.mouse.dy = atoi(dy);
 			}		
 		}	
 
@@ -114,7 +114,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		char *wheel_move = xml_wm->value();
 			if(wheel_move)
 			{
-				ret.wheel_move = atoi(wheel_move);
+				ret.mouse.wheel_move = atoi(wheel_move);
 			}		
 		}	
 
@@ -124,7 +124,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 			char *gotox = xml_gotox->value();
 			if(gotox)
 			{
-				ret.gotox = atoi(gotox);
+				ret.mouse.gotox = atoi(gotox);
 			}
 		}
 		rapidxml::xml_attribute<> *xml_gotoy = nodes->first_attribute("gotoy",5,true);
@@ -133,7 +133,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 			char *gotoy = xml_gotoy->value();
 			if(gotoy)
 			{
-				ret.gotoy = atoi(gotoy);
+				ret.mouse.gotoy = atoi(gotoy);
 			}
 		}
 		rapidxml::xml_attribute<> *xml_click = nodes->first_attribute("click",5,true);
@@ -142,7 +142,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 			char *click = xml_click->value();
 			if(click)
 			{
-				ret.click = atoi(click);
+				ret.mouse.click = atoi(click);
 			}
 		}
 		rapidxml::xml_attribute<> *xml_rc = nodes->first_attribute("right_click",11,true);
@@ -151,7 +151,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 			char *right_click = xml_rc->value();
 			if(right_click)
 			{
-				ret.right_click = atoi(right_click);
+				ret.mouse.right_click = atoi(right_click);
 			}
 		}
 		rapidxml::xml_attribute<> *xml_delay = nodes->first_attribute("delay",6,true);
