@@ -13,6 +13,9 @@
 void MIDI::Stop()
 {
     stop =true;
+    in_thread->join();
+    out_thread->join();
+
 }
 void MIDI::parse()
 {
@@ -64,6 +67,16 @@ void MIDI::execHeader()
     }
 }
 
+void MIDI::send_keyboard(string data)
+{
+    cout<<"should be sending:"<<data<<endl;
+}
+
+void MIDI::send_mouse(mouseActions mouse)
+{
+    cout<<mouse<<endl;
+}
+
 void MIDI::send_midi(char *send_data, size_t send_data_length)
 {
     int err = 0;
@@ -94,7 +107,24 @@ void MIDI::processInput(midiSignal midiS)
                 it_out != it_act->out.end();
                 it_out++)
             {
-                send_midi((char *)it_out->midi.byte,sizeof(midiSignal));
+                switch(it_out->tp)
+                {
+                    case keyboard:
+                        send_keyboard(it_out->data);
+                        break;
+                    case midi:
+                        send_midi((char *)it_out->midi.byte,sizeof(midiSignal));
+                        break;
+                    case mouse:
+                        send_mouse(it_out->mouse);
+                        break;
+                    case joystick:
+                        send_joystick();
+                        break;
+                    default:
+                        break;
+                }
+
                 if(it_out->delay > 0)
                     std::this_thread::sleep_for(std::chrono::milliseconds(it_out->delay));
             }
@@ -102,16 +132,7 @@ void MIDI::processInput(midiSignal midiS)
     }
 }
 
-void MIDI::out_func()
-{
-    while(!stop)
-    {
-        //read from queue and launch it to the device.
-        //sleeps otherwise
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        
-    }
-}
+
 /**
  * 
  * This is the thread that will read the input's from user and queue the outputs

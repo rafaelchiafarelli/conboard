@@ -103,7 +103,10 @@ errors keystrokes::send_unicode (FILE* hid_dev, unsigned int unicode, uni_m meth
 		l = scan.tolay (s, klayout);
 		send_key (hid_dev, l->key, MOD_LCTRL | MOD_LSHIFT);
 		for (int i = 0; i < strlen (buf); i++) {
-			s = scan.toscan ((char[2]){buf[i], '\0'});
+			char scan_this[2];
+			scan_this[0] = buf[i];
+			scan_this[1] = '\0';
+			s = scan.toscan (scan_this);
 			l = scan.tolay (s, klayout);
 			send_key (hid_dev, l->key, MOD_LCTRL | MOD_LSHIFT);
 		}
@@ -115,7 +118,10 @@ errors keystrokes::send_unicode (FILE* hid_dev, unsigned int unicode, uni_m meth
 		l = scan.tolay (s, klayout);
 		send_key (hid_dev, l->key, MOD_LCTRL | MOD_LSHIFT);
 		for (int i = 0; i < strlen (buf); i++) {
-			s = scan.toscan ((char[2]){buf[i], '\0'});
+			char scan_this[2];
+			scan_this[0] = buf[i];
+			scan_this[1] = '\0';
+			s = scan.toscan (scan_this);
 			l = scan.tolay (s, klayout);
 			send_key (hid_dev, l->key, MOD_NONE);
 		}
