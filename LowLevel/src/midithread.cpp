@@ -254,7 +254,7 @@ void MIDI::in_func()
 				std::cout<<"cannot read from port "<<port_name<<" , "<<snd_strerror(err)<<std::endl;
 				break;
 			}
-            //std::cout<<std::hex<<(unsigned int)buf[0]<<" "<<std::hex<<(unsigned int)buf[1]<<" "<<std::hex<<(unsigned int)buf[2]<<std::endl;
+            std::cout<<std::hex<<(unsigned int)buf[0]<<" "<<std::hex<<(unsigned int)buf[1]<<" "<<std::hex<<(unsigned int)buf[2]<<std::endl;
 			time = 0;
             if(err > sizeof(midiSignal))
             {
@@ -267,6 +267,7 @@ void MIDI::in_func()
             midiS.byte[1] = buf[1];
             midiS.byte[2] = buf[2];
             midiS.byte[4] = 0;
+            
             processInput(midiS);
 		}
 	}
@@ -287,16 +288,20 @@ xml.Clear();
 
 }
 
-void MIDI::outFile(string name)
+bool MIDI::outFile(string name)
 {
 lock_guard<mutex> locker(locking_mechanism);
-    if(!outFileStream)
+bool ret = false;
+    if(!outFileStream.is_open())
     {
         outFileName = name;
-        outFileStream.open(name);
-        outToFile = true;
+        outFileStream.open(name, std::ofstream::out | std::ofstream::app);
+        ret = outFileStream.is_open();
+        outToFile = ret;
     }
+return ret;
 }
+
 
 void MIDI::outStop()
 {

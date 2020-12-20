@@ -76,7 +76,7 @@ class MIDI{
         void Stop();
         void Reload();
         void outStop();
-        void outFile(string name);
+        bool outFile(string name);
         
         MIDI(char *port_name, string xmlFileName);
         ~MIDI();
