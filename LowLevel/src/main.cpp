@@ -97,11 +97,11 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 
 	subs = subs_in > subs_out ? subs_in : subs_out;
 	if (!subs){
-		cout<<"Device Error IO"<<endl;
+		std::cout<<"Device Error IO"<<endl;
 		return;
 	}
 	
-	cout<<"list_device size:"<<subs<<endl;
+	std::cout<<"list_device size:"<<subs<<endl;
 
 	for (sub = 0; sub < subs; ++sub) {
 		raw_midi m;
@@ -139,7 +139,7 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 		}
 		m.devName = string(dev_port);
 		hw_ports.push_back(m);
-		cout<<dev_port<<endl;
+		std::cout<<dev_port<<endl;
 	}
 }
 
@@ -181,7 +181,7 @@ static void device_list(void)
 	
 		return;
 	}
-	cout<<"Dir Device    Name"<<endl;
+	std::cout<<"Dir Device    Name"<<endl;
 	do {
 		list_card_devices(card);
 		if ((err = snd_card_next(&card)) < 0) {
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
     
 	if(argc < 4)
 		{
-			cout<<"error, must specifi port and xml. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.xml\""<<endl;
+			std::cout<<"error, must specifi port and xml. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.xml\""<<endl;
 			return -1;
 		}
     char p_name[256];
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 			break;
 
 		default:
-			cout<<"Try `amidi --help' for more information."<<endl;
+			std::cout<<"Try more information."<<endl;
 			return 1;
 		}
 	}
@@ -241,18 +241,24 @@ int main(int argc, char *argv[])
 		char p_name[] = {"hw:1,0,0"};
 		string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml");
 	*/
-	cout<<xmlFileName<<endl;
-
-	for(vector<raw_midi>::iterator it = hw_ports.begin();
-		it!=hw_ports.end();
-		it++)
+	std::cout<<xmlFileName<<endl;
+	if(!hw_ports.empty())
 	{
-		if(!it->port.compare(p_name))
+		for(vector<raw_midi>::iterator it = hw_ports.begin();
+			it!=hw_ports.end();
+			it++)
 		{
-			stop = false;
-			cout<<"Found a compatible port"<<endl;
-			break;
+			if(!it->port.compare(p_name))
+			{
+				stop = false;
+				std::cout<<"Found a compatible port"<<endl;
+				break;
+			}
 		}
+	}
+	else
+	{
+		stop = true;
 	}
 	if(!stop)
 	{
@@ -261,7 +267,7 @@ int main(int argc, char *argv[])
 		fd = open(fifoFile,O_RDONLY| O_NONBLOCK); 
 		if(fd < 0)
 		{
-			cout<<"error opening named pipe (fifo)"<<endl;
+			std::cout<<"error opening named pipe (fifo)"<<endl;
 			return -1;
 		}
 		devMIDI = new MIDI(p_name, xmlFileName);
@@ -281,7 +287,7 @@ int main(int argc, char *argv[])
 			int err = read(fd, cmd, 80); 
 			if(err<0)
 			{
-				cout<<"Fifo closed"<<endl;
+				std::cout<<"Fifo closed"<<endl;
 				stop = true;
 			}
 			else
@@ -291,7 +297,7 @@ int main(int argc, char *argv[])
 				string command = raw.substr(0,raw.find(' '));
 				if(!command.compare("reload"))
 				{
-					cout<<"Reload!"<<endl;
+					std::cout<<"Reload!"<<endl;
 					devMIDI->Reload();
 				}
 				else if(!command.compare("file"))
@@ -314,7 +320,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		cout<<"File not found"<<endl;
+		std::cout<<"File not found"<<endl;
 	}
     return 0;
 }
