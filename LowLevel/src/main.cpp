@@ -118,20 +118,12 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 		char dev_port[256];
 		if (sub == 0 && sub_name[0] == '\0') {
 			
-			sprintf(dev_port,"%c%c  hw:%d,%d    %s",
-			       sub < subs_in ? 'I' : ' ',
-			       sub < subs_out ? 'O' : ' ',
-			       card, device, name);
-			
-			if (subs > 1)
-				printf(" (%d subdevices)", subs);
-			putchar('\n');
+			sprintf(dev_port,"hw:%d,%d,%d",
+			       card, device,sub);
 			break;
 		} else {
-			sprintf(dev_port,"%c%c  hw:%d,%d,%d  %s %s",
-			       sub < subs_in ? 'I' : ' ',
-			       sub < subs_out ? 'O' : ' ',
-			       card, device, sub, sub_name,name);
+			sprintf(dev_port,"hw:%d,%d,%d",
+			       card, device, sub);
 		}
 		m.devName = string(dev_port);
 		hw_ports.push_back(m);
@@ -202,7 +194,7 @@ int main(int argc, char *argv[])
 		{"xml", 1, NULL, 'x'},
 		{ }
 	};
-    cout<<"here 1"<<endl;
+    
 	if(argc < 4)
 	{
 		std::cout<<"error, must specifi port and xml. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.xml\""<<endl;
@@ -216,20 +208,18 @@ int main(int argc, char *argv[])
 	int c;
 	while ((c = getopt_long(argc, argv, short_options,
 		     		long_options, NULL)) != -1) {
-		cout<<strlen(optarg)<<endl;
-		cout<<optarg<<endl;
 		switch (c) {
 
 		case 'p':
-			cout<<"here 3"<<endl;
+		
 			strcpy(p_name,optarg);
 			break;
 		case 'x':
-			cout<<"here 4"<<endl;
+		
 			xmlFileName = string(optarg);
 			break;
 		case 'i':
-			cout<<"here 5"<<endl;
+		
 			sprintf(fifoFile, "%s",optarg);
 			break;
 
@@ -237,9 +227,9 @@ int main(int argc, char *argv[])
 			std::cout<<"Try more information."<<endl;
 			return 1;
 		}
-		cout<<"here 6"<<endl;
+		
 	}
-    cout<<"here 2"<<endl;
+    cout<<"device list"<<endl;
     device_list();
 	/*
 		char p_name[] = {"hw:1,0,0"};
@@ -252,7 +242,8 @@ int main(int argc, char *argv[])
 			it!=hw_ports.end();
 			it++)
 		{
-			if(!it->port.compare(p_name))
+			cout<<it->devName<<endl;
+			if(!it->devName.compare(p_name))
 			{
 				stop = false;
 				std::cout<<"Found a compatible port"<<endl;
@@ -268,15 +259,21 @@ int main(int argc, char *argv[])
 	{
 		MIDI *devMIDI;
 		int fd = 0;
+		int fifoerr = mkfifo(fifoFile, 0666); 
 		fd = open(fifoFile,O_RDONLY| O_NONBLOCK); 
+		if(fifoerr<0)
+		{
+			cout<<"fifo err"<<endl;
+		}
+
 		if(fd < 0)
 		{
 			std::cout<<"error opening named pipe (fifo)"<<endl;
 			return -1;
 		}
 		devMIDI = new MIDI(p_name, xmlFileName);
-		mkfifo(fifoFile, 0666); 
-		char cmd[80];
+
+		char cmd[256];
 		signal(SIGINT, sig_handler);
 		while(!stop)
 		{
@@ -287,8 +284,9 @@ int main(int argc, char *argv[])
 			 * 		- file: send midi cmds to a file
 			 * 		- outstop: stop sending cmds to file.
 			 */ 
-			
+			memset(cmd,0,256);
 			int err = read(fd, cmd, 80); 
+		
 			if(err<0)
 			{
 				std::cout<<"Fifo closed"<<endl;
@@ -307,7 +305,12 @@ int main(int argc, char *argv[])
 				else if(!command.compare("file"))
 				{
 					string param = raw.substr(raw.find(' '), raw.size());
-					devMIDI->outFile(param);
+					bool isOpen = devMIDI->outFile(param);
+					if(isOpen)
+						cout<<"file openned"<<endl;
+					else
+						cout<<"NOT openned"<<endl;
+					
 				}
 				else if(!command.compare("outstop"))
 				{
