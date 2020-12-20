@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 #include <queue>
-
+#include <mutex>
 
 using namespace std;
 #define PORT_NAME_SIZE 10
@@ -37,12 +37,16 @@ using namespace std;
 class MIDI{
 
     private:
-        
+        mutex locking_mechanism;
         std::thread *in_thread;
         std::thread *out_thread;
         std::queue<std::vector<devActions> > oQueue;
         void in_func(); //midi input handler
         void out_func(); //keyboard and mouse handler
+        bool outToFile;
+        std::string outFileName;
+        ofstream outFileStream;
+
 
         atomic_bool send;
         atomic_bool stop;
@@ -59,7 +63,7 @@ class MIDI{
         snd_rawmidi_t *input;
         snd_rawmidi_t *output;
         char port_name[PORT_NAME_SIZE];
-
+        
         
         void execHeader();
         void parse();
@@ -70,6 +74,9 @@ class MIDI{
         void send_joystick(){};
     public:
         void Stop();
+        void Reload();
+        void outStop();
+        void outFile(string name);
         
         MIDI(char *port_name, string xmlFileName);
         ~MIDI();

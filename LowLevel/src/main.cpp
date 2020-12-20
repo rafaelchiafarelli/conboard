@@ -15,17 +15,19 @@
 #include "aconfig.h"
 #include "version.h"
 
-
+#include "main.hpp"
 
 #include "midithread.hpp"
 #include <chrono>
 #include <string>
 #include <atomic>
+#include <vector>
 
 
 using namespace std;
 
-atomic_bool stop;
+
+
 /**
  * This is the main module of the system
  *  It is responsible for reading all the devices that are connected to the system - and keep reading it.
@@ -62,24 +64,9 @@ atomic_bool stop;
  * 
  **/ 
 
-static void usage(void)
-{
-	printf(
-		"Usage: amidi options\n"
-		"\n"
-		"-h, --help             this help\n"
-		"-V, --version          print current version\n"
-		"-l, --list-devices     list all hardware ports\n"
-		"-L, --list-rawmidis    list all RawMIDI definitions\n"
-		"-p, --port=name        select port by name\n"
-		"-s, --send=file        send the contents of a (.syx) file\n"
-		"-r, --receive=file     write received data into a file\n"
-		"-S, --send-hex=\"...\"   send hexadecimal bytes\n"
-		"-d, --dump             print received data as hexadecimal bytes\n"
-		"-t, --timeout=seconds  exits when no data has been received\n"
-		"                       for the specified duration\n"
-		"-a, --active-sensing   don't ignore active sensing bytes\n");
-}
+
+atomic_bool stop;
+vector<raw_midi> hw_ports;
 
 
 static void list_device(snd_ctl_t *ctl, int card, int device)
@@ -90,7 +77,7 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 	int subs, subs_in, subs_out;
 	int sub;
 	int err;
-
+	
 	snd_rawmidi_info_alloca(&info);
 	snd_rawmidi_info_set_device(info, device);
 
@@ -109,10 +96,17 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 		subs_out = 0;
 
 	subs = subs_in > subs_out ? subs_in : subs_out;
-	if (!subs)
+	if (!subs){
+		cout<<"Device Error IO"<<endl;
 		return;
+	}
+		
 
 	for (sub = 0; sub < subs; ++sub) {
+		raw_midi m;
+		m.card = card;
+		m.device = device;
+		m.sub = sub;
 		snd_rawmidi_info_set_stream(info, sub < subs_in ?
 					    SND_RAWMIDI_STREAM_INPUT :
 					    SND_RAWMIDI_STREAM_OUTPUT);
@@ -122,23 +116,29 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 
 			return;
 		}
-		name = snd_rawmidi_info_get_name(info);
-		sub_name = snd_rawmidi_info_get_subdevice_name(info);
+		m.name = string(snd_rawmidi_info_get_name(info));
+		m.sub_name = string(snd_rawmidi_info_get_subdevice_name(info));
+		char dev_port[256];
 		if (sub == 0 && sub_name[0] == '\0') {
-			printf("%c%c  hw:%d,%d    %s",
+			
+			sprintf(dev_port,"%c%c  hw:%d,%d    %s",
 			       sub < subs_in ? 'I' : ' ',
 			       sub < subs_out ? 'O' : ' ',
 			       card, device, name);
+			
 			if (subs > 1)
 				printf(" (%d subdevices)", subs);
 			putchar('\n');
 			break;
 		} else {
-			printf("%c%c  hw:%d,%d,%d  %s\n",
+			sprintf(dev_port,"%c%c  hw:%d,%d,%d  %s %s",
 			       sub < subs_in ? 'I' : ' ',
 			       sub < subs_out ? 'O' : ' ',
-			       card, device, sub, sub_name);
+			       card, device, sub, sub_name,name);
 		}
+		m.devName = string(dev_port);
+		hw_ports.push_back(m);
+		cout<<dev_port<<endl;
 	}
 }
 
@@ -197,37 +197,125 @@ static void sig_handler(int dummy)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "hVlLp:s:r:S::dt:a";
+	stop = true;
+	static const char short_options[] = "i:p:x";
 	static const struct option long_options[] = {
-		{"help", 0, NULL, 'h'},
-		{"version", 0, NULL, 'V'},
-		{"list-devices", 0, NULL, 'l'},
-		{"list-rawmidis", 0, NULL, 'L'},
+		{"ID", 1, NULL, 'p'},
 		{"port", 1, NULL, 'p'},
-		{"send", 1, NULL, 's'},
-		{"receive", 1, NULL, 'r'},
-		{"send-hex", 2, NULL, 'S'},
-		{"dump", 0, NULL, 'd'},
-		{"timeout", 1, NULL, 't'},
-		{"active-sensing", 0, NULL, 'a'},
+		{"xml", 1, NULL, 'x'},
 		{ }
 	};
-    //============================================================================================================================
+    
+	if(argc < 3)
+		{
+			cout<<"error, must specifi port and xml. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.xml\""<<endl;
+			return -1;
+		}
+    char p_name[256];
+	char fifoFile[256];
+    string xmlFileName;
+	int c;
+	while ((c = getopt_long(argc, argv, short_options,
+		     		long_options, NULL)) != -1) {
+		switch (c) {
 
-    stop = false;
+		case 'p':
+			sprintf(p_name,"%s",optarg);
+			break;
+		case 'x':
+			xmlFileName = string(optarg);
+			break;
+		case 'd':
+			sprintf(fifoFile, "%s",optarg);
+			break;
+
+		default:
+			cout<<"Try `amidi --help' for more information."<<endl;
+			return 1;
+		}
+	}
+    
     device_list();
-    char p_name[] = {"hw:1,0,0"};
-    string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml");
-    MIDI testMIDI(p_name, xmlFileName);
-	signal(SIGINT, sig_handler);
-    while(!stop)
-    {
-         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+	/*
+		char p_name[] = {"hw:1,0,0"};
+		string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml");
+	*/
+	
 
-    testMIDI.Stop();
-
-   
+	for(vector<raw_midi>::iterator it = hw_ports.begin();
+		it!=hw_ports.end();
+		it++)
+	{
+		if(!it->port.compare(p_name))
+		{
+			stop = false;
+			cout<<"Found a compatible port"<<endl;
+			break;
+		}
+	}
+	if(!stop)
+	{
+		MIDI *devMIDI;
+		int fd = 0;
+		fd = open(fifoFile,O_RDONLY| O_NONBLOCK); 
+		if(fd < 0)
+		{
+			cout<<"error opening named pipe (fifo)"<<endl;
+			return -1;
+		}
+		devMIDI = new MIDI(p_name, xmlFileName);
+		mkfifo(fifoFile, 0666); 
+		char cmd[80];
+		signal(SIGINT, sig_handler);
+		while(!stop)
+		{
+			//listen to a fifo for hi level commands
+			/**
+			 * Commands: 
+			 * 		- reload: will stop the thread, reload the xml file and re-start the thread
+			 * 		- file: send midi cmds to a file
+			 * 		- outstop: stop sending cmds to file.
+			 */ 
+			
+			int err = read(fd, cmd, 80); 
+			if(err<0)
+			{
+				cout<<"Fifo closed"<<endl;
+				stop = true;
+			}
+			else
+			{
+				// cmd param1 param2 param3....
+				string raw = string(cmd);
+				string command = raw.substr(0,raw.find(' '));
+				if(!command.compare("reload"))
+				{
+					cout<<"Reload!"<<endl;
+					devMIDI->Reload();
+				}
+				else if(!command.compare("file"))
+				{
+					string param = raw.substr(raw.find(' '), raw.size());
+;					devMIDI->outFile(param);
+				}
+				else if(!command.compare("outstop"))
+				{
+					devMIDI->outStop();
+				}
+			}
+			
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+		if(fd)
+			close(fd); 
+		devMIDI->Stop();
+		delete devMIDI;
+	}
+	else
+	{
+		cout<<"File not found"<<endl;
+	}
     return 0;
 }
+
 

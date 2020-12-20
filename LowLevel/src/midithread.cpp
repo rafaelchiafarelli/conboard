@@ -13,8 +13,19 @@
 void MIDI::Stop()
 {
     stop =true;
-    in_thread->join();
-    out_thread->join();
+    if(outToFile)
+        {
+            outFileStream.close();
+            
+        }
+
+    outToFile = false;
+    if(in_thread)
+        if(in_thread->joinable())
+            in_thread->join();
+    if(out_thread)
+        if(out_thread->joinable())
+            out_thread->join();
 
 }
 void MIDI::parse()
@@ -22,25 +33,32 @@ void MIDI::parse()
 
 }
 MIDI::~MIDI(){
-    in_thread->join();
-    out_thread->join();
-    delete in_thread;
-    delete out_thread;
+    Stop();
+    if(in_thread)
+        delete in_thread;
+    if(out_thread)
+        delete out_thread;
 }
 
 MIDI::MIDI(char *p_name, string xmlFileName):xml(xmlFileName,&modes,&header)
 {
+    outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
     memcpy(port_name,p_name,strlen(p_name));
     stop = false;
     send = false;
     int err = 0;
 	if ((err = snd_rawmidi_open(&input, &output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
-		std::cout<<"here"<<std::endl;
+		std::cout<<"device not found, no thread will be started. err: "<<err<<std::endl;
+        in_thread = NULL;
+        out_thread = NULL;
 	}
-    SelectedMode = 0;
-    in_thread = new thread(&MIDI::in_func,this);
-    out_thread = new thread(&MIDI::out_func,this);
+    else
+    {
+        SelectedMode = 0;
+        in_thread = new thread(&MIDI::in_func,this);
+        out_thread = new thread(&MIDI::out_func,this);
+    }
 }
 
 void MIDI::execHeader()
@@ -49,18 +67,18 @@ void MIDI::execHeader()
         it != header.end();
         it++)
     {
-        std::cout<<"header"<<std::endl;
+        //std::cout<<"header"<<std::endl;
         for(std::vector<devActions>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
         {
-            std::cout<<"devIt:  "<<devIt->tp<<std::endl;
+            //std::cout<<"devIt:  "<<devIt->tp<<std::endl;
             if(devIt->tp == midi)
             {
                 send_midi(devIt->midi.byte,sizeof(midiSignal));
                 if(devIt->delay > 0)
                 {
-                    std::cout<<"thi is a sleep:"<<devIt->delay<<std::endl;
+                    //std::cout<<"thi is a sleep:"<<devIt->delay<<std::endl;
                     std::this_thread::sleep_for(std::chrono::milliseconds(devIt->delay));
                 }
             }
@@ -93,6 +111,13 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
 
 void MIDI::processInput(midiSignal midiS)
 {
+    lock_guard<mutex> locker(locking_mechanism);
+
+    if(outToFile)
+    {
+        outFileStream<<midiS.byte<<endl;
+    }
+
     l_mode.index = SelectedMode;
     l_action.in.midi = midiS;
 
@@ -189,10 +214,12 @@ void MIDI::in_func()
 			if (stop || (err < 0 && errno == EINTR))
             {
                 std::cout<<"poll failed: "<<stop<<" "<<err<<std::endl;
+                stop = true;
 				break;
             }
 			if (err < 0) {
 				ok=-1;
+                stop = true;
                 std::cout<<"poll failed: "<<strerror(errno)<<std::endl;
 				break;
 			}
@@ -227,9 +254,7 @@ void MIDI::in_func()
 				std::cout<<"cannot read from port "<<port_name<<" , "<<snd_strerror(err)<<std::endl;
 				break;
 			}
-
-            std::cout<<std::hex<<(unsigned int)buf[0]<<" "<<std::hex<<(unsigned int)buf[1]<<" "<<std::hex<<(unsigned int)buf[2]<<std::endl;
-
+            //std::cout<<std::hex<<(unsigned int)buf[0]<<" "<<std::hex<<(unsigned int)buf[1]<<" "<<std::hex<<(unsigned int)buf[2]<<std::endl;
 			time = 0;
             if(err > sizeof(midiSignal))
             {
@@ -242,16 +267,43 @@ void MIDI::in_func()
             midiS.byte[1] = buf[1];
             midiS.byte[2] = buf[2];
             midiS.byte[4] = 0;
-            
             processInput(midiS);
 		}
 	}
-
 	if (input)
 		snd_rawmidi_close(input);
 	if (output)
 		snd_rawmidi_close(output);
-
-	
 }
 
+void MIDI::Reload(){
+lock_guard<mutex> locker(locking_mechanism);
+while(!oQueue.empty())
+    oQueue.pop();
+
+header.clear();
+modes.clear();
+xml.Clear();
+
+}
+
+void MIDI::outFile(string name)
+{
+lock_guard<mutex> locker(locking_mechanism);
+    if(!outFileStream)
+    {
+        outFileName = name;
+        outFileStream.open(name);
+        outToFile = true;
+    }
+}
+
+void MIDI::outStop()
+{
+lock_guard<mutex> locker(locking_mechanism);
+outToFile =false;
+    if(outFileStream)
+    {
+        outFileStream.close();
+    }
+}

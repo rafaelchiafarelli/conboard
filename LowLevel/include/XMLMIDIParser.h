@@ -34,6 +34,7 @@ class XMLMIDIParser
 {
 	private:
 		bool loaded;
+		std::string FileName;
 		std::string DevName;
 		std::string DevInput;
 		std::string DevOutput;
@@ -52,6 +53,12 @@ class XMLMIDIParser
 		void ProcessHeader(rapidxml::xml_node<> *Device);
 		void ProcessMainBody(rapidxml::xml_node<> *Device);
 	public:
+		void Clear(){
+			raw_xml.clear();
+			xmlDoc.clear();
+			loaded = false;
+		}
+		void Reload();
 		devType GetType(){return type;};
 		unsigned int GetTimeOut(){return timeout;};
 		XMLMIDIParser(std::string FileName,std::set<ModeType,std::greater<ModeType>>  *Mode,std::vector<Actions> *h);
