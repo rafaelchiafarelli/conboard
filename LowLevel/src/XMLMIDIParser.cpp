@@ -8,24 +8,29 @@ XMLMIDIParser::XMLMIDIParser(std::string FileName, std::set<ModeType,std::greate
 	header_actions = h;
 	modes = Mode;
 	loaded = false;
-	
-	if (loadFile(FileName)) 
+	FileName = FileName;
+	Reload();
+}
+void XMLMIDIParser::Reload(){
+	if(loaded == false)
 	{
-		if(!raw_xml.empty())
+		if (loadFile(FileName)) 
 		{
-			const auto tmp = raw_xml;
-			enum {
-				PARSE_FLAGS = rapidxml::parse_non_destructive
-			};
-			xmlDoc.parse<PARSE_FLAGS>(const_cast<char*>(raw_xml.data()));
-			if (xmlDoc.first_node("DEVICE", 6, true))
+			if(!raw_xml.empty())
 			{
-				loaded = Initializer();
+				const auto tmp = raw_xml;
+				enum {
+					PARSE_FLAGS = rapidxml::parse_non_destructive
+				};
+				xmlDoc.parse<PARSE_FLAGS>(const_cast<char*>(raw_xml.data()));
+				if (xmlDoc.first_node("DEVICE", 6, true))
+				{
+					loaded = Initializer();
+				}
 			}
 		}
 	}
 }
-
 
 XMLMIDIParser::~XMLMIDIParser()
 {
