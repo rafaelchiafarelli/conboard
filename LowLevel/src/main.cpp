@@ -200,13 +200,13 @@ int main(int argc, char *argv[])
 	stop = true;
 	static const char short_options[] = "i:p:x";
 	static const struct option long_options[] = {
-		{"ID", 1, NULL, 'p'},
+		{"ID", 1, NULL, 'i'},
 		{"port", 1, NULL, 'p'},
 		{"xml", 1, NULL, 'x'},
 		{ }
 	};
     
-	if(argc < 3)
+	if(argc < 4)
 		{
 			cout<<"error, must specifi port and xml. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.xml\""<<endl;
 			return -1;
