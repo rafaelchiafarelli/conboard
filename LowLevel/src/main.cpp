@@ -100,7 +100,8 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 		cout<<"Device Error IO"<<endl;
 		return;
 	}
-		
+	
+	cout<<"list_device size:"<<subs<<endl;
 
 	for (sub = 0; sub < subs; ++sub) {
 		raw_midi m;
@@ -180,7 +181,7 @@ static void device_list(void)
 	
 		return;
 	}
-	puts("Dir Device    Name");
+	cout<<"Dir Device    Name"<<endl;
 	do {
 		list_card_devices(card);
 		if ((err = snd_card_next(&card)) < 0) {
@@ -240,7 +241,7 @@ int main(int argc, char *argv[])
 		char p_name[] = {"hw:1,0,0"};
 		string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml");
 	*/
-	
+	cout<<xmlFileName<<endl;
 
 	for(vector<raw_midi>::iterator it = hw_ports.begin();
 		it!=hw_ports.end();
