@@ -65,10 +65,6 @@ using namespace std;
  **/ 
 
 
-atomic_bool stop;
-vector<raw_midi> hw_ports;
-
-
 static void list_device(snd_ctl_t *ctl, int card, int device)
 {
 	snd_rawmidi_info_t *info;
@@ -303,7 +299,7 @@ int main(int argc, char *argv[])
 				else if(!command.compare("file"))
 				{
 					string param = raw.substr(raw.find(' '), raw.size());
-;					devMIDI->outFile(param);
+					devMIDI->outFile(param);
 				}
 				else if(!command.compare("outstop"))
 				{
