@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
-
+#include <atomic>
+#include <vector>
 #include <string>
 using namespace std;
 
@@ -16,3 +17,8 @@ class raw_midi{
     int device;
 
 };
+
+
+atomic_bool stop;
+vector<raw_midi> hw_ports;
+
