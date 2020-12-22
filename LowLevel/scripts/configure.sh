@@ -24,6 +24,10 @@ preconditions(){
 }
 
 install_gcc() {
+    sudo apt install -y libc6-armel-cross libc6-dev-armel-cross binutils-arm-linux-gnueabihf libncurses5-dev build-essential bison flex libssl-dev bc
+    sudo apt install -y gcc g++ cmake
+}
+install_gcc_x86() {
     sudo apt install -y g++-aarch64-linux-gnu 
     sudo apt install -y libc6-armel-cross libc6-dev-armel-cross binutils-arm-linux-gnueabi libncurses5-dev build-essential bison flex libssl-dev bc
     sudo apt install -y gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
@@ -36,22 +40,22 @@ install_alsa(){
 }
 
 install_python3(){
-
-wget https://www.python.org/ftp/python/3.8.0/Python-3.8.0.tgz
-sudo apt-get update
-sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev tar wget vim
-sudo tar zxf Python-3.8.0.tgz
-cd Python-3.8.0
-sudo ./configure --enable-optimizations
-sudo make
-sudo make altinstall
-echo "alias python=/usr/local/bin/python3.8" >> ~/.bashrc
-source ~/.bashrc
-
+    wget https://www.python.org/ftp/python/3.8.0/Python-3.8.0.tgz
+    sudo apt-get update
+    sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev tar wget vim
+    sudo tar zxf Python-3.8.0.tgz
+    cd Python-3.8.0
+    sudo ./configure --enable-optimizations
+    sudo make
+    sudo make altinstall
+    echo "alias python=/usr/local/bin/python3.8" >> ~/.bashrc
+    source ~/.bashrc
 }
 
 compile_all(){
 
+    cd $SCRIPT
+    compiler.sh
 
 }
 
