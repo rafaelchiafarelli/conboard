@@ -1,2 +1,2 @@
 # conboard
-Control Surface based on the raspberry pi zero w
+Control Surface based on the Orange pi zero
