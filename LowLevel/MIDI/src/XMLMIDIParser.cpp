@@ -334,15 +334,17 @@ bool XMLMIDIParser::Initializer()
 
 bool XMLMIDIParser::loadFile(const char *filename) {
 	bool ret = false;
-	std::cout<<"loadFile"<<std::endl;
+	std::cout<<"loadFile:"<<filename<<std::endl;
 	rapidxml::file<> xmlFile(filename); // Default template is char
-
+	
 	if(xmlFile.size()>0)
 		ret = true;
+	std::cout<<"LoadFile:"<<ret<<std::endl;
 
 	enum {
 		PARSE_FLAGS = rapidxml::parse_non_destructive
 	};
+	std::cout<<"parse"<<std::endl;
 	xmlDoc.parse<PARSE_FLAGS>(xmlFile.data());
     
 	std::cout<<"loadFile:"<<ret<<std::endl;
