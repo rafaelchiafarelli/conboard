@@ -9,13 +9,17 @@ XMLMIDIParser::XMLMIDIParser(std::string FileName, std::set<ModeType,std::greate
 	modes = Mode;
 	loaded = false;
 	FileName = FileName;
+	std::cout<<"XMLMIDIParser"<<std::endl;
 	Reload();
+	std::cout<<"XMLMIDIParser END"<<std::endl;
 }
 void XMLMIDIParser::Reload(){
+	std::cout<<"Reload"<<std::endl;
 	if(loaded == false)
 	{
 		if (loadFile(FileName)) 
 		{
+			std::cout<<"Reload"<<std::endl;
 			if(!raw_xml.empty())
 			{
 				const auto tmp = raw_xml;
@@ -39,6 +43,7 @@ XMLMIDIParser::~XMLMIDIParser()
 
 void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 {
+	std::cout<<"ProcessMainBody"<<std::endl;
 	if (Body)
 	{
 		std::cout<<"Body exists"<<std::endl;
@@ -46,6 +51,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 			; xmlmodes
 			; xmlmodes = xmlmodes->next_sibling("mode", 4, true))
 		{		
+			std::cout<<"Mode"<<std::endl;
 			char *idtag = xmlmodes->first_attribute("id",2,true)->value();
 			unsigned int idx;
 			if(idtag)
@@ -242,10 +248,10 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 
 void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 {
-	
+	std::cout<<"ProcessHeader"<<std::endl;
 	if (Header)
 	{
-	
+		
 		for (rapidxml::xml_node<>* action_nodes = Header->first_node("action", 6, true)
 			; action_nodes
 			; action_nodes = action_nodes->next_sibling("action", 6, true))
@@ -271,6 +277,7 @@ void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 
 bool XMLMIDIParser::Initializer()
 {
+	std::cout<<"Initializer"<<std::endl;
 	bool ret = false;
 	rapidxml::xml_node<> *Device = xmlDoc.first_node("DEVICE", 6, true);
 	if(Device)
@@ -324,8 +331,6 @@ bool XMLMIDIParser::Initializer()
 			{
 				std::cout<<"body does not exist"<<std::endl;
 			}
-			
-
 		ret = true;
 	}
 	return ret;
