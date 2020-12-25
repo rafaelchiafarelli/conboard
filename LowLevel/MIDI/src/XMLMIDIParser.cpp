@@ -211,6 +211,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		}
 
 		ret.kData = kbAct;
+		std::cout<<"keyboard"<<kbAct.data<<"delay: "<<kbAct.delay<<"type:"<<kbAct.type<<std::endl;
 
 	} 
 	else if(!strncmp(type, "midi",4))
