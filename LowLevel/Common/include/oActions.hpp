@@ -48,7 +48,7 @@ static struct options jmod[] = {
 class oActions{
     private:
         int fd = 0;
-        char const *hid_name = {"/dev/ghid0"};    
+        char const *hid_name = {"/dev/hidg0"};    
         atomic_bool stop;
 
 
