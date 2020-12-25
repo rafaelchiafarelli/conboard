@@ -48,20 +48,19 @@ class XMLMIDIParser
 		devActions parseIO(rapidxml::xml_node<> *nodes);
 		bool Initializer();
 		
-		bool loadFile(const std::string &filename);
+		bool loadFile(const char *filename);
 
 		void ProcessHeader(rapidxml::xml_node<> *Device);
 		void ProcessMainBody(rapidxml::xml_node<> *Device);
 	public:
 		void Clear(){
-			raw_xml.clear();
 			xmlDoc.clear();
 			loaded = false;
 		}
 		void Reload();
 		devType GetType(){return type;};
 		unsigned int GetTimeOut(){return timeout;};
-		XMLMIDIParser(std::string FileName,std::set<ModeType,std::greater<ModeType>>  *Mode,std::vector<Actions> *h);
+		XMLMIDIParser(const char *filename,std::set<ModeType,std::greater<ModeType>>  *Mode,std::vector<Actions> *h);
 		~XMLMIDIParser();
 };
 

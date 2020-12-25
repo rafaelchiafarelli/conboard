@@ -46,7 +46,7 @@ MIDI::~MIDI(){
         delete out_thread;
 }
 
-MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):xml(xmlFileName,&modes,&header),oActions(devName)
+MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):xml(xmlFileName.c_str(),&modes,&header),oActions(devName)
 {
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
@@ -130,7 +130,7 @@ void MIDI::processInput(midiSignal midiS)
     l_action.in.midi = midiS;
 
     std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
-        
+
     std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(l_action);
     
     if(it_mode != modes.end())
