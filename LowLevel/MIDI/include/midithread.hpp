@@ -74,10 +74,10 @@ class MIDI : public oActions{
         void parse();
         void processInput(midiSignal midiS);
         void send_midi(char *send_data, size_t send_data_length);
-        void send_keyboard(string data);
+        void send_keyboard(keyboardActions act);
         void send_mouse(mouseActions mouse);
         void send_joystick(){};
-        
+
     public:
         void Stop();
         void Reload();
