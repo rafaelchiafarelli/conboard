@@ -41,6 +41,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 {
 	if (Body)
 	{
+		std::cout<<"Body exists"<<std::endl;
 		for (rapidxml::xml_node<>* xmlmodes = Body->first_node("mode", 4, true)
 			; xmlmodes
 			; xmlmodes = xmlmodes->next_sibling("mode", 4, true))
@@ -319,6 +320,11 @@ bool XMLMIDIParser::Initializer()
 		rapidxml::xml_node<> *Body = Device->first_node("body", 4, true);
 		if(Body)
 			ProcessMainBody(Body);
+			else
+			{
+				std::cout<<"body does not exist"<<std::endl;
+			}
+			
 
 		ret = true;
 	}
