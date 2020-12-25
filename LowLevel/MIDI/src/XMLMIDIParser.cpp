@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include "XMLMIDIParser.h"
+#include "rapidxml_utils.hpp"
 #include <set>
 
 
@@ -339,17 +340,11 @@ bool XMLMIDIParser::Initializer()
 bool XMLMIDIParser::loadFile(const std::string &filename) {
 	bool ret = false;
 	std::cout<<"loadFile"<<std::endl;
-	std::ifstream is;
-	is.open(filename, std::ifstream::binary | std::ifstream::ate);
-	
-	if (is.is_open()) {
-		
+	rapidxml::file<> xmlFile(filename); // Default template is char
+
+	if(xmlFile.size()>0)
 		ret = true;
-		raw_xml.resize(static_cast<size_t>(is.tellg()));
-		is.seekg(0);
-		is.read(raw_xml.data(), raw_xml.size());
-		raw_xml.push_back(0);
-	}
+    xmlDoc.parse<0>(xmlFile.data());
 	std::cout<<"loadFile:"<<ret<<std::endl;
 	return ret;
 }
