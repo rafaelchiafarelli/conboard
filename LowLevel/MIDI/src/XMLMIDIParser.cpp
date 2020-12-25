@@ -5,7 +5,7 @@
 #include <set>
 
 
-XMLMIDIParser::XMLMIDIParser(std::string FileName, std::set<ModeType,std::greater<ModeType>> *Mode,std::vector<Actions> *h) {
+XMLMIDIParser::XMLMIDIParser(const char *FileName, std::set<ModeType,std::greater<ModeType>> *Mode,std::vector<Actions> *h) {
 	header_actions = h;
 	modes = Mode;
 	loaded = false;
@@ -18,16 +18,11 @@ void XMLMIDIParser::Reload(){
 	std::cout<<"Reload"<<std::endl;
 	if(loaded == false)
 	{
-		if (loadFile(FileName)) 
+		if (loadFile(FileName.c_str())) 
 		{
 			std::cout<<"Reload"<<std::endl;
-			if(!raw_xml.empty())
+
 			{
-				const auto tmp = raw_xml;
-				enum {
-					PARSE_FLAGS = rapidxml::parse_non_destructive
-				};
-				xmlDoc.parse<PARSE_FLAGS>(const_cast<char*>(raw_xml.data()));
 				if (xmlDoc.first_node("DEVICE", 6, true))
 				{
 					loaded = Initializer();
@@ -337,14 +332,19 @@ bool XMLMIDIParser::Initializer()
 	return ret;
 }
 
-bool XMLMIDIParser::loadFile(const std::string &filename) {
+bool XMLMIDIParser::loadFile(const char *filename) {
 	bool ret = false;
 	std::cout<<"loadFile"<<std::endl;
 	rapidxml::file<> xmlFile(filename); // Default template is char
 
 	if(xmlFile.size()>0)
 		ret = true;
-    xmlDoc.parse<0>(xmlFile.data());
+
+	enum {
+		PARSE_FLAGS = rapidxml::parse_non_destructive
+	};
+	xmlDoc.parse<PARSE_FLAGS>(xmlFile.data());
+    
 	std::cout<<"loadFile:"<<ret<<std::endl;
 	return ret;
 }
