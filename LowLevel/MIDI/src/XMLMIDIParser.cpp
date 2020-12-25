@@ -349,6 +349,7 @@ bool XMLMIDIParser::loadFile(const std::string &filename) {
 		is.read(raw_xml.data(), raw_xml.size());
 		raw_xml.push_back(0);
 	}
+	std::cout<<"loadFile:"<<ret<<std::endl;
 	return ret;
 }
 
