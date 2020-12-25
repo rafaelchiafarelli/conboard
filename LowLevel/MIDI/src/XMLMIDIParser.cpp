@@ -338,6 +338,7 @@ bool XMLMIDIParser::Initializer()
 
 bool XMLMIDIParser::loadFile(const std::string &filename) {
 	bool ret = false;
+	std::cout<<"loadFile"<<std::endl;
 	std::ifstream is( filename, std::ifstream::binary | std::ifstream::ate);
 	
 	if (is) {
