@@ -92,9 +92,11 @@ void MIDI::execHeader()
     }
 }
 
-void MIDI::send_keyboard(string data)
+void MIDI::send_keyboard(keyboardActions act)
 {
-    cout<<"should be sending:"<<data<<endl;
+    bool hold = false;
+        char buf[1] = {'a'};
+    keyboard_send(act.type,buf,1,&hold);
 }
 
 void MIDI::send_mouse(mouseActions mouse)
@@ -156,7 +158,7 @@ void MIDI::out_func()
                     switch(out->tp)
                         {
                             case keyboard:
-                                send_keyboard(out->data);
+                                send_keyboard(out->kData);
                                 break;
                             case midi:
                                 send_midi((char *)out->midi.byte,sizeof(midiSignal));

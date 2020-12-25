@@ -35,6 +35,7 @@ class keyboardActions{
     public:
         keyType type;
         std::string data;
+        unsigned int delay;
 };
 
 class mouseActions{
@@ -59,7 +60,7 @@ class devActions{
         devType tp; /* type of the output, either keyboard or mouse ou a midi response*/
 
         //keyboard
-        std::string data; /* data to be sent to the output*/
+        keyboardActions kData; /* data to be sent to the output*/
 
 
         joystickActions joy;

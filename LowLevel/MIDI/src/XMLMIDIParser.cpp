@@ -168,13 +168,52 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 				ret.delay = atoi(delay);
 			}
 		}
-	} else if(!strncmp(type, "keyboard",8))
+	}
+	else if(!strncmp(type, "keyboard",8))
 	{
 		ret.tp = keyboard;
-		char *data = nodes->first_attribute("data",4,true)->value();
-		ret.data = std::string(data,nodes->first_attribute("data",4,true)->value_size());
+		rapidxml::xml_attribute<> *kbData = nodes->first_attribute("data",4,true);
+		rapidxml::xml_attribute<> *kbType = nodes->first_attribute("kbType",4,true);
+		rapidxml::xml_attribute<> *kbDelay = nodes->first_attribute("delay",4,true);
+		keyboardActions kbAct;
+		
+		if(kbData)
+		{
+			kbAct.data = std::string(kbData->value(),kbData->value_size());
+		}
+		else
+		{
+			kbAct.data = "";
+		}
+			
+		if(kbType)
+		{
+			std::string kbt(kbType->value(),kbType->value_size());
+			if(!kbt.compare("oneKey"))
+				kbAct.type = oneKey;
+			if(!kbt.compare("text"))
+				kbAct.type = text;
+			if(!kbt.compare("hotkey"))
+				kbAct.type = hotkey;
+		}
+		else
+		{
+			kbAct.type = oneKey;
+		}
 
-	} else if(!strncmp(type, "midi",4))
+		if(kbDelay)
+		{
+			kbAct.delay = atoi(kbDelay->value());
+		}
+		else
+		{
+			kbAct.delay = 0;
+		}
+
+		ret.kData = kbAct;
+
+	} 
+	else if(!strncmp(type, "midi",4))
 	{
 		ret.tp = midi;
 		ret.midi.byte[0] = 0;

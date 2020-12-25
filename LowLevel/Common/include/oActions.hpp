@@ -50,13 +50,14 @@ class oActions{
         int fd = 0;
         char const *hid_name = {"/dev/ghid0"};    
         atomic_bool stop;
+
+
+    public:
         int joystick_fill_report(char report[8], char buf[BUF_LEN], bool *hold);
         int keyboard_send(keyType type, char *buf, size_t length, bool *hold);
         int mouse_fill_report(char report[8], char buf[BUF_LEN], bool *hold);
         int send_out(char *buf,size_t size, bool hold);
         int out_thred();        
-
-    public:
         oActions(char *devName){};
         ~oActions(){};
         virtual void oMouse(mouseActions){};
