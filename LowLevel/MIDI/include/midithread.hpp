@@ -30,13 +30,18 @@
 #include <vector>
 #include <queue>
 #include <mutex>
+#include <oActions.hpp>
 
 using namespace std;
 #define PORT_NAME_SIZE 10
 #define MILLISECONDS_TIMEOUT 10
-class MIDI{
+
+
+class MIDI : public oActions{
 
     private:
+
+
         mutex locking_mechanism;
         std::thread *in_thread;
         std::thread *out_thread;
@@ -72,13 +77,17 @@ class MIDI{
         void send_keyboard(string data);
         void send_mouse(mouseActions mouse);
         void send_joystick(){};
+        
     public:
         void Stop();
         void Reload();
         void outStop();
         bool outFile(string name);
+        void oMouse(mouseActions){};
         
-        MIDI(char *port_name, string xmlFileName);
+        void oJoystick(joystickActions){};
+        void oKeyboard(keyboardActions){};
+        MIDI(char *port_name, string xmlFileName, char *hid_name);
         ~MIDI();
 
 };

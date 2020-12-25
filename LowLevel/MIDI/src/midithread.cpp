@@ -1,13 +1,19 @@
 #include "midithread.hpp"
 #include <iostream>
-#include "stdlib.h"
-#include "stdio.h"
+#include <stdlib.h>
+#include <stdio.h>
 #include <chrono>
 #include <thread>
 #include <alsa/asoundlib.h>
 #include <string>
 
 #include <iomanip>
+
+#include <string.h>
+#include <ctype.h>
+#include <fcntl.h>
+
+#include <unistd.h>
 
 
 void MIDI::Stop()
@@ -40,7 +46,7 @@ MIDI::~MIDI(){
         delete out_thread;
 }
 
-MIDI::MIDI(char *p_name, string xmlFileName):xml(xmlFileName,&modes,&header)
+MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):xml(xmlFileName,&modes,&header),oActions(devName)
 {
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
@@ -312,3 +318,5 @@ outToFile =false;
         outFileStream.close();
     }
 }
+
+

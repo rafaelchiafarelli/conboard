@@ -1,0 +1,36 @@
+Let's make Linux OTG ports useful...
+
+To install:
+
+	cd /srv/
+	git clone https://github.com/dpavlin/usb-otg
+	./install.sh
+
+This will create composite gandet on boot through which you can insert keystrokes,
+mount disk images, or open serial port back to arm board.
+
+I'm using Debian armbian image for all Allwinner boards with linux-image-next-sunxi kernel.
+
+This setup has been tested on:
+- Raspberry Pi 0
+- Cubieboard2 A20
+- Lamobo R1 A20
+- Cubieboard A10
+
+
+
+Based on documentation from:
+
+http://www.chip-community.org/index.php/Chip:_USB_hid_on_libcomposite
+
+https://github.com/ckuethe/usbarmory/wiki/USB-Gadgets
+
+http://github.com/wismna/raspberry-pi/hackpi
+
+https://github.com/torvalds/linux/blob/master/Documentation/usb/gadget-testing.txt
+
+
+UVC (to emulate webcam):
+
+git clone git://git.ideasonboard.org/uvc-gadget.git
+
