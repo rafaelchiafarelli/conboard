@@ -25,7 +25,7 @@ preconditions(){
 
 install_gcc() {
     sudo apt install -y libc6-armel-cross libc6-dev-armel-cross binutils-arm-linux-gnueabihf libncurses5-dev build-essential bison flex libssl-dev bc
-    sudo apt install -y gcc g++ cmake
+    sudo apt install -y gcc g++ cmake x11-common x11-utils libx11-dev
 }
 install_gcc_x86() {
     sudo apt install -y g++-aarch64-linux-gnu 

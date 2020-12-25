@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 			std::cout<<"error opening named pipe (fifo)"<<endl;
 			return -1;
 		}
-		devMIDI = new MIDI(p_name, xmlFileName);
+		devMIDI = new MIDI(p_name, xmlFileName, (char *)"dsfasdfa");
 
 		char cmd[256];
 		signal(SIGINT, sig_handler);
@@ -331,5 +331,6 @@ int main(int argc, char *argv[])
 	}
     return 0;
 }
+
 
 

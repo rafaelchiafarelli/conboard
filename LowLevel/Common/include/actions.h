@@ -5,6 +5,13 @@
 #include <ostream>
 #include <vector>
 #include <set>
+#include "keyNumbers.hpp"
+
+typedef enum{
+    oneKey,
+    hotkey,
+    text
+}keyType;
 
 typedef enum{
     midi,
@@ -18,6 +25,17 @@ typedef union {
     char byte[4];
     uint32_t asInt;
 }midiSignal;
+
+class joystickActions{
+    private:
+    public:
+};
+
+class keyboardActions{
+    public:
+        keyType type;
+        std::string data;
+};
 
 class mouseActions{
     public:
@@ -43,6 +61,8 @@ class devActions{
         //keyboard
         std::string data; /* data to be sent to the output*/
 
+
+        joystickActions joy;
         //mouse
         mouseActions mouse;
 
