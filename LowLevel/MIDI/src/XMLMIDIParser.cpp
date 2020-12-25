@@ -71,7 +71,6 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 				}
 				body_actions.insert(action);
 			}
-			
 			modes->insert(ModeType(body_actions,idx));
 		}
 	}
