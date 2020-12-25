@@ -5,11 +5,11 @@
 #include <set>
 
 
-XMLMIDIParser::XMLMIDIParser(const char *FileName, std::set<ModeType,std::greater<ModeType>> *Mode,std::vector<Actions> *h) {
+XMLMIDIParser::XMLMIDIParser(const char *_FileName, std::set<ModeType,std::greater<ModeType>> *Mode,std::vector<Actions> *h) {
 	header_actions = h;
 	modes = Mode;
 	loaded = false;
-	FileName = FileName;
+	FileName = _FileName;
 	std::cout<<"XMLMIDIParser"<<std::endl;
 	Reload();
 	std::cout<<"XMLMIDIParser END"<<std::endl;
