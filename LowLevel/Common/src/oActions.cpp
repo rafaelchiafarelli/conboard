@@ -21,6 +21,13 @@
 
 using namespace std;
 
+oActions::oActions(char *devName)
+{
+
+	fd = open(hid_name, O_RDWR, 0666));
+	cout<<"file: "<<hid_name<<" fd:"<<fd<<endl;
+
+}
 
 int oActions::send_out(char *buf,size_t size, bool h)
 {
