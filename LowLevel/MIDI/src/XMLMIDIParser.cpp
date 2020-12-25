@@ -339,9 +339,10 @@ bool XMLMIDIParser::Initializer()
 bool XMLMIDIParser::loadFile(const std::string &filename) {
 	bool ret = false;
 	std::cout<<"loadFile"<<std::endl;
-	std::ifstream is( filename, std::ifstream::binary);
+	std::ifstream is;
+	is.open(filename, std::ifstream::binary | std::ifstream::ate);
 	
-	if (is) {
+	if (is.is_open()) {
 		
 		ret = true;
 		raw_xml.resize(static_cast<size_t>(is.tellg()));
