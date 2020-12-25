@@ -38,7 +38,7 @@ class XMLMIDIParser
 		std::string DevName;
 		std::string DevInput;
 		std::string DevOutput;
-		std::vector<char> raw_xml;
+		
 		std::vector<Actions> *header_actions;
 		
 		std::set<ModeType,std::greater<ModeType>> *modes;
