@@ -132,11 +132,14 @@ void MIDI::processInput(midiSignal midiS)
     std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
 
     std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(l_action);
+    
     if(it_mode != modes.end())
     {
+        cout<<"mode is valid"<<endl;
         if(it_act != it_mode->body_actions.end())
         {
             oQueue.push(it_act->out);
+            cout<<"added"<<endl;
             send = true;
         }
     }
