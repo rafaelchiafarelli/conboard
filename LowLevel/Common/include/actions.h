@@ -20,7 +20,6 @@ typedef enum{
     joystick
 }devType;
 
-
 typedef union {
     char byte[4];
     uint32_t asInt;
@@ -70,7 +69,6 @@ class devActions{
         //keyboard
         keyboardActions kData; /* data to be sent to the output*/
 
-
         joystickActions joy;
         //mouse
         mouseActions mouse;
@@ -80,7 +78,6 @@ class devActions{
 
         //delay
         unsigned int delay=0; /* delay in microsseconds to wait after data was sent */
-        
         
         devActions(unsigned char b0, unsigned char b1, unsigned char b2){
             index = ((unsigned int)b2)<<16 + ((unsigned int)b1)<<8 + b0;
@@ -97,25 +94,22 @@ class devActions{
             switch(devAct.tp)
             {
                 case devType::keyboard:
-                os<<"keyboard"<<devAct.kData;
+                os<<"keyboard: "<<devAct.kData;
                 break;
                 case devType::joystick:
-                os<<"joystick"<<devAct.joy;
+                os<<"joystick: "<<devAct.joy;
                 break;
                 case devType::midi:
-                os<<"midi"<<std::hex<<(unsigned int)devAct.midi.byte[0]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[1]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[2];
+                os<<"midi: "<<std::hex<<(unsigned int)devAct.midi.byte[0]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[1]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[2];
                 break;
                 case devType::mouse:
-                os<<"mouse"<<devAct.mouse;
+                os<<"mouse: "<<devAct.mouse;
                 break;
             }
-            
         return os;
         };
 
 };
-
-
 
 class Actions{
 
