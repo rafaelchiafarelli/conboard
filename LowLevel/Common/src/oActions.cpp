@@ -52,7 +52,7 @@ int oActions::keyboard_send(keyType type, char *buf, size_t length, bool *hold)
 				to_send = 8;
 				cout<<"file desc:"<<fd<<endl;
 				int sent_data = write(fd, report, to_send);
-				cout<<"data sent:"<<sent_data<<endl;
+				cout<<"data sent:"<<sent_data<<" hold:"<<hold<<endl;
 				if (!hold) {
 					memset(report, 0x0, sizeof(report));
 					int sent = write(fd, report, to_send);
