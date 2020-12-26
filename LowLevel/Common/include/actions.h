@@ -97,13 +97,16 @@ class devActions{
             switch(devAct.tp)
             {
                 case devType::keyboard:
-                os<<devAct.kData;
+                os<<"keyboard"<<devAct.kData;
                 break;
                 case devType::joystick:
-                os<<devAct.joy;
+                os<<"joystick"<<devAct.joy;
                 break;
                 case devType::midi:
-                os<<std::hex<<(unsigned int)devAct.midi.byte[0]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[1]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[2];
+                os<<"midi"<<std::hex<<(unsigned int)devAct.midi.byte[0]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[1]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[2];
+                break;
+                case devType::mouse:
+                os<<"mouse"<<devAct.mouse;
                 break;
             }
             
