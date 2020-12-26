@@ -45,16 +45,18 @@ int oActions::keyboard_send(keyType type, char *buf, size_t length, bool *hold)
 		case oneKey:
 			cout<<"buf:"<<buf<<" comprimento:"<<length<<endl;
 			namedKeyCodes key=in_word_set(buf,length);
-			cout<<"key->name"<<key.name<<"key->number"<<key.number<<endl;
-			report[3] = key.number;
-			to_send = 8;
-			cout<<"file desc:"<<fd<<endl;
-			int sent_data = write(fd, report, to_send);
-			cout<<"data sent:"<<sent_data<<endl;
-			if (!hold) {
-				memset(report, 0x0, sizeof(report));
-				int sent = write(fd, report, to_send);
-				cout<<"data sent:"<<sent<<endl;	
+			if(key.number){
+				cout<<"key->name"<<key.name<<"key->number"<<key.number<<endl;
+				report[3] = key.number;
+				to_send = 8;
+				cout<<"file desc:"<<fd<<endl;
+				int sent_data = write(fd, report, to_send);
+				cout<<"data sent:"<<sent_data<<endl;
+				if (!hold) {
+					memset(report, 0x0, sizeof(report));
+					int sent = write(fd, report, to_send);
+					cout<<"data sent:"<<sent<<endl;	
+				}
 			}
 		break;
 	}
