@@ -56,7 +56,6 @@ int oActions::keyboard_send(keyType type, char *buf, size_t length, bool hold)
 				if (!hold) {
 					memset(report, 0x0, sizeof(report));
 					int sent = write(fd, report, to_send);
-					cout<<"data sent:"<<sent<<endl;	
 				}
 			}
 		break;
