@@ -23,25 +23,10 @@ using namespace std;
 
 oActions::oActions(char *devName)
 {
-
 	fd = open(hid_name, O_RDWR, 0666);
 	cout<<"file: "<<hid_name<<" fd:"<<fd<<endl;
-
 }
 
-int oActions::send_out(char *buf,size_t size, bool h)
-{
-    char report[8];
-    bool hold = h;
-    memset(report, 0x0, sizeof(report));
-    keyType dummy;
-    int to_send = keyboard_send(dummy, buf,size, &hold);
-
-    //int to_send = mouse_fill_report(report, buf, &hold);
-
-    //int to_send = joystick_fill_report(report, buf, &hold);
-return 0;
-}
 
 int oActions::keyboard_send(keyType type, char *buf, size_t length, bool *hold)
 {
@@ -77,7 +62,9 @@ int oActions::keyboard_send(keyType type, char *buf, size_t length, bool *hold)
 }
 
 
+/*
 
+*/
 int oActions::mouse_fill_report(char report[8], char buf[BUF_LEN], bool *hold)
 {
 	char *tok = strtok(buf, " ");
@@ -114,7 +101,9 @@ int oActions::mouse_fill_report(char report[8], char buf[BUF_LEN], bool *hold)
 }
 
 
+/*
 
+*/
 int oActions::joystick_fill_report(char report[8], char buf[BUF_LEN], bool *hold)
 {
 	char *tok = strtok(buf, " ");
@@ -151,29 +140,5 @@ int oActions::joystick_fill_report(char report[8], char buf[BUF_LEN], bool *hold
 	return 4;
 }
 
-
-int oActions::out_thred()
-{
-	const char *filename = NULL;
-	
-	char buf[BUF_LEN];
-	int cmd_len;
-	char report[8];
-	int to_send = 8;
-	int hold = 0;
-	fd_set rfds;
-	int retval, i;
-
-	if ((fd = open(hid_name, O_RDWR, 0666)) == -1) {
-		return 3;
-	}
-
-	while (!stop) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
-
-	close(fd);
-	return 0;
-}
 
 

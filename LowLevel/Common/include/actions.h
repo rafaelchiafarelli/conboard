@@ -6,25 +6,35 @@
 #include <vector>
 #include <set>
 #include "keyNumbers.hpp"
-
+/**
+ * 
+ */ 
 typedef enum{
     oneKey,
     hotkey,
     text
 }keyType;
-
+/**
+ * 
+ */
 typedef enum{
     midi,
     keyboard,
     mouse,
     joystick
 }devType;
-
+/**
+ * 
+ * 
+ */
 typedef union {
     char byte[4];
     uint32_t asInt;
 }midiSignal;
-
+/**
+ * 
+ * 
+ */ 
 class joystickActions{
     private:
     public:
@@ -33,7 +43,10 @@ class joystickActions{
         return os;
     };
 };
-
+/**
+ * 
+ * 
+ */ 
 class keyboardActions{
     public:
         keyType type;
@@ -44,7 +57,11 @@ class keyboardActions{
         return os;
     };
 };
-
+/**
+ * 
+ * 
+ * 
+ */ 
 class mouseActions{
     public:
             long dx = 0;
@@ -59,7 +76,10 @@ class mouseActions{
         return os;
     };
 };
-
+/**
+ * 
+ * 
+ */ 
 class devActions{
     private: 
         unsigned int index;
@@ -110,7 +130,10 @@ class devActions{
         };
 
 };
-
+/**
+ * 
+ * 
+ */ 
 class Actions{
 
 public:
