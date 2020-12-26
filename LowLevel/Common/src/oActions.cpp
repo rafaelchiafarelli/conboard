@@ -45,6 +45,7 @@ int oActions::keyboard_send(keyType type, char *buf, size_t length, bool *hold)
 		case oneKey:
 			cout<<"buf:"<<buf<<" comprimento:"<<length<<endl;
 			namedKeyCodes key=in_word_set(buf,length);
+			cout<<"key->number"<<key.number<<endl;
 			if(key.number){
 				cout<<"key->name"<<key.name<<"key->number"<<key.number<<endl;
 				report[3] = key.number;
