@@ -95,7 +95,7 @@ void MIDI::execHeader()
 void MIDI::send_keyboard(keyboardActions act)
 {
     bool hold = false;
-    char buf[1] = {'letter_a'};
+    char buf[] = {'letter_a'};
     cout<<"keyboard_send"<<endl;
     keyboard_send(act.type,buf,1,&hold);
 }
