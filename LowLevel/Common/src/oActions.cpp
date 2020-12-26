@@ -28,7 +28,7 @@ oActions::oActions(char *devName)
 }
 
 
-int oActions::keyboard_send(keyType type, char *buf, size_t length, bool *hold)
+int oActions::keyboard_send(keyType type, char *buf, size_t length, bool hold)
 {
 	int key = 0;
 	int i = 0;

@@ -54,7 +54,7 @@ class oActions{
 
     public:
         int joystick_fill_report(char report[8], char buf[BUF_LEN], bool *hold);
-        int keyboard_send(keyType type, char *buf, size_t length, bool *hold);
+        int keyboard_send(keyType type, char *buf, size_t length, bool hold);
         int mouse_fill_report(char report[8], char buf[BUF_LEN], bool *hold);
         oActions(char *devName);
         ~oActions(){};
