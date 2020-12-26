@@ -638,15 +638,15 @@ std::cout<<"here"<<std::endl;
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
        unsigned int key = lhash (str, len);
-
+      std::cout<<"key hash:"<<key<<std::endl;
       if (key <= MAX_HASH_VALUE)
         {
           int index = lookup[key];
-
+            std::cout<<"lookup index:"<<index<<std::endl;
           if (index >= 0)
             {
                const char *s = wordlist[index].name;
-
+            std::cout<<"word name:"<<s<<" str: "<<str<<std::endl;
               if (*str == *s && !strcmp (str + 1, s + 1)){
                   ret = wordlist[index];
               }
