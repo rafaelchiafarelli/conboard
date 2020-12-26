@@ -27,8 +27,10 @@ oActions::oActions(char *devName)
 	cout<<"file: "<<hid_name<<" fd:"<<fd<<endl;
 }
 
-
-int oActions::keyboard_send(keyType type, char *buf, size_t length, bool hold)
+/**
+ * 
+ */ 
+int oActions::keyboard_send(keyboardActions act)
 {
 	int key = 0;
 	int i = 0;
@@ -36,15 +38,15 @@ int oActions::keyboard_send(keyType type, char *buf, size_t length, bool hold)
     memset(report,0,8);
 	size_t to_send;
 	cout<<"keyboard_send"<<endl;	
-	switch(type){
+	switch(act.type){
 		case hotkey:
 			// do stuff
 		break;
 		case text:
 		break;
 		case oneKey:
-			cout<<"buf:"<<buf<<" comprimento:"<<length<<endl;
-			namedKeyCodes key=in_word_set(buf,length);
+			cout<<"buf:"<<act.data<<" comprimento:"<<act.data.size()<<endl;
+			namedKeyCodes key=in_word_set(act.data.c_str(),act.data.size());
 			cout<<"key->number"<<key.number<<endl;
 			if(key.number){
 				cout<<"key->name"<<key.name<<"key->number"<<key.number<<endl;
@@ -52,8 +54,15 @@ int oActions::keyboard_send(keyType type, char *buf, size_t length, bool hold)
 				to_send = 8;
 				cout<<"file desc:"<<fd<<endl;
 				int sent_data = write(fd, report, to_send);
-				cout<<"data sent:"<<sent_data<<" hold:"<<hold<<endl;
-				if (!hold) {
+				cout<<"data sent:"<<sent_data<<" hold:"<<act.hold<<endl;
+				if (act.hold == not_hold) {
+					memset(report, 0x0, sizeof(report));
+					int sent = write(fd, report, to_send);
+				}
+				if (act.hold == hold_delay) {
+					if(act.delay > 0){
+						std::this_thread::sleep_for(std::chrono::microseconds(act.delay));
+					}
 					memset(report, 0x0, sizeof(report));
 					int sent = write(fd, report, to_send);
 				}
