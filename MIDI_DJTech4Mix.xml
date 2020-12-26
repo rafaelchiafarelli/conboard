@@ -40,9 +40,10 @@
 	<mode id="0">
 		<action >
 			<input type="midi" b0="91" b1="02" b2="7f" ></input>
-			<output type="keyboard" data="a" delay="250" kbType="hotkey"></output>
-			<output type="keyboard" data="v" delay="250" kbType="text"></output>
-			<output type="keyboard" data="r" delay="250" kbType="oneKey"></output>
+			<output type="keyboard" data="letter_r" delay="250" kbType="oneKey"></output>
+			<output type="keyboard" data="letter_a" delay="250" kbType="oneKey"></output>
+			<output type="keyboard" data="letter_f" delay="250" kbType="oneKey"></output>
+			<output type="keyboard" data="letter_a" delay="250" kbType="oneKey"></output>
 			<output type="midi" b0="91" b1="02" b2="7f" ></output>
 		</action>
 		<action >

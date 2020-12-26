@@ -51,6 +51,7 @@ class keyboardActions{
     public:
         keyType type;
         std::string data;
+        size_t size;
         unsigned int delay;
     friend std::ostream& operator<<(std::ostream &os, const keyboardActions &dt){
         os<<"type:"<<dt.type<<" data:"<<dt.data<<" delay:"<<dt.delay;

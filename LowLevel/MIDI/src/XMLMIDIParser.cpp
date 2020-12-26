@@ -213,7 +213,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		{
 			kbAct.delay = 0;
 		}
-
+		ret.kData.size = kbAct.data.size();
 		ret.kData = kbAct;
 		std::cout<<ret<<std::endl;
 
