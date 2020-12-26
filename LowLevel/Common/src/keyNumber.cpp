@@ -633,7 +633,7 @@ namedKeyCodes *in_word_set ( const char *str,  size_t len)
        -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
        -1,  -1, 231
     };
-
+std::cout<<"here"<<std::endl;
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
     {
        unsigned int key = lhash (str, len);
