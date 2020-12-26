@@ -51,8 +51,9 @@ unsigned int lhash ( const char *str,  size_t len)
   return hval + asso_values[(unsigned char)str[len - 1]];
 }
 
-namedKeyCodes *in_word_set ( const char *str,  size_t len)
+namedKeyCodes in_word_set ( const char *str,  size_t len)
 {
+      namedKeyCodes ret = {.name = NULL, .number = 0};
   enum
     {
       TOTAL_KEYWORDS = 232,
@@ -646,10 +647,12 @@ std::cout<<"here"<<std::endl;
             {
                const char *s = wordlist[index].name;
 
-              if (*str == *s && !strcmp (str + 1, s + 1))
-                return &wordlist[index];
+              if (*str == *s && !strcmp (str + 1, s + 1)){
+                  ret = wordlist[index];
+              }
+                
             }
         }
     }
-  return 0;
+  return ret;
 }
