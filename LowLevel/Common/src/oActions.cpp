@@ -49,7 +49,8 @@ int oActions::keyboard_send(keyType type, char *buf, size_t length, bool *hold)
 	int i = 0;
     char report[8];
     memset(report,0,8);
-	size_t to_send;	
+	size_t to_send;
+	cout<<"keyboard_send"<<endl;	
 	switch(type){
 		case hotkey:
 			// do stuff
@@ -58,11 +59,11 @@ int oActions::keyboard_send(keyType type, char *buf, size_t length, bool *hold)
 		break;
 		case oneKey:
 			namedKeyCodes *key=in_word_set(buf,length);
+			cout<<"key->name"<<key->name<<endl;
 			report[3] = key->number;
 			to_send = 8;
-			if (write(fd, report, to_send) != to_send) {
-
-			}
+			int sent_data = write(fd, report, to_send);
+			cout<<"data sent:"<<sent_data<<endl;
 			if (!hold) {
 				memset(report, 0x0, sizeof(report));
 				int sent = write(fd, report, to_send);

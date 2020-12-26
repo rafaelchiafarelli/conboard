@@ -95,7 +95,8 @@ void MIDI::execHeader()
 void MIDI::send_keyboard(keyboardActions act)
 {
     bool hold = false;
-        char buf[1] = {'a'};
+    char buf[1] = {'a'};
+    cout<<"keyboard_send"<<endl;
     keyboard_send(act.type,buf,1,&hold);
 }
 
@@ -161,6 +162,7 @@ void MIDI::out_func()
         //sleeps otherwise
         if(send)
         {
+            cout<<"out_function"<<endl;
             std::vector<devActions> to_send = oQueue.front();
             for(std::vector<devActions>::iterator out = to_send.begin();
                 out != to_send.end();
