@@ -135,7 +135,15 @@ void MIDI::processInput(midiSignal midiS)
     
     if(it_mode != modes.end())
     {
-        cout<<"mode is valid"<<endl;
+        cout<<"mode is valid and act is:"<<it_act->out.size()<<endl;
+        cout<<"in is:"<<it_act->in<<endl;
+        
+        for(std::vector<devActions>::const_iterator it_tmp = (it_act->out).begin();
+        it_tmp != it_act->out.end();
+         it_tmp++)
+        {
+            cout<<*it_tmp<<endl;
+        }
         if(it_act != it_mode->body_actions.end())
         {
             oQueue.push(it_act->out);

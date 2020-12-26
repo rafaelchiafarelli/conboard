@@ -29,6 +29,10 @@ typedef union {
 class joystickActions{
     private:
     public:
+    friend std::ostream& operator<<(std::ostream &os, const joystickActions &dt){
+        os<<"no joystickActions yet";
+        return os;
+    };
 };
 
 class keyboardActions{
@@ -36,6 +40,10 @@ class keyboardActions{
         keyType type;
         std::string data;
         unsigned int delay;
+    friend std::ostream& operator<<(std::ostream &os, const keyboardActions &dt){
+        os<<"type:"<<dt.type<<" data:"<<dt.data<<" delay:"<<dt.delay;
+        return os;
+    };
 };
 
 class mouseActions{
@@ -84,7 +92,23 @@ class devActions{
             }
         unsigned int GetIndex(){return index;}
         void SetIndex(int idx){index = idx;}
-        
+
+        friend std::ostream& operator<<(std::ostream &os, const devActions &devAct){
+            switch(devAct.tp)
+            {
+                case devType::keyboard:
+                os<<devAct.kData;
+                break;
+                case devType::joystick:
+                os<<devAct.joy;
+                break;
+                case devType::midi:
+                os<<std::hex<<(unsigned int)devAct.midi.byte[0]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[1]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[2];
+                break;
+            }
+            
+        return os;
+        };
 
 };
 
