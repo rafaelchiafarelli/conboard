@@ -297,7 +297,6 @@ bool XMLMIDIParser::Initializer()
 		{
 			timeout = (unsigned int) atoi(Device->first_attribute("timeout", 7, true)->value());
 		}
-
 		
 		if (Device->first_attribute("name", 4, true))
 		{
