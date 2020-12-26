@@ -97,7 +97,7 @@ void MIDI::send_keyboard(keyboardActions act)
     bool hold = false;
     char buf[] = {"letter_a"};
     cout<<"keyboard_send"<<endl;
-    keyboard_send(act.type,buf,1,&hold);
+    keyboard_send(act.type,buf,strlen(buf),&hold);
 }
 
 void MIDI::send_mouse(mouseActions mouse)
