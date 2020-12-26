@@ -171,6 +171,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 				ret.delay = atoi(delay);
 			}
 		}
+		std::cout<<ret<<std::endl;
 	}
 	else if(!strncmp(type, "keyboard",8))
 	{
@@ -214,7 +215,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		}
 
 		ret.kData = kbAct;
-		std::cout<<"keyboard"<<kbAct.data<<"delay: "<<kbAct.delay<<"type:"<<kbAct.type<<std::endl;
+		std::cout<<ret<<std::endl;
 
 	} 
 	else if(!strncmp(type, "midi",4))
@@ -238,6 +239,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		{
 			ret.midi.byte[2] = (unsigned char)strtol(nodes->first_attribute("b2", 2, true)->value(),NULL, 16);
 		}
+		std::cout<<ret<<std::endl;
 	}
 	return ret;
 }
