@@ -6,6 +6,7 @@
 #include <vector>
 #include <set>
 #include "keyNumbers.hpp"
+
 /**
  * 
  */ 
@@ -14,6 +15,16 @@ typedef enum{
     hotkey,
     text
 }keyType;
+
+/**
+ * 
+ */
+typedef enum{
+    hold,
+    not_hold,
+    hold_delay
+}holdType;
+
 /**
  * 
  */
@@ -23,6 +34,7 @@ typedef enum{
     mouse,
     joystick
 }devType;
+
 /**
  * 
  * 
@@ -31,6 +43,7 @@ typedef union {
     char byte[4];
     uint32_t asInt;
 }midiSignal;
+
 /**
  * 
  * 
@@ -43,6 +56,7 @@ class joystickActions{
         return os;
     };
 };
+
 /**
  * 
  * 
@@ -51,12 +65,12 @@ class keyboardActions{
     public:
         keyType type;
         std::string data;
-        size_t size;
+        holdType hold;
         unsigned int delay;
-    friend std::ostream& operator<<(std::ostream &os, const keyboardActions &dt){
-        os<<"type:"<<dt.type<<" data:"<<dt.data<<" delay:"<<dt.delay;
-        return os;
-    };
+        friend std::ostream& operator<<(std::ostream &os, const keyboardActions &dt){
+            os<<"type:"<<dt.type<<" data:"<<dt.data<<" delay:"<<dt.delay;
+            return os;
+        };
 };
 /**
  * 
