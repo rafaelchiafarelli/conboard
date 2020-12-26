@@ -5,7 +5,7 @@
 #include <set>
 
 
-XMLMIDIParser::XMLMIDIParser(const char *_FileName, std::set<ModeType,std::greater<ModeType>> *Mode,std::vector<Actions> *h) {
+XMLMIDIParser::XMLMIDIParser(const char *_FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
 	header_actions = h;
 	modes = Mode;
 	loaded = false;
@@ -54,7 +54,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 			{
 				idx = atoi(idtag);
 			}
-			std::set<Actions,std::greater<Actions>> body_actions;
+			std::vector<Actions> body_actions;
 			for (rapidxml::xml_node<>* action_nodes = xmlmodes->first_node("action", 6, true)
 				; action_nodes
 				; action_nodes = action_nodes->next_sibling("action", 6, true))
@@ -72,10 +72,10 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 				{
 					action.out.push_back(parseIO(out_nodes));
 				}
-				body_actions.insert(action);
+				body_actions.push_back(action);
 			}
 			std::cout<<"mode index:"<<idx<<" body_actions:"<<body_actions.size()<<std::endl;
-			modes->insert(ModeType(body_actions,idx));
+			modes->push_back(ModeType(body_actions,idx));
 		}
 	}
 }

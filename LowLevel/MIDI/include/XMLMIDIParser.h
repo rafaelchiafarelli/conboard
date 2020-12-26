@@ -17,12 +17,12 @@
 #include "rapidxml.hpp"
 #include "actions.h"
 #include <set>
-
+#include <vector>
 class ModeType{
 public:
-	std::set<Actions,std::greater<Actions>> body_actions;
+	std::vector<Actions> body_actions;
 	unsigned int index;
-	ModeType(std::set<Actions,std::greater<Actions>> b, unsigned int idx){
+	ModeType(std::vector<Actions> b, unsigned int idx){
 		body_actions = b;
 		index = idx;
 	}
@@ -40,8 +40,8 @@ class XMLMIDIParser
 		std::string DevOutput;
 		
 		std::vector<Actions> *header_actions;
-		
-		std::set<ModeType,std::greater<ModeType>> *modes;
+		std::vector<ModeType> *modes;
+
 		rapidxml::xml_document<> xmlDoc;
 		devType type;
 		unsigned int timeout;
@@ -60,7 +60,7 @@ class XMLMIDIParser
 		void Reload();
 		devType GetType(){return type;};
 		unsigned int GetTimeOut(){return timeout;};
-		XMLMIDIParser(const char *filename,std::set<ModeType,std::greater<ModeType>>  *Mode,std::vector<Actions> *h);
+		XMLMIDIParser(const char *filename,std::vector<ModeType> *Mode,std::vector<Actions> *h);
 		~XMLMIDIParser();
 };
 

@@ -130,9 +130,9 @@ void MIDI::processInput(midiSignal midiS)
     l_mode.index = SelectedMode;
     l_action.in.midi = midiS;
 
-    std::set<ModeType, std::greater<ModeType>>::iterator it_mode =modes.find(l_mode);
-
-    std::set<Actions, std::greater<Actions>>::iterator it_act = it_mode->body_actions.find(l_action);
+    std::vector<ModeType>::iterator it_mode =modes.begin();
+    
+    std::vector<Actions>::iterator it_act = it_mode->body_actions.begin();
     
     if(it_mode != modes.end())
     {
@@ -140,7 +140,7 @@ void MIDI::processInput(midiSignal midiS)
         if(it_act != it_mode->body_actions.end())
         {
             cout<<"in is:"<<it_act->in<<endl;
-            for(std::vector<devActions>::const_iterator it_tmp = (it_act->out).begin();
+            for(std::vector<devActions>::iterator it_tmp = (it_act->out).begin();
                 it_tmp != it_act->out.end();
                 it_tmp++)
             {
@@ -184,10 +184,9 @@ void MIDI::out_func()
                             default:
                                 break;
                         }
-
-                        if(out->delay > 0)
-                            std::this_thread::sleep_for(std::chrono::milliseconds(out->delay));
-                    }
+                    if(out->delay > 0)
+                        std::this_thread::sleep_for(std::chrono::milliseconds(out->delay));
+                }
                 oQueue.pop();
                 if(oQueue.empty())
                 {

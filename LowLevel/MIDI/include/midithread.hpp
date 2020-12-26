@@ -60,7 +60,7 @@ class MIDI : public oActions{
         Actions l_action;
 
         std::vector<Actions> header;
-        std::set<ModeType,std::greater<ModeType>> modes;
+        std::vector<ModeType> modes;
         XMLMIDIParser xml;
 
         unsigned int SelectedMode;
