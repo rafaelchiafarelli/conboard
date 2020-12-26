@@ -9,9 +9,9 @@
 #include <stdlib.h>
 
 
-//#line 11 "keyNumbers.hash"
+
 typedef struct { char const *name; unsigned char number;}namedKeyCodes;
-namedKeyCodes *in_word_set ( const char *str,  size_t len);
+namedKeyCodes in_word_set ( const char *str,  size_t len);
 unsigned int lhash ( const char *str,  size_t len);
 /* maximum key range = 803, duplicates = 0 */
 
