@@ -6,11 +6,11 @@
 
 class textCharSet { 
   public:
-   const char *cmd; 
-   const char *first; 
-   const char *second; 
-   const char *third; 
-   const char *fourth;
+   char *cmd; 
+   char *first; 
+   char *second; 
+   char *third; 
+   char *fourth;
    };
 
 #define TEXT_CHAR_SET {{ .cmd =NULL,NULL,NULL,NULL,NULL},\
