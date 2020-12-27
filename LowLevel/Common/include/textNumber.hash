@@ -1,0 +1,226 @@
+
+
+%{
+#pragma once       
+#include <assert.h>
+#include <iostream>
+#include <string.h>
+#include <stdlib.h>
+
+%}
+
+struct textCharSet { unsigned int name; char *cmd; char *first; char *second; char *third; char *fourth};
+%%
+¤,	lAlt,	n_one,	n_five
+¶,	lAlt,	n_two,	n_zero
+§,	lAlt,	n_two,	n_one
+!,	lAlt,	n_three,	n_three
+#,	lAlt,	n_three,	n_five
+$,	lAlt,	n_three,	n_six
+"%",	lAlt,	n_three,	n_seven
+&,	lAlt,	n_three,	n_eight
+(,	lAlt,	n_four,	n_zero
+),	lAlt,	n_four,	n_one
+*,	lAlt,	n_four,	n_two
++,	lAlt,	n_four,	n_three
+,,	lAlt,	n_four,	n_four
+-,	lAlt,	n_four,	n_five
+.,	lAlt,	n_four,	n_six
+/,	lAlt,	n_four,	n_seven
+0,	lAlt,	n_four,	n_eight
+1,	lAlt,	n_four,	n_nine
+2,	lAlt,	n_five,	n_zero
+3,	lAlt,	n_five,	n_one
+4,	lAlt,	n_five,	n_two
+5,	lAlt,	n_five,	n_three
+6,	lAlt,	n_five,	n_four
+7,	lAlt,	n_five,	n_five
+8,	lAlt,	n_five,	n_six
+9,	lAlt,	n_five,	n_seven
+:,	lAlt,	n_five,	n_eight
+;,	lAlt,	n_five,	n_nine
+<,	lAlt,	n_six,	n_zero
+=,	lAlt,	n_six,	n_one
+>,	lAlt,	n_six,	n_two
+?,	lAlt,	n_six,	n_three
+@,	lAlt,	n_six,	n_four
+A,	lAlt,	n_six,	n_five
+B,	lAlt,	n_six,	n_six
+C,	lAlt,	n_six,	n_seven
+D,	lAlt,	n_six,	n_eight
+E,	lAlt,	n_six,	n_nine
+F,	lAlt,	n_seven,	n_zero
+G,	lAlt,	n_seven,	n_one
+H,	lAlt,	n_seven,	n_two
+I,	lAlt,	n_seven,	n_three
+J,	lAlt,	n_seven,	n_four
+K,	lAlt,	n_seven,	n_five
+L,	lAlt,	n_seven,	n_six
+M,	lAlt,	n_seven,	n_seven
+N,	lAlt,	n_seven,	n_eight
+O,	lAlt,	n_seven,	n_nine
+P,	lAlt,	n_eight,	n_zero
+Q,	lAlt,	n_eight,	n_one
+R,	lAlt,	n_eight,	n_two
+S,	lAlt,	n_eight,	n_three
+T,	lAlt,	n_eight,	n_four
+U,	lAlt,	n_eight,	n_five
+V,	lAlt,	n_eight,	n_six
+W,	lAlt,	n_eight,	n_seven
+X,	lAlt,	n_eight,	n_eight
+Y,	lAlt,	n_eight,	n_nine
+Z,	lAlt,	n_nine,	n_zero
+[,	lAlt,	n_nine,	n_one
+\,	lAlt,	n_nine,	n_two
+],	lAlt,	n_nine,	n_three
+^,	lAlt,	n_nine,	n_four
+_,	lAlt,	n_nine,	n_five
+`,	lAlt,	n_nine,	n_six
+a,	lAlt,	n_nine,	n_seven
+b,	lAlt,	n_nine,	n_eight
+c,	lAlt,	n_nine,	n_nine
+d,	lAlt,	n_one,	n_zero,	n_zero
+e,	lAlt,	n_one,	n_zero,	n_one
+f,	lAlt,	n_one,	n_zero,	n_two
+g,	lAlt,	n_one,	n_zero,	n_three
+h,	lAlt,	n_one,	n_zero,	n_four
+i,	lAlt,	n_one,	n_zero,	n_five
+j,	lAlt,	n_one,	n_zero,	n_six
+k,	lAlt,	n_one,	n_zero,	n_seven
+l,	lAlt,	n_one,	n_zero,	n_eight
+m,	lAlt,	n_one,	n_zero,	n_nine
+n,	lAlt,	n_one,	n_one,	n_zero
+o,	lAlt,	n_one,	n_one,	n_one
+p,	lAlt,	n_one,	n_one,	n_two
+q,	lAlt,	n_one,	n_one,	n_three
+r,	lAlt,	n_one,	n_one,	n_four
+s,	lAlt,	n_one,	n_one,	n_five
+t,	lAlt,	n_one,	n_one,	n_six
+u,	lAlt,	n_one,	n_one,	n_seven
+v,	lAlt,	n_one,	n_one,	n_eight
+w,	lAlt,	n_one,	n_one,	n_nine
+x,	lAlt,	n_one,	n_two,	n_zero
+y,	lAlt,	n_one,	n_two,	n_one
+z,	lAlt,	n_one,	n_two,	n_two
+{,	lAlt,	n_one,	n_two,	n_three
+|,	lAlt,	n_one,	n_two,	n_four
+},	lAlt,	n_one,	n_two,	n_five
+~,	lAlt,	n_one,	n_two,	n_six
+,	lAlt,	n_one,	n_two,	n_seven
+Ç,	lAlt,	n_one,	n_two,	n_eight
+ü,	lAlt,	n_one,	n_two,	n_nine
+é,	lAlt,	n_one,	n_three,	n_zero
+â,	lAlt,	n_one,	n_three,	n_one
+ä,	lAlt,	n_one,	n_three,	n_two
+à,	lAlt,	n_one,	n_three,	n_three
+å,	lAlt,	n_one,	n_three,	n_four
+ç,	lAlt,	n_one,	n_three,	n_five
+ê,	lAlt,	n_one,	n_three,	n_six
+ë,	lAlt,	n_one,	n_three,	n_seven
+è,	lAlt,	n_one,	n_three,	n_eight
+ï,	lAlt,	n_one,	n_three,	n_nine
+î,	lAlt,	n_one,	n_four,	n_zero
+ì,	lAlt,	n_one,	n_four,	n_one
+æ,	lAlt,	n_one,	n_four,	n_five
+Æ,	lAlt,	n_one,	n_four,	n_six
+ô,	lAlt,	n_one,	n_four,	n_seven
+ö,	lAlt,	n_one,	n_four,	n_eight
+ò,	lAlt,	n_one,	n_four,	n_nine
+û,	lAlt,	n_one,	n_five,	n_zero
+ù,	lAlt,	n_one,	n_five,	n_one
+ÿ,	lAlt,	n_one,	n_five,	n_two
+¢,	lAlt,	n_one,	n_five,	n_five
+£,	lAlt,	n_one,	n_five,	n_six
+¥,	lAlt,	n_one,	n_five,	n_seven
+P,	lAlt,	n_one,	n_five,	n_eight
+ƒ,	lAlt,	n_one,	n_five,	n_nine
+á,	lAlt,	n_one,	n_six,	n_zero
+í,	lAlt,	n_one,	n_six,	n_one
+ó,	lAlt,	n_one,	n_six,	n_two
+ú,	lAlt,	n_one,	n_six,	n_three
+ñ,	lAlt,	n_one,	n_six,	n_four
+Ñ,	lAlt,	n_one,	n_six,	n_five
+ª,	lAlt,	n_one,	n_six,	n_six
+º,	lAlt,	n_one,	n_six,	n_seven
+¿,	lAlt,	n_one,	n_six,	n_eight
+¬,	lAlt,	n_one,	n_seven,	n_zero
+½,	lAlt,	n_one,	n_seven,	n_one
+¼,	lAlt,	n_one,	n_seven,	n_two
+¡,	lAlt,	n_one,	n_seven,	n_three
+«,	lAlt,	n_one,	n_seven,	n_four
+»,	lAlt,	n_one,	n_seven,	n_five
+¦,	lAlt,	n_one,	n_seven,	n_nine
+ß,	lAlt,	n_two,	n_two,	n_five
+µ,	lAlt,	n_two,	n_three,	n_zero
+±,	lAlt,	n_two,	n_four,	n_one
+°,	lAlt,	n_two,	n_four,	n_eight
+•,	lAlt,	n_two,	n_four,	n_nine
+·,	lAlt,	n_two,	n_five,	n_zero
+²,	lAlt,	n_two,	n_five,	n_three
+€,	lAlt,	n_zero,	n_one,	n_two,	n_eight
+„,	lAlt,	n_zero,	n_one,	n_three,	n_two
+…,	lAlt,	n_zero,	n_one,	n_three,	n_three
+†,	lAlt,	n_zero,	n_one,	n_three,	n_four
+‡,	lAlt,	n_zero,	n_one,	n_three,	n_five
+ˆ,	lAlt,	n_zero,	n_one,	n_three,	n_six
+‰,	lAlt,	n_zero,	n_one,	n_three,	n_seven
+Š,	lAlt,	n_zero,	n_one,	n_three,	n_eight
+‹,	lAlt,	n_zero,	n_one,	n_three,	n_nine
+Œ,	lAlt,	n_zero,	n_one,	n_four,	n_zero
+‘,	lAlt,	n_zero,	n_one,	n_four,	n_five
+’,	lAlt,	n_zero,	n_one,	n_four,	n_six
+“,	lAlt,	n_zero,	n_one,	n_four,	n_seven
+”,	lAlt,	n_zero,	n_one,	n_four,	n_eight
+–,	lAlt,	n_zero,	n_one,	n_five,	n_zero
+—,	lAlt,	n_zero,	n_one,	n_five,	n_one
+˜,	lAlt,	n_zero,	n_one,	n_five,	n_two
+™,	lAlt,	n_zero,	n_one,	n_five,	n_three
+š,	lAlt,	n_zero,	n_one,	n_five,	n_four
+›,	lAlt,	n_zero,	n_one,	n_five,	n_five
+œ,	lAlt,	n_zero,	n_one,	n_five,	n_six
+Ÿ,	lAlt,	n_zero,	n_one,	n_five,	n_nine
+¨,	lAlt,	n_zero,	n_one,	n_six,	n_eight
+©,	lAlt,	n_zero,	n_one,	n_six,	n_nine
+®,	lAlt,	n_zero,	n_one,	n_seven,	n_four
+¯,	lAlt,	n_zero,	n_one,	n_seven,	n_five
+³,	lAlt,	n_zero,	n_one,	n_seven,	n_nine
+´,	lAlt,	n_zero,	n_one,	n_eight,	n_zero
+¸,	lAlt,	n_zero,	n_one,	n_eight,	n_four
+¹,	lAlt,	n_zero,	n_one,	n_eight,	n_five
+¾,	lAlt,	n_zero,	n_one,	n_nine,	n_zero
+À,	lAlt,	n_zero,	n_one,	n_nine,	n_two
+Á,	lAlt,	n_zero,	n_one,	n_nine,	n_three
+Â,	lAlt,	n_zero,	n_one,	n_nine,	n_four
+Ã,	lAlt,	n_zero,	n_one,	n_nine,	n_five
+Ä,	lAlt,	n_zero,	n_one,	n_nine,	n_six
+Å,	lAlt,	n_zero,	n_one,	n_nine,	n_seven
+È,	lAlt,	n_zero,	n_two,	n_zero,	n_zero
+É,	lAlt,	n_zero,	n_two,	n_zero,	n_one
+Ê,	lAlt,	n_zero,	n_two,	n_zero,	n_two
+Ë,	lAlt,	n_zero,	n_two,	n_zero,	n_three
+Ì,	lAlt,	n_zero,	n_two,	n_zero,	n_four
+Í,	lAlt,	n_zero,	n_two,	n_zero,	n_five
+Î,	lAlt,	n_zero,	n_two,	n_zero,	n_six
+Ï,	lAlt,	n_zero,	n_two,	n_zero,	n_seven
+Ð,	lAlt,	n_zero,	n_two,	n_zero,	n_eight
+Ò,	lAlt,	n_zero,	n_two,	n_one,	n_zero
+Ó,	lAlt,	n_zero,	n_two,	n_one,	n_one
+Ô,	lAlt,	n_zero,	n_two,	n_one,	n_two
+Õ,	lAlt,	n_zero,	n_two,	n_one,	n_three
+Ö,	lAlt,	n_zero,	n_two,	n_one,	n_four
+×,	lAlt,	n_zero,	n_two,	n_one,	n_five
+Ø,	lAlt,	n_zero,	n_two,	n_one,	n_six
+Ù,	lAlt,	n_zero,	n_two,	n_one,	n_seven
+Ú,	lAlt,	n_zero,	n_two,	n_one,	n_eight
+Û,	lAlt,	n_zero,	n_two,	n_one,	n_nine
+Ü,	lAlt,	n_zero,	n_two,	n_two,	n_zero
+Ý,	lAlt,	n_zero,	n_two,	n_two,	n_one
+Þ,	lAlt,	n_zero,	n_two,	n_two,	n_two
+ã,	lAlt,	n_zero,	n_two,	n_two,	n_seven
+ð,	lAlt,	n_zero,	n_two,	n_four,	n_zero
+õ,	lAlt,	n_zero,	n_two,	n_four,	n_five
+÷,	lAlt,	n_zero,	n_two,	n_four,	n_seven
+ø,	lAlt,	n_zero,	n_two,	n_four,	n_eight
+ü,	lAlt,	n_zero,	n_two,	n_five,	n_two
+ý,	lAlt,	n_zero,	n_two,	n_five,	n_three
+þ,	lAlt,	n_zero,	n_two,	n_five,	n_four
