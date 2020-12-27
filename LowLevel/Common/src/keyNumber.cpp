@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
-unsigned int lhash ( const char *str,  size_t len)
+extern "C" unsigned int lhash ( const char *str,  size_t len)
 {
   static unsigned short asso_values[] =
     {
@@ -49,7 +49,9 @@ unsigned int lhash ( const char *str,  size_t len)
     }
   return hval + asso_values[(unsigned char)str[len - 1]];
 }
-namedKeyCodes oneKeySet ( const char *str,  size_t len)
+
+
+extern "C" namedKeyCodes oneKeySet ( const char *str,  size_t len)
 {
       namedKeyCodes ret = {.name = NULL, .number = 0};
   enum
