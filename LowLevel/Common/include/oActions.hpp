@@ -52,38 +52,7 @@ class oActions: public KeySet{
         int fd = 0;
         char const *hid_name = {"/dev/hidg0"};    
         atomic_bool stop;
-        textCharSet textToCmdList[30] =  { 
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL},
-      { .cmd =NULL,NULL,NULL,NULL,NULL}};
-   
+        textCharSet textToCmdList[245] =  TEXT_CHAR_SET;
 
     protected:
         int joystick_fill_report(char report[8], char buf[BUF_LEN], bool *hold);
