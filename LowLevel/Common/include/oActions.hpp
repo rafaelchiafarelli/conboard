@@ -51,11 +51,14 @@ class oActions{
         char const *hid_name = {"/dev/hidg0"};    
         atomic_bool stop;
 
-
-    public:
+    protected:
         int joystick_fill_report(char report[8], char buf[BUF_LEN], bool *hold);
         int keyboard_send(keyboardActions act);
         int mouse_fill_report(char report[8], char buf[BUF_LEN], bool *hold);
+        std::vector<std::string> words_seperate(std::string s);
+        void sendHotKey(std::vector<std::string> cmds);
+        void fillReport(namedKeyCodes key, char *report);
+    public:
         oActions(char *devName);
         ~oActions(){};
         virtual void oMouse(mouseActions){};
