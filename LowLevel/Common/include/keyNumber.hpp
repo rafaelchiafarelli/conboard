@@ -18,7 +18,12 @@ typedef enum{
 }modifier;
 
 typedef struct { char const *name; unsigned char number;}namedKeyCodes;
-namedKeyCodes onKeySet ( const char *str,  size_t len);
-unsigned int lhash ( const char *str,  size_t len);
+
+class KeySet{
+    public:
+        namedKeyCodes oneKeySet ( const char *str,  size_t len);
+        unsigned int lhash ( const char *str,  size_t len);
+};
+
 /* maximum key range = 803, duplicates = 0 */
 
