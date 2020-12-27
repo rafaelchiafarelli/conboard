@@ -52,7 +52,7 @@ class oActions: public KeySet{
         int fd = 0;
         char const *hid_name = {"/dev/hidg0"};    
         atomic_bool stop;
-        const textCharSet textToCmdList[255] = TEXT_CHAR_SET;
+        const textCharSet textToCmdList[254] = TEXT_CHAR_SET;
 
     protected:
         int joystick_fill_report(char report[8], char buf[BUF_LEN], bool *hold);
