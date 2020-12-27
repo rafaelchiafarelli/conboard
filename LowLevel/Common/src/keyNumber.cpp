@@ -1,9 +1,9 @@
-#include <keyNumbers.hpp>
+#include <keyNumber.hpp>
 #include <iostream>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
-extern "C" unsigned int lhash ( const char *str,  size_t len)
+unsigned int KeySet::lhash ( const char *str,  size_t len)
 {
   static unsigned short asso_values[] =
     {
@@ -51,7 +51,7 @@ extern "C" unsigned int lhash ( const char *str,  size_t len)
 }
 
 
-extern "C" namedKeyCodes oneKeySet ( const char *str,  size_t len)
+namedKeyCodes KeySet::oneKeySet( const char *str,  size_t len)
 {
       namedKeyCodes ret = {.name = NULL, .number = 0};
   enum

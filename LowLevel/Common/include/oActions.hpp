@@ -2,7 +2,7 @@
 #include <iostream>
 #include <atomic>
 #include "actions.h"
-#include "keyNumbers.hpp"
+#include "keyNumber.hpp"
 #define BUF_LEN 512
 using namespace std;
 
@@ -45,7 +45,7 @@ static struct options jmod[] = {
     {.opt = NULL}
 };
 
-class oActions{
+class oActions: public KeySet{
     private:
         int fd = 0;
         char const *hid_name = {"/dev/hidg0"};    

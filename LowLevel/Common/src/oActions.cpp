@@ -17,8 +17,9 @@
 #include <linux/input.h>
 #include <linux/input-event-codes.h>
 
-#include <keyNumbers.hpp>
+#include <keyNumber.hpp>
 #include <textCharSets.hpp>
+
 using namespace std;
 
 oActions::oActions(char *devName)
@@ -82,7 +83,7 @@ void oActions::sendHotKey(std::vector<std::string> cmds)
 	str_it != cmds.end();
 	str_it++)
 	{
-		namedKeyCodes key = onKeySet(str_it->c_str(),(*str_it).size());
+		namedKeyCodes key = oneKeySet(str_it->c_str(),(*str_it).size());
 		fillReport(key, report);
 	}
 	int sent = write(fd, report, to_send);
@@ -118,27 +119,27 @@ int oActions::keyboard_send(keyboardActions act)
 				textCharSet cmd_to_send=textToCmdList[(unsigned int)(*str_it)];
 				if(cmd_to_send.cmd)
 				{
-					namedKeyCodes key=onKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
+					namedKeyCodes key=oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
 					fillReport(key, report);
 				}
 				if(cmd_to_send.first)
 				{
-					namedKeyCodes key=onKeySet(cmd_to_send.first,strlen(cmd_to_send.first));
+					namedKeyCodes key=oneKeySet(cmd_to_send.first,strlen(cmd_to_send.first));
 					fillReport(key, report);
 				}
 				if(cmd_to_send.second)
 				{
-					namedKeyCodes key=onKeySet(cmd_to_send.second,strlen(cmd_to_send.second));
+					namedKeyCodes key=oneKeySet(cmd_to_send.second,strlen(cmd_to_send.second));
 					fillReport(key, report);
 				}
 				if(cmd_to_send.third)
 				{
-					namedKeyCodes key=onKeySet(cmd_to_send.third,strlen(cmd_to_send.third));
+					namedKeyCodes key=oneKeySet(cmd_to_send.third,strlen(cmd_to_send.third));
 					fillReport(key, report);
 				}
 				if(cmd_to_send.fourth)
 				{
-					namedKeyCodes key=onKeySet(cmd_to_send.fourth,strlen(cmd_to_send.fourth));
+					namedKeyCodes key=oneKeySet(cmd_to_send.fourth,strlen(cmd_to_send.fourth));
 					fillReport(key, report);
 				}
 				int sent = write(fd, report, to_send);
@@ -148,7 +149,7 @@ int oActions::keyboard_send(keyboardActions act)
 
 		break;
 		case oneKey:
-			namedKeyCodes key=onKeySet(act.data.c_str(),act.data.size());
+			namedKeyCodes key=oneKeySet(act.data.c_str(),act.data.size());
 			if(key.number){
 				report[3] = key.number;
 				to_send = 8;
