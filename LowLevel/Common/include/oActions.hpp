@@ -52,7 +52,7 @@ class oActions: public KeySet{
         int fd = 0;
         char const *hid_name = {"/dev/hidg0"};    
         atomic_bool stop;
-        const textCharSet textToCmdList[255] =  { 
+        textCharSet textToCmdList[255] =  { 
       { .cmd =NULL,NULL,NULL,NULL,NULL},
       { .cmd =NULL,NULL,NULL,NULL,NULL},
       { .cmd =NULL,NULL,NULL,NULL,NULL},
