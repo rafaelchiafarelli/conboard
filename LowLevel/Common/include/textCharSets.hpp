@@ -11,8 +11,6 @@ class textCharSet {
    const char *second; 
    const char *third; 
    const char *fourth;
-   const char *fifth;
-   const char *sixth;
    };
 
 #define TEXT_CHAR_SET {{ .cmd =NULL,NULL,NULL,NULL,NULL},\
@@ -260,4 +258,3 @@ class textCharSet {
       { .cmd={"lAlt"}, .first={"n_zero"},.second={"n_two"}, .third={"n_five"}, .fourth={"n_two"}},\
       { .cmd={"lAlt"}, .first={"n_zero"},.second={"n_two"}, .third={"n_five"}, .fourth={"n_three"}},\
       { .cmd={"lAlt"}, .first={"n_zero"},.second={"n_two"}, .third={"n_five"}, .fourth={"n_four"}}};
-      
