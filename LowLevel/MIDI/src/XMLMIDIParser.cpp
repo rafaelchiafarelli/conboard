@@ -55,7 +55,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 				idx = atoi(idtag);
 			}
 			std::cout<<"Mode:"<<idx<<std::endl;
-			rapidxml::xml_node<> *mode_header = xmlmodes->first_node("mode_header",12,true);
+			rapidxml::xml_node<> *mode_header = xmlmodes->first_node("mode_header",11,true);
 			std::vector<Actions> header;
 			if(mode_header)
 			{
