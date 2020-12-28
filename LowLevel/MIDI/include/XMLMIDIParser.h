@@ -20,10 +20,12 @@
 #include <vector>
 class ModeType{
 public:
+	std::vector<Actions> header;
 	std::vector<Actions> body_actions;
 	unsigned int index;
-	ModeType(std::vector<Actions> b, unsigned int idx){
+	ModeType(std::vector<Actions> b, std::vector<Actions> h, unsigned int idx){
 		body_actions = b;
+		header = h;
 		index = idx;
 	}
 	ModeType(){}

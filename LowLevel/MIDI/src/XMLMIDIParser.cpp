@@ -54,6 +54,32 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 			{
 				idx = atoi(idtag);
 			}
+			std::cout<<"Mode:"<<idx<<std::endl;
+			rapidxml::xml_node<> *mode_header = xmlmodes->first_node("mode_header",12,true);
+			std::vector<Actions> header;
+			if(mode_header)
+			{
+				
+				for (rapidxml::xml_node<>* action_mode_header = mode_header->first_node("action", 6, true)
+				; action_mode_header
+				; action_mode_header = action_mode_header->next_sibling("action", 6, true))
+				{
+					rapidxml::xml_node<>* in_header = action_mode_header->first_node("input",5,true);
+					Actions action;
+					
+					if(in_header)
+					{
+						action.in = parseIO(in_header);
+					}
+					for (rapidxml::xml_node<>* out_nodes = action_mode_header->first_node("output", 6, true)
+						; out_nodes
+						; out_nodes = out_nodes->next_sibling("output", 6, true))
+					{
+						action.out.push_back(parseIO(out_nodes));
+					}
+				header.push_back(action);
+				}
+			}
 			std::vector<Actions> body_actions;
 			for (rapidxml::xml_node<>* action_nodes = xmlmodes->first_node("action", 6, true)
 				; action_nodes
@@ -72,10 +98,11 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 				{
 					action.out.push_back(parseIO(out_nodes));
 				}
+				
 				body_actions.push_back(action);
 			}
 			std::cout<<"mode index:"<<idx<<" body_actions:"<<body_actions.size()<<std::endl;
-			modes->push_back(ModeType(body_actions,idx));
+			modes->push_back(ModeType(body_actions,header,idx));
 		}
 	}
 }
