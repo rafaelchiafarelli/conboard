@@ -134,14 +134,15 @@ void MIDI::processInput(midiSignal midiS)
         if(it_act != it_mode->body_actions.end())
         {
             cout<<"in is:"<<it_act->in<<endl;
-            for(std::vector<devActions>::iterator it_tmp = (it_act->out).begin();
+            
+            for(std::vector<devActions>::iterator it_tmp = it_act->out.begin();
                 it_tmp != it_act->out.end();
                 it_tmp++)
             {
-                cout<<*it_tmp<<endl;
+                cout<<"out: "<<*it_tmp<<endl;
             }
             oQueue.push(it_act->out);
-            cout<<"added"<<endl;
+            
             send = true;
         }
     }
