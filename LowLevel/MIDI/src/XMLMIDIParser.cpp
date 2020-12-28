@@ -116,15 +116,19 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 	devActions ret;
 	rapidxml::xml_attribute<> *in_type;
 	if(nodes) //there must be a node to be parsed
-		return ret;
+		{
+			std::cout<<"nodes exist!"<<std::endl;
+			return ret;
+		}
 	in_type = nodes->first_attribute("type",4,true);
 
 	if(!in_type)   //there must be a type
+	{
+		std::cout<<"in_type exist!"<<std::endl;
 		return ret;
+	}
 	
-	char *type = in_type->value();
-	
-	if(!strncmp(type, "mouse",5))
+	if(!strncmp(in_type->value(), "mouse",5))
 	{
 		ret.tp = mouse;
 		rapidxml::xml_attribute<> *xml_dx = nodes->first_attribute("dx",2,true);
@@ -205,7 +209,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		}
 		std::cout<<ret<<std::endl;
 	}
-	else if(!strncmp(type, "keyboard",8))
+	else if(!strncmp(in_type->value(), "keyboard",8))
 	{
 		ret.tp = keyboard;
 		rapidxml::xml_attribute<> *kbData = nodes->first_attribute("data",4,true);
@@ -267,7 +271,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		std::cout<<ret<<std::endl;
 
 	} 
-	else if(!strncmp(type, "midi",4))
+	else if(!strncmp(in_type->value(), "midi",4))
 	{
 		ret.tp = midi;
 		ret.mAct.midi.byte[0] = 0;
