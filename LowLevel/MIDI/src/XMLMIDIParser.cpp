@@ -47,14 +47,14 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 			; xmlmodes
 			; xmlmodes = xmlmodes->next_sibling("mode", 4, true))
 		{		
-			std::cout<<"Mode"<<std::endl;
+			
 			char *idtag = xmlmodes->first_attribute("id",2,true)->value();
 			unsigned int idx;
 			if(idtag)
 			{
 				idx = atoi(idtag);
 			}
-			std::cout<<"Mode:"<<idx<<std::endl;
+			
 			rapidxml::xml_node<> *mode_header = xmlmodes->first_node("mode_header",11,true);
 			std::vector<Actions> header;
 			if(mode_header)
@@ -80,6 +80,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 				header.push_back(action);
 				}
 			}
+
 			std::vector<Actions> body_actions;
 			for (rapidxml::xml_node<>* action_nodes = xmlmodes->first_node("action", 6, true)
 				; action_nodes
@@ -90,7 +91,6 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 				
 				if(in_nodes)
 				{
-					std::cout<<"here in nodes"<<std::endl;
 					action.in = parseIO(in_nodes);
 				}
 				for (rapidxml::xml_node<>* out_nodes = action_nodes->first_node("output", 6, true)
@@ -98,13 +98,10 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 					; out_nodes = out_nodes->next_sibling("output", 6, true))
 				{
 					devActions act = parseIO(out_nodes);
-					std::cout<<"act:"<<act<<std::endl;
 					action.out.push_back(act);
 				}
-					std::cout<<"here"<<std::endl;
 				body_actions.push_back(action);
 			}
-			std::cout<<"mode index:"<<idx<<" body_actions:"<<body_actions.size()<<std::endl;
 			modes->push_back(ModeType(body_actions,header,idx));
 		}
 	}
@@ -118,8 +115,13 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 	if(nodes) //there must be a node to be parsed
 		{
 			std::cout<<"nodes exist!"<<std::endl;
+
 			return ret;
 		}
+	char debug[20];
+	memset(debug,0,20);
+	memcpy(debug,nodes->name(),nodes->name_size());
+	std::cout<<"deb:"<<debug<<std::endl;
 	in_type = nodes->first_attribute("type",4,true);
 
 	if(!in_type)   //there must be a type
