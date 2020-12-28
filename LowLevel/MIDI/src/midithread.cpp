@@ -134,7 +134,6 @@ void MIDI::processInput(midiSignal midiS)
         if(it_act != it_mode->body_actions.end())
         {
             cout<<"in is:"<<it_act->in<<endl;
-            
             for(std::vector<devActions>::iterator it_tmp = it_act->out.begin();
                 it_tmp != it_act->out.end();
                 it_tmp++)
@@ -142,7 +141,6 @@ void MIDI::processInput(midiSignal midiS)
                 cout<<"out: "<<*it_tmp<<endl;
             }
             oQueue.push(it_act->out);
-            
             send = true;
         }
     }
@@ -162,6 +160,7 @@ void MIDI::out_func()
                 out != to_send.end();
                 out++)
                 {
+                    std::cout<<"out:"<<*out<<std::endl;
                     switch(out->tp)
                         {
                             case keyboard:
