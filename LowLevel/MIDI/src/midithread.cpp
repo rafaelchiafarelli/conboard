@@ -46,7 +46,7 @@ MIDI::~MIDI(){
         delete out_thread;
 }
 
-MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):xml(xmlFileName.c_str(),&modes,&header),oActions(devName)
+MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):modes(), header(), xml(xmlFileName.c_str(),&modes,&header),oActions(devName)
 {
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
