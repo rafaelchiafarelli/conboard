@@ -98,7 +98,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 				{
 					action.out.push_back(parseIO(out_nodes));
 				}
-				
+				std::cout<<"here"<<std::endl;
 				body_actions.push_back(action);
 			}
 			std::cout<<"mode index:"<<idx<<" body_actions:"<<body_actions.size()<<std::endl;
