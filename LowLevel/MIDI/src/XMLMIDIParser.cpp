@@ -97,10 +97,10 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 					; out_nodes
 					; out_nodes = out_nodes->next_sibling("output", 6, true))
 				{
-					std::cout<<"here in for"<<std::endl;
+					
 					
 					devActions act = parseIO(out_nodes);
-					std::cout<<"parsed act:"<<act.tp<<std::endl;
+					
 					action.out.push_back(act);
 				}
 					std::cout<<"here"<<std::endl;
@@ -117,6 +117,8 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 	
 	devActions ret;
 	rapidxml::xml_attribute<> *in_type;
+	if(nodes) //there must be a node to be parsed
+		return ret;
 	in_type = nodes->first_attribute("type",4,true);
 
 	if(!in_type)   //there must be a type
@@ -209,8 +211,8 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 	{
 		ret.tp = keyboard;
 		rapidxml::xml_attribute<> *kbData = nodes->first_attribute("data",4,true);
-		rapidxml::xml_attribute<> *kbType = nodes->first_attribute("kbType",4,true);
-		rapidxml::xml_attribute<> *kbDelay = nodes->first_attribute("delay",4,true);
+		rapidxml::xml_attribute<> *kbType = nodes->first_attribute("kbType",6,true);
+		rapidxml::xml_attribute<> *kbDelay = nodes->first_attribute("delay",5,true);
 		rapidxml::xml_attribute<> *kbHold = nodes->first_attribute("hold",4,true);
 		keyboardActions kbAct;
 		
@@ -225,7 +227,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		}
 		if(kbHold)
 		{
-			std::string kbt(kbType->value(),kbType->value_size());
+			std::string kbt(kbHold->value(),kbHold->value_size());
 			if(!kbt.compare("true"))
 				kbAct.hold = hold;
 			if(!kbt.compare("false"))
