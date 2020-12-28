@@ -51,7 +51,7 @@ class textCharSet {
       { .cmd="lShift",	.first =	"n_three",NULL,NULL,NULL},\
       { .cmd="lShift",	.first =	"n_four",	NULL,NULL,NULL},\
       { .cmd="lShift", 	.first =	"n_five",	NULL,NULL,NULL},\
-      { .cmd="lShift", 	.first ={	"n_seven",	NULL,NULL,NULL},\
+      { .cmd="lShift", 	.first =	"n_seven",	NULL,NULL,NULL},\
       { .cmd="singleCuotes",	NULL,NULL,NULL,NULL},\
       { .cmd="lShift", .first="n_nine",	NULL,NULL,NULL},\
       { .cmd="lShift", .first="n_zero",	NULL,NULL,NULL},\
