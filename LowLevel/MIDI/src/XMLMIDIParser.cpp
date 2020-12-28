@@ -228,6 +228,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		if(kbHold)
 		{
 			std::string kbt(kbHold->value(),kbHold->value_size());
+			std::cout<<"key type:"<<kbt<<std::endl;
 			if(!kbt.compare("true"))
 				kbAct.hold = hold;
 			if(!kbt.compare("false"))
@@ -241,6 +242,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		if(kbType)
 		{
 			std::string kbt(kbType->value(),kbType->value_size());
+			std::cout<<"key type:"<<kbt<<std::endl;
 			if(!kbt.compare("oneKey"))
 				kbAct.type = oneKey;
 			if(!kbt.compare("text"))
@@ -256,6 +258,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		if(kbDelay)
 		{
 			kbAct.delay = atoi(kbDelay->value());
+			std::cout<<"delay:"<<kbAct.delay<<std::endl;
 		}
 		else
 		{
