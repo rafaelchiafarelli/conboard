@@ -29,6 +29,7 @@ typedef enum{
  * 
  */
 typedef enum{
+    notype,
     midi,
     keyboard,
     mouse,
@@ -44,6 +45,20 @@ typedef union {
     uint32_t asInt;
 }midiSignal;
 
+
+class midiActions{
+    public:
+    midiSignal midi;
+    unsigned long int delay;
+    midiActions(){};
+    ~midiActions(){};
+    friend std::ostream& operator<<(std::ostream &os, const midiActions &dt){
+        os<<std::hex<<(unsigned int)dt.midi.byte[0]<<" "<<std::hex<<(unsigned int)dt.midi.byte[1]<<" "<<std::hex<<(unsigned int)dt.midi.byte[2]<<std::endl;
+        return os;
+    };
+
+};
+
 /**
  * 
  * 
@@ -51,6 +66,8 @@ typedef union {
 class joystickActions{
     private:
     public:
+    joystickActions(){};
+    ~joystickActions(){};
     friend std::ostream& operator<<(std::ostream &os, const joystickActions &dt){
         os<<"no joystickActions yet";
         return os;
@@ -67,6 +84,8 @@ class keyboardActions{
         std::string data;
         holdType hold;
         unsigned int delay;
+        keyboardActions(){};
+        ~keyboardActions(){};
         friend std::ostream& operator<<(std::ostream &os, const keyboardActions &dt){
             os<<"type:"<<dt.type<<" data:"<<dt.data<<" delay:"<<dt.delay;
             return os;
@@ -79,13 +98,16 @@ class keyboardActions{
  */ 
 class mouseActions{
     public:
-            long dx = 0;
+        long dx = 0;
         long gotox = 0;
         long dy = 0;
         long gotoy = 0;
         unsigned int wheel_move = 0;
         bool click = 0;
         bool right_click = 0;
+        unsigned long int delay;
+        mouseActions(){};
+        ~mouseActions(){};
     friend std::ostream& operator<<(std::ostream &os, const mouseActions &dt){
         os<<"dx:"<<dt.dx<<" dy:"<<dt.dy<<" gotox:"<<dt.gotox<<" gotoy:"<<dt.gotoy<<" whm:"<<dt.wheel_move<<" click:"<<dt.click<<" rclick"<<dt.right_click;
         return os;
@@ -109,19 +131,40 @@ class devActions{
         mouseActions mouse;
 
         //midi
-        midiSignal midi;
+        midiActions mAct;
 
-        //delay
-        unsigned int delay=0; /* delay in microsseconds to wait after data was sent */
-        
-        devActions(unsigned char b0, unsigned char b1, unsigned char b2){
-            index = ((unsigned int)b2)<<16 + ((unsigned int)b1)<<8 + b0;
-            tp = devType::midi;
-        };
+
         devActions(){
             index = 0;
+            tp = devType::notype;
+        };
+        devActions(unsigned char b0, unsigned char b1, unsigned char b2){
+            index = ((unsigned int)b2)<<16 + ((unsigned int)b1)<<8 + b0;
+            mAct.midi.asInt = index;
             tp = devType::midi;
-            }
+        };
+
+        devActions(std::string kD, keyType ktp){
+            kData.data = kD;
+            kData.type= ktp;
+            tp = devType::keyboard;
+        };
+        devActions( unsigned long int dx,
+                    unsigned long int gotox,
+                    unsigned long int dy,
+                    unsigned long int gotoy,
+                    unsigned int wheel_move,
+                    bool click,
+                    bool right_click){
+            mouse.dx = dx;
+            mouse.gotox = gotox,
+            mouse.dy = dy;
+            mouse.gotoy = gotoy;
+            mouse.wheel_move = wheel_move;
+            mouse.click = click;
+            mouse.right_click = right_click;
+            tp = devType::mouse;
+        };
         unsigned int GetIndex(){return index;}
         void SetIndex(int idx){index = idx;}
 
@@ -135,7 +178,7 @@ class devActions{
                 os<<"joystick: "<<devAct.joy;
                 break;
                 case devType::midi:
-                os<<"midi: "<<std::hex<<(unsigned int)devAct.midi.byte[0]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[1]<<" "<<std::hex<<(unsigned int)devAct.midi.byte[2];
+                os<<"midi: "<<devAct.mAct;
                 break;
                 case devType::mouse:
                 os<<"mouse: "<<devAct.mouse;
@@ -143,7 +186,6 @@ class devActions{
             }
         return os;
         };
-
 };
 /**
  * 
@@ -156,7 +198,7 @@ public:
     std::vector<devActions> out;
     Actions(){};
     ~Actions(){};
-    bool operator > (const Actions &rhs) const {return in.midi.asInt>rhs.in.midi.asInt;}
+    bool operator > (const Actions &rhs) const {return in.mAct.midi.asInt>rhs.in.mAct.midi.asInt;}
 };
 
 #endif

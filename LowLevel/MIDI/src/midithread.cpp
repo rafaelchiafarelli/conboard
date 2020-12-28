@@ -81,11 +81,11 @@ void MIDI::execHeader()
             //std::cout<<"devIt:  "<<devIt->tp<<std::endl;
             if(devIt->tp == midi)
             {
-                send_midi(devIt->midi.byte,sizeof(midiSignal));
-                if(devIt->delay > 0)
+                send_midi(devIt->mAct.midi.byte,sizeof(midiSignal));
+                if(devIt->mAct.delay > 0)
                 {
                     //std::cout<<"thi is a sleep:"<<devIt->delay<<std::endl;
-                    std::this_thread::sleep_for(std::chrono::milliseconds(devIt->delay));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(devIt->mAct.delay));
                 }
             }
         }
@@ -122,7 +122,7 @@ void MIDI::processInput(midiSignal midiS)
     }
 
     l_mode.index = SelectedMode;
-    l_action.in.midi = midiS;
+    l_action.in.mAct.midi = midiS;
 
     std::vector<ModeType>::iterator it_mode =modes.begin();
     
@@ -165,9 +165,11 @@ void MIDI::out_func()
                         {
                             case keyboard:
                                 keyboard_send(out->kData);
+                                std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
                                 break;
                             case midi:
-                                send_midi((char *)out->midi.byte,sizeof(midiSignal));
+                                send_midi((char *)out->mAct.midi.byte,sizeof(midiSignal));
+                                std::this_thread::sleep_for(std::chrono::milliseconds(out->mAct.delay));
                                 break;
                             case mouse:
                                 send_mouse(out->mouse);
@@ -178,8 +180,8 @@ void MIDI::out_func()
                             default:
                                 break;
                         }
-                    if(out->delay > 0)
-                        std::this_thread::sleep_for(std::chrono::milliseconds(out->delay));
+                    
+                        
                 }
                 oQueue.pop();
                 if(oQueue.empty())

@@ -168,7 +168,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 			char *delay = xml_delay->value();
 			if(delay)
 			{
-				ret.delay = atoi(delay);
+				ret.mouse.delay = atoi(delay);
 			}
 		}
 		std::cout<<ret<<std::endl;
@@ -235,23 +235,23 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 	else if(!strncmp(type, "midi",4))
 	{
 		ret.tp = midi;
-		ret.midi.byte[0] = 0;
-		ret.midi.byte[1] = 0;
-		ret.midi.byte[2] = 0;
+		ret.mAct.midi.byte[0] = 0;
+		ret.mAct.midi.byte[1] = 0;
+		ret.mAct.midi.byte[2] = 0;
 		char *ptr; //do not use
 		if (nodes->first_attribute("b0", 2, true))
 		{
-			ret.midi.byte[0] = (unsigned char)strtol(nodes->first_attribute("b0", 2, true)->value(),NULL, 16);
+			ret.mAct.midi.byte[0] = (unsigned char)strtol(nodes->first_attribute("b0", 2, true)->value(),NULL, 16);
 		}
 
 		if (nodes->first_attribute("b1", 2, true))
 		{
-			ret.midi.byte[1] = (unsigned char)strtol(nodes->first_attribute("b1", 2, true)->value(),NULL, 16);
+			ret.mAct.midi.byte[1] = (unsigned char)strtol(nodes->first_attribute("b1", 2, true)->value(),NULL, 16);
 		}
 
 		if (nodes->first_attribute("b2", 2, true))
 		{
-			ret.midi.byte[2] = (unsigned char)strtol(nodes->first_attribute("b2", 2, true)->value(),NULL, 16);
+			ret.mAct.midi.byte[2] = (unsigned char)strtol(nodes->first_attribute("b2", 2, true)->value(),NULL, 16);
 		}
 		std::cout<<ret<<std::endl;
 	}
