@@ -112,16 +112,11 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 	
 	devActions ret;
 	rapidxml::xml_attribute<> *in_type;
-	if(nodes) //there must be a node to be parsed
+	if(!nodes) //there must be a node to be parsed
 		{
-			std::cout<<"nodes exist!"<<std::endl;
-
 			return ret;
 		}
-	char debug[20];
-	memset(debug,0,20);
-	memcpy(debug,nodes->name(),nodes->name_size());
-	std::cout<<"deb:"<<debug<<std::endl;
+
 	in_type = nodes->first_attribute("type",4,true);
 
 	if(!in_type)   //there must be a type
