@@ -180,8 +180,6 @@ void MIDI::out_func()
                             default:
                                 break;
                         }
-                    
-                        
                 }
                 oQueue.pop();
                 if(oQueue.empty())
