@@ -49,7 +49,7 @@ typedef union {
 class midiActions{
     public:
     midiSignal midi;
-    unsigned long int delay;
+    unsigned long int delay = 0;
     midiActions(){};
     ~midiActions(){};
     friend std::ostream& operator<<(std::ostream &os, const midiActions &dt){
@@ -83,7 +83,7 @@ class keyboardActions{
         keyType type;
         std::string data;
         holdType hold;
-        unsigned int delay;
+        unsigned int delay = 0;
         keyboardActions(){};
         ~keyboardActions(){};
         friend std::ostream& operator<<(std::ostream &os, const keyboardActions &dt){
@@ -105,7 +105,7 @@ class mouseActions{
         unsigned int wheel_move = 0;
         bool click = 0;
         bool right_click = 0;
-        unsigned long int delay;
+        unsigned long int delay = 0;
         mouseActions(){};
         ~mouseActions(){};
     friend std::ostream& operator<<(std::ostream &os, const mouseActions &dt){
