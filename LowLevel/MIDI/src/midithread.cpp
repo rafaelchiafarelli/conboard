@@ -74,18 +74,18 @@ void MIDI::execHeader()
         it != header.end();
         it++)
     {
-        //std::cout<<"header"<<std::endl;
+        std::cout<<"header"<<std::endl;
         for(std::vector<devActions>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
         {
-            //std::cout<<"devIt:  "<<devIt->tp<<std::endl;
+            std::cout<<"devIt:  "<<devIt->tp<<std::endl;
             if(devIt->tp == midi)
             {
                 send_midi(devIt->mAct.midi.byte,sizeof(midiSignal));
                 if(devIt->mAct.delay > 0)
                 {
-                    //std::cout<<"thi is a sleep:"<<devIt->delay<<std::endl;
+                    std::cout<<"thi is a sleep:"<<devIt->mAct.delay<<std::endl;
                     std::this_thread::sleep_for(std::chrono::milliseconds(devIt->mAct.delay));
                 }
             }
