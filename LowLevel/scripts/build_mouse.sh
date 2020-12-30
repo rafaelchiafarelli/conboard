@@ -23,6 +23,7 @@ cmake_run(){
     cd $SCRIPTS_DIR/../Mouse
     mkdir -p build
     cd build
+	rm -rf ./*
 	cmake ..
 }
 

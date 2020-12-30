@@ -62,7 +62,7 @@ class oActions: public KeySet{
         void sendHotKey(std::vector<std::string> cmds);
         void fillReport(namedKeyCodes key, char *report);
     public:
-        oActions(char *devName);
+        oActions();
         ~oActions(){};
         virtual void oMouse(mouseActions){};
         virtual void oJoystick(joystickActions){};
