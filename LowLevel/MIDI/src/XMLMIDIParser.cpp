@@ -289,6 +289,10 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		{
 			ret.mAct.midi.byte[2] = (unsigned char)strtol(nodes->first_attribute("b2", 2, true)->value(),NULL, 16);
 		}
+		if (nodes->first_attribute("delay", 5, true))
+		{
+			ret.mAct.delay = (unsigned char)strtol(nodes->first_attribute("delay", 5, true)->value(),NULL, 16);
+		}
 		std::cout<<ret<<std::endl;
 	}
 	return ret;
