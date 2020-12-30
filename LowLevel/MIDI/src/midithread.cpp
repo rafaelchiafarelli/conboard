@@ -149,11 +149,12 @@ void MIDI::processInput(midiSignal midiS)
 
 void MIDI::out_func()
 {
-    std::cout<<"out_func start: "<<std::endl;
+    std::cout<<"out_func start: "<<stop<<" input:"<<input<<std::endl;
     while(!stop)
     {
         //read from queue and launch it to the device.
         //sleeps otherwise
+        
         if(send)
         {
             cout<<"out_function"<<endl;
@@ -208,7 +209,7 @@ void MIDI::in_func()
 	int ok = 0;
     int err;
     int lTimeOut = timeout;
-    std::cout<<"in_func start: "<<std::endl;
+    std::cout<<"in_func start: "<<stop<<" input:"<<input<<std::endl;
 	if (input)
 		snd_rawmidi_read(input, NULL, 0); /* trigger reading */
 
@@ -291,6 +292,7 @@ void MIDI::in_func()
 		snd_rawmidi_close(input);
 	if (output)
 		snd_rawmidi_close(output);
+    
 }
 
 void MIDI::Reload(){
