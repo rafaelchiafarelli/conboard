@@ -46,7 +46,7 @@ MIDI::~MIDI(){
         delete out_thread;
 }
 
-MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):modes(), header(), xml(xmlFileName.c_str(),&modes,&header),oActions(devName)
+MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):modes(), header(), xml(xmlFileName.c_str(),&modes,&header),oActions()
 {
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
@@ -54,6 +54,7 @@ MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):modes(), header(), 
     stop = false;
     send = false;
     int err = 0;
+    std::cout<<"MIDI"<<std::endl;
 	if ((err = snd_rawmidi_open(&input, &output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
 		std::cout<<"device not found, no thread will be started. err: "<<err<<std::endl;
         in_thread = NULL;
@@ -148,6 +149,7 @@ void MIDI::processInput(midiSignal midiS)
 
 void MIDI::out_func()
 {
+    std::cout<<"out_func start: "<<std::endl;
     while(!stop)
     {
         //read from queue and launch it to the device.
@@ -206,6 +208,7 @@ void MIDI::in_func()
 	int ok = 0;
     int err;
     int lTimeOut = timeout;
+    std::cout<<"in_func start: "<<std::endl;
 	if (input)
 		snd_rawmidi_read(input, NULL, 0); /* trigger reading */
 

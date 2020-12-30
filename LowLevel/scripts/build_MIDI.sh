@@ -23,6 +23,7 @@ cmake_run(){
     cd $SCRIPTS_DIR/../MIDI
     mkdir -p build
     cd build
+	rm -rf ./*
 	cmake ..
 }
 

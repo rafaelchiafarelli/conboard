@@ -23,6 +23,7 @@ cmake_run(){
     cd "$SCRIPTS_DIR/../Common"
     mkdir -p build
     cd build
+	rm -rf ./*
 	cmake ..
 }
 
