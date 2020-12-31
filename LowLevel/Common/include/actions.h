@@ -196,6 +196,10 @@ class Actions{
 public:
     devActions in;
     std::vector<devActions> out;
+    void clear(){
+        out.clear();
+        in = devActions();
+    }
     Actions(){};
     ~Actions(){};
     bool operator > (const Actions &rhs) const {return in.mAct.midi.asInt>rhs.in.mAct.midi.asInt;}
