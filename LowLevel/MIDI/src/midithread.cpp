@@ -127,22 +127,21 @@ void MIDI::processInput(midiSignal midiS)
 
     std::vector<ModeType>::iterator it_mode =modes.begin();
     
-    std::vector<Actions>::iterator it_act = it_mode->body_actions.begin();
-    
     if(it_mode != modes.end())
     {
-        cout<<"mode is valid"<<endl;
-        if(it_act != it_mode->body_actions.end())
+        for( std::vector<Actions>::iterator it_act = it_mode->body_actions.begin(); it_act != it_mode->body_actions.end(); it_act++)
         {
-            cout<<"in is:"<<it_act->in<<endl;
-            for(std::vector<devActions>::iterator it_tmp = it_act->out.begin();
-                it_tmp != it_act->out.end();
-                it_tmp++)
+            if(it_act->in.mAct.midi.asInt == midiS.asInt)
             {
-                cout<<"out: "<<*it_tmp<<endl;
+                oQueue.push(it_act->out);
+                send = true;
             }
-            oQueue.push(it_act->out);
-            send = true;
+            else
+            {
+                midiActions tmp;
+                tmp.midi = midiS;
+                std::cout<<"nop. not equal: "<<it_act->in.mAct<<" not equal to:"<<tmp<<std::endl;
+            }
         }
     }
 }
@@ -189,7 +188,7 @@ void MIDI::out_func()
                 {
                     send = false;
                 }
-        }    
+        }
         else
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
