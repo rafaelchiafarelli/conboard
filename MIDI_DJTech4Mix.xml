@@ -49,25 +49,14 @@
 				<output type="midi" b0="91" b1="02" b2="FF" delay="500"></output>
 				<output type="midi" b0="91" b1="03" b2="FF" delay="500"></output>
 				<output type="midi" b0="91" b1="03" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="04" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="05" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="06" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="07" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="09" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="0A" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="0B" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="0C" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="0D" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="0E" b2="FF" delay="500"></output>
-				<output type="midi" b0="91" b1="0F" b2="FF" delay="500"></output>
 			</action>
 		</mode_header>
 		<action >
 			<input type="midi" b0="91" b1="02" b2="7f" ></input>
-			<output type="keyboard" data="letter_r" delay="250" kbType="oneKey" hold="false"></output>
-			<output type="keyboard" data="letter_a" delay="250" kbType="oneKey" hold="false"></output>
-			<output type="keyboard" data="letter_f" delay="250" kbType="oneKey" hold="false"></output>
-			<output type="keyboard" data="letter_a" delay="2500" kbType="oneKey" hold="false"></output>
+			<output type="keyboard" data="letter_r" delay="250" kbType="oneKey" hold="not_hold"></output>
+			<output type="keyboard" data="letter_a" delay="250" kbType="oneKey" hold="not_hold"></output>
+			<output type="keyboard" data="letter_f" delay="250" kbType="oneKey" hold="not_hold"></output>
+			<output type="keyboard" data="letter_a" delay="2500" kbType="oneKey" hold="not_hold"></output>
 			<output type="midi" b0="91" b1="02" b2="7f" ></output>
 		</action>
 		<action >
