@@ -162,24 +162,24 @@ void MIDI::out_func()
             {
 
                 switch(out->tp)
-                    {
-                        case keyboard:
-                            keyboard_send(out->kData);
-                            std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
-                            break;
-                        case midi:
-                            send_midi((char *)out->mAct.midi.byte,sizeof(midiSignal));
-                            std::this_thread::sleep_for(std::chrono::milliseconds(out->mAct.delay));
-                            break;
-                        case mouse:
-                            send_mouse(out->mouse);
-                            break;
-                        case joystick:
-                            send_joystick();
-                            break;
-                        default:
-                            break;
-                    }
+                {
+                    case keyboard:
+                        keyboard_send(out->kData);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
+                        break;
+                    case midi:
+                        send_midi((char *)out->mAct.midi.byte,sizeof(midiSignal));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(out->mAct.delay));
+                        break;
+                    case mouse:
+                        send_mouse(out->mouse);
+                        break;
+                    case joystick:
+                        send_joystick();
+                        break;
+                    default:
+                        break;
+                }
             }
             oQueue.pop();
             if(oQueue.empty())

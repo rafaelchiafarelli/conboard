@@ -112,6 +112,7 @@ int oActions::keyboard_send(keyboardActions act)
 			}
 		break;
 		case text:
+			std::cout<<act.data<<std::endl;
 			for(std::string::iterator str_it = act.data.begin();
 			str_it != act.data.end();
 			str_it++
