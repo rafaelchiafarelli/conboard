@@ -131,8 +131,10 @@ void MIDI::processInput(midiSignal midiS)
     {
         for( std::vector<Actions>::iterator it_act = it_mode->body_actions.begin(); it_act != it_mode->body_actions.end(); it_act++)
         {
-            if(it_act->in.mAct.midi.asInt == midiS.asInt)
+            if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                (it_act->in.mAct.midi.byte[1] == midiS.byte[1]))
             {
+                std::cout<<"equal"<<std::endl;
                 oQueue.push(it_act->out);
                 send = true;
             }
