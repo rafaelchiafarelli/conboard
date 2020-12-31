@@ -10,17 +10,17 @@ XMLMIDIParser::XMLMIDIParser(const char *_FileName, std::vector<ModeType> *Mode,
 	modes = Mode;
 	loaded = false;
 	FileName = _FileName;
-	std::cout<<"XMLMIDIParser"<<std::endl;
+	
 	Reload();
-	std::cout<<"XMLMIDIParser END"<<std::endl;
+	
 }
 void XMLMIDIParser::Reload(){
-	std::cout<<"Reload"<<std::endl;
+	
 	if(loaded == false)
 	{
 		if (loadFile(FileName.c_str())) 
 		{
-			std::cout<<"Reload"<<std::endl;
+	
 
 			{
 				if (xmlDoc.first_node("DEVICE", 6, true))
@@ -39,10 +39,9 @@ XMLMIDIParser::~XMLMIDIParser()
 
 void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 {
-	std::cout<<"ProcessMainBody"<<std::endl;
+	
 	if (Body)
 	{
-		std::cout<<"Body exists"<<std::endl;
 		for (rapidxml::xml_node<>* xmlmodes = Body->first_node("mode", 4, true)
 			; xmlmodes
 			; xmlmodes = xmlmodes->next_sibling("mode", 4, true))
@@ -122,7 +121,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 
 	if(!in_type)   //there must be a type
 	{
-		std::cout<<"in_type exist!"<<std::endl;
+		
 		return ret;
 	}
 	
@@ -205,7 +204,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 				ret.mouse.delay = atoi(delay);
 			}
 		}
-		std::cout<<ret<<std::endl;
+		
 	}
 	else if(!strncmp(in_type->value(), "keyboard",8))
 	{
@@ -228,7 +227,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		if(kbHold)
 		{
 			std::string kbt(kbHold->value(),kbHold->value_size());
-			std::cout<<"key type:"<<kbt<<std::endl;
+			
 			if(!kbt.compare("hold"))
 				kbAct.hold = hold;
 			if(!kbt.compare("not_hold"))
@@ -242,7 +241,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		if(kbType)
 		{
 			std::string kbt(kbType->value(),kbType->value_size());
-			std::cout<<"key type:"<<kbt<<std::endl;
+			
 			if(!kbt.compare("oneKey"))
 				kbAct.type = oneKey;
 			if(!kbt.compare("text"))
@@ -258,7 +257,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		if(kbDelay)
 		{
 			kbAct.delay = atoi(kbDelay->value());
-			std::cout<<"delay:"<<kbAct.delay<<std::endl;
+			
 		}
 		else
 		{
@@ -266,7 +265,7 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		}
 		
 		ret.kData = kbAct;
-		std::cout<<ret<<std::endl;
+		
 
 	} 
 	else if(!strncmp(in_type->value(), "midi",4))
@@ -294,14 +293,14 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		{
 			ret.mAct.delay = (unsigned char)strtol(nodes->first_attribute("delay", 5, true)->value(),NULL, 16);
 		}
-		std::cout<<ret<<std::endl;
+		
 	}
 	return ret;
 }
 
 void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 {
-	std::cout<<"ProcessHeader"<<std::endl;
+	
 	if (Header)
 	{
 		
@@ -330,7 +329,7 @@ void XMLMIDIParser::ProcessHeader(rapidxml::xml_node<> *Header)
 
 bool XMLMIDIParser::Initializer()
 {
-	std::cout<<"Initializer"<<std::endl;
+	
 	bool ret = false;
 	rapidxml::xml_node<> *Device = xmlDoc.first_node("DEVICE", 6, true);
 	if(Device)
@@ -379,10 +378,6 @@ bool XMLMIDIParser::Initializer()
 		rapidxml::xml_node<> *Body = Device->first_node("body", 4, true);
 		if(Body)
 			ProcessMainBody(Body);
-			else
-			{
-				std::cout<<"body does not exist"<<std::endl;
-			}
 		ret = true;
 	}
 	return ret;
@@ -390,20 +385,20 @@ bool XMLMIDIParser::Initializer()
 
 bool XMLMIDIParser::loadFile(const char *filename) {
 	bool ret = false;
-	std::cout<<"loadFile:"<<filename<<std::endl;
+	
 	rapidxml::file<> xmlFile(filename); // Default template is char
 	
 	if(xmlFile.size()>0)
 		ret = true;
-	std::cout<<"LoadFile:"<<ret<<std::endl;
+	
 
 	enum {
 		PARSE_FLAGS = rapidxml::parse_non_destructive
 	};
-	std::cout<<"parse"<<std::endl;
+	
 	xmlDoc.parse<PARSE_FLAGS>(xmlFile.data());
     
-	std::cout<<"loadFile:"<<ret<<std::endl;
+	
 	return ret;
 }
 

@@ -162,14 +162,14 @@ static void device_list(void)
 
 	card = -1;
 	if ((err = snd_card_next(&card)) < 0) {
-		
+		cout<<"No device found"<<endl;
 		return;
 	}
 	if (card < 0) {
 	
 		return;
 	}
-	std::cout<<"Dir Device    Name"<<endl;
+		cout<<"Dir Device    Name"<<endl;
 	do {
 		list_card_devices(card);
 		if ((err = snd_card_next(&card)) < 0) {
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
     
 	if(argc < 4)
 	{
-		std::cout<<"error, must specifi port and xml. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.xml\""<<endl;
+		cout<<"error, must specifi port and xml. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.xml\""<<endl;
 		return -1;
 	}
     char p_name[256];
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 			break;
 
 		default:
-			std::cout<<"Try more information."<<endl;
+			cout<<"Try more information."<<endl;
 			return 1;
 		}
 		
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 		char p_name[] = {"hw:1,0,0"};
 		string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml");
 	*/
-	std::cout<<xmlFileName<<endl;
+	cout<<xmlFileName<<endl;
 	if(!hw_ports.empty())
 	{
 		for(vector<raw_midi>::iterator it = hw_ports.begin();
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
 			if(!it->devName.compare(p_name))
 			{
 				stop = false;
-				std::cout<<"Found a compatible port"<<endl;
+				cout<<"Found a compatible port"<<endl;
 				break;
 			}
 		}
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 
 		if(fd < 0)
 		{
-			std::cout<<"error opening named pipe (fifo)"<<endl;
+			cout<<"error opening named pipe (fifo)"<<endl;
 			return -1;
 		}
 		devMIDI = new MIDI(p_name, xmlFileName, (char *)"dsfasdfa");
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 		
 			if(err<0)
 			{
-				std::cout<<"Fifo closed"<<endl;
+				cout<<"Fifo closed"<<endl;
 				stop = true;
 			}
 			else
