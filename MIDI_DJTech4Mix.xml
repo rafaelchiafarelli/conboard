@@ -61,15 +61,15 @@
 			
 		</action>
 		<action >
-			<input type="midi" b0="91" b1="0f" b2="41" ></input>
+			<input type="midi" b0="b1" b1="0f" b2="41" ></input>
 			<output type="midi" b0="91" b1="03" b2="7f" ></output>
 		</action>
 		<action >
-			<input type="midi" b0="91" b1="0f" b2="3f" ></input>
+			<input type="midi" b0="b1" b1="0f" b2="3f" ></input>
 			<output type="midi" b0="91" b1="04" b2="7f" ></output>
 		</action>
 		<action >
-			<input type="midi" b0="91" b1="0f" b2="0" ></input>
+			<input type="midi" b0="b1" b1="0f" b2="0" ></input>
 			<output type="midi" b0="91" b1="03" b2="0" ></output>
 			<output type="midi" b0="91" b1="04" b2="0" ></output>
 		</action>
