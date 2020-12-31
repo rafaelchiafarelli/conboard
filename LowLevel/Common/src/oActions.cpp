@@ -114,8 +114,8 @@ int oActions::keyboard_send(keyboardActions act)
 		case text:
 			std::cout<<act.data<<std::endl;
 			for(std::string::iterator str_it = act.data.begin();
-			str_it != act.data.end();
-			str_it++
+				str_it != act.data.end();
+				str_it++
 			)
 			{
 				textCharSet cmd_to_send=textToCmdList[(unsigned int)(*str_it)];
