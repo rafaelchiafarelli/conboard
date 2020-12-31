@@ -80,9 +80,9 @@ class joystickActions{
  */ 
 class keyboardActions{
     public:
-        keyType type;
-        std::string data;
-        holdType hold;
+        keyType type = oneKey;
+        std::string data = "";
+        holdType hold = not_hold;
         unsigned int delay = 0;
         keyboardActions(){};
         ~keyboardActions(){};

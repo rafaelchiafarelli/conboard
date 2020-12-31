@@ -228,11 +228,11 @@ devActions XMLMIDIParser::parseIO(rapidxml::xml_node<> *nodes)
 		{
 			std::string kbt(kbHold->value(),kbHold->value_size());
 			std::cout<<"key type:"<<kbt<<std::endl;
-			if(!kbt.compare("true"))
+			if(!kbt.compare("hold"))
 				kbAct.hold = hold;
-			if(!kbt.compare("false"))
+			if(!kbt.compare("not_hold"))
 				kbAct.hold = not_hold;
-			if(!kbt.compare("delay"))
+			if(!kbt.compare("hold_delay"))
 				kbAct.hold = hold_delay;
 		}
 		else{
