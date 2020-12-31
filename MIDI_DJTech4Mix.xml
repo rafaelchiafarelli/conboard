@@ -57,7 +57,7 @@
 			<output type="keyboard" data="letter_r" delay="0" kbType="oneKey" hold="not_hold"></output>
 			<output type="keyboard" data="letter_a" delay="0" kbType="oneKey" hold="not_hold"></output>
 			<output type="keyboard" data="letter_f" delay="0" kbType="oneKey" hold="not_hold"></output>
-			<output type="keyboard" data="letter_a" delay="2500" kbType="oneKey" hold="not_hold"></output>
+			<output type="keyboard" data="esse é um teste para ver os caracteres çÇãâáà:;.,><<>//?[]{}1234567890|\\QWERTYUIOPASDFGHJHKLZXCVBNMM!@#$%*()¨üë" delay="250" kbType="oneKey" hold="not_hold"></output>
 			
 		</action>
 		<action >

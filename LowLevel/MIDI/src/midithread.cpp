@@ -54,7 +54,7 @@ MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):modes(), header(), 
     stop = false;
     send = false;
     int err = 0;
-    std::cout<<"MIDI"<<std::endl;
+    
 	if ((err = snd_rawmidi_open(&input, &output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
 		std::cout<<"device not found, no thread will be started. err: "<<err<<std::endl;
         in_thread = NULL;
@@ -74,18 +74,18 @@ void MIDI::execHeader()
         it != header.end();
         it++)
     {
-        std::cout<<"header"<<std::endl;
+    
         for(std::vector<devActions>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
         {
-            std::cout<<"devIt:  "<<devIt->tp<<std::endl;
+         
             if(devIt->tp == midi)
             {
                 send_midi(devIt->mAct.midi.byte,sizeof(midiSignal));
                 if(devIt->mAct.delay > 0)
                 {
-                    std::cout<<"thi is a sleep:"<<devIt->mAct.delay<<std::endl;
+         
                     std::this_thread::sleep_for(std::chrono::milliseconds(devIt->mAct.delay));
                 }
             }
@@ -135,16 +135,11 @@ void MIDI::processInput(midiSignal midiS)
                (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
                (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
             {
-                std::cout<<"equal"<<std::endl;
+
                 oQueue.push(it_act->out);
                 send = true;
             }
-            else
-            {
-                midiActions tmp;
-                tmp.midi = midiS;
-                std::cout<<"nop. not equal: "<<it_act->in.mAct<<" not equal to:"<<tmp<<std::endl;
-            }
+
         }
     }
 }
@@ -159,13 +154,13 @@ void MIDI::out_func()
         
         if(send)
         {
-            cout<<"out_function"<<endl;
+
             std::vector<devActions> to_send = oQueue.front();
             for(std::vector<devActions>::iterator out = to_send.begin();
                 out != to_send.end();
                 out++)
             {
-                std::cout<<"out:"<<*out<<std::endl;
+
                 switch(out->tp)
                     {
                         case keyboard:
