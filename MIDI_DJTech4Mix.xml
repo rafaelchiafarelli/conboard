@@ -53,10 +53,10 @@
 		</mode_header>
 		<action >
 			<input type="midi" b0="91" b1="02" b2="7f" ></input>
-			
-			<output type="keyboard" data="letter_r" delay="250" kbType="oneKey" hold="not_hold"></output>
-			<output type="keyboard" data="letter_a" delay="250" kbType="oneKey" hold="not_hold"></output>
-			<output type="keyboard" data="letter_f" delay="250" kbType="oneKey" hold="not_hold"></output>
+			<output type="midi" b0="91" b1="02" b2="7f" ></input>
+			<output type="keyboard" data="letter_r" delay="0" kbType="oneKey" hold="not_hold"></output>
+			<output type="keyboard" data="letter_a" delay="0" kbType="oneKey" hold="not_hold"></output>
+			<output type="keyboard" data="letter_f" delay="0" kbType="oneKey" hold="not_hold"></output>
 			<output type="keyboard" data="letter_a" delay="2500" kbType="oneKey" hold="not_hold"></output>
 			
 		</action>
