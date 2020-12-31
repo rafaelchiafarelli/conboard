@@ -49,7 +49,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 		{		
 			
 			char *idtag = xmlmodes->first_attribute("id",2,true)->value();
-			unsigned int idx;
+			unsigned int idx=0;
 			if(idtag)
 			{
 				idx = atoi(idtag);
@@ -78,6 +78,7 @@ void XMLMIDIParser::ProcessMainBody(rapidxml::xml_node<> *Body)
 						action.out.push_back(parseIO(out_nodes));
 					}
 				header.push_back(action);
+				
 				}
 			}
 
