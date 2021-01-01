@@ -1,0 +1,3 @@
+SUBSYSTEM=="usb", ATTR{idVendor}=="04b3", ATTR{idProduct}=="3025", RUN+="/home/myuser/bin/udev_jap.sh"
+ACTION=="add", ATTRS{name}=="USB Keyboard" RUN="/usr/local/bin/usb-keyboard-in_udev"
+ACTION=="add", SUBSYSTEM=="usb", DRIVER=="usb", RUN+="/conboard/scripts/launcher.sh"

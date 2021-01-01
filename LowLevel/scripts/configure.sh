@@ -45,6 +45,7 @@ install_python3(){
     wget https://www.python.org/ftp/python/3.8.0/Python-3.8.0.tgz
     sudo apt-get update
     sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev tar wget vim
+    sudo apt-get install -y python-setuptools
     sudo tar zxf Python-3.8.0.tgz
     cd Python-3.8.0
     sudo ./configure --enable-optimizations
@@ -52,6 +53,9 @@ install_python3(){
     sudo make altinstall
     echo "alias python=/usr/local/bin/python3.8" >> ~/.bashrc
     source ~/.bashrc
+    sudo python3.8 -m easy_install pip
+    sudo pip3.8 install --upgrade pip
+    sudo pip3.8 install update pip
 }
 
 compile_all(){

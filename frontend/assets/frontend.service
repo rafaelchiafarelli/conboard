@@ -1,0 +1,18 @@
+[Unit]
+Description=FrontEnd for the conboard
+Documentation=https://github.com/rafaelchiafarelli/conboard
+
+[Service]
+User=root
+Type=simple
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+Environment=PYTHONPATH=/conboard/frontend/venv/bin
+Environment=PATH=/conboard/frontend/venv/bin
+WorkingDirectory=/conboard/frontend
+ExecStart=/conboard/frontend/venv/bin/gunicorn -w 1 -t 5 -b localhost:9082 main:app --access-logfile /conboard/frontend/access_video.log -k gevent
+
+
+[Install]
+WantedBy=multi-user.target

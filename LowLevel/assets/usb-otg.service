@@ -1,0 +1,12 @@
+[Unit]
+Description=USB OTG gadgets
+Documentation=https://github.com/rafaelchiafarelli/conboard
+
+[Service]
+User=root
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/conboard/usb-composite-all.sh
+
+[Install]
+WantedBy=multi-user.target
