@@ -130,11 +130,11 @@ static void list_card_devices(int card)
 	char name[32];
 	int device;
 	int err;
+	sprintf(name, "hw:%d", card);
+	if ((err = snd_ctl_open(&ctl, name, 0)) < 0) {
+		return;
+	}
 	for (;;) {
-		sprintf(name, "hw:%d", card);
-		if ((err = snd_ctl_open(&ctl, name, 0)) < 0) {
-			break;
-		}
 		device = -1;
 		if ((err = snd_ctl_rawmidi_next_device(ctl, &device)) < 0) {
 			break;
@@ -144,10 +144,10 @@ static void list_card_devices(int card)
 		list_device(ctl, card, device);
 	}
 	if(err<0)
-		cout<<"Error: "<<err<<endl;
+		std::cout<<"Error: "<<err<<endl;
 	err = snd_ctl_close(ctl);
 	if(err<0)
-		cout<<"Error closing: "<<err<<endl;
+		std::cout<<"Error closing: "<<err<<endl;
 }
 
 static void device_list(void)
