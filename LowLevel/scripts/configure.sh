@@ -21,7 +21,7 @@ build() {
 
 preconditions(){
     sudo apt update
-    sudo apt install udev udevil
+    sudo apt install udev udevil gitk
 }
 
 install_gcc() {

@@ -99,29 +99,39 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 	
 	std::cout<<"list_device size:"<<subs<<endl;
 
-	raw_midi m;
-	m.card = card;
-	m.device = device;
-	m.sub = sub;
-	snd_rawmidi_info_set_stream(info, sub < subs_in ?
-					SND_RAWMIDI_STREAM_INPUT :
-					SND_RAWMIDI_STREAM_OUTPUT);
-	snd_rawmidi_info_set_subdevice(info, sub);
-	err = snd_ctl_rawmidi_info(ctl, info);
-	if (err < 0) {
 
-		return;
-	}
-	m.name = string(snd_rawmidi_info_get_name(info));
-	m.sub_name = string(snd_rawmidi_info_get_subdevice_name(info));
-	char dev_port[256];
+	for (sub = 0; sub < subs; ++sub) {
+		raw_midi m;
+		m.card = card;
+		m.device = device;
+		m.sub = sub;
+		snd_rawmidi_info_set_stream(info, sub < subs_in ?
+					    SND_RAWMIDI_STREAM_INPUT :
+					    SND_RAWMIDI_STREAM_OUTPUT);
+		snd_rawmidi_info_set_subdevice(info, sub);
+		err = snd_ctl_rawmidi_info(ctl, info);
+		if (err < 0) {
+ 
+			return;
+		}
+		m.name = string(snd_rawmidi_info_get_name(info));
+		sub_name = snd_rawmidi_info_get_subdevice_name(info);
+		m.sub_name = string(snd_rawmidi_info_get_subdevice_name(info));
+		char dev_port[256];
+		if (sub == 0 && sub_name[0] == '\0') {
+			
+			sprintf(dev_port,"hw:%d,%d,%d",
+			       card, device,sub);
+			break;
+		} else {
+			sprintf(dev_port,"hw:%d,%d,%d",
+			       card, device, sub);
+		}
+		m.devName = string(dev_port);
+		hw_ports.push_back(m);
+		std::cout<<dev_port<<endl;
 
-	sprintf(dev_port,"hw:%d,%d,%d",
-				card, device, sub);
-
-	m.devName = string(dev_port);
-	hw_ports.push_back(m);
-	std::cout<<dev_port<<endl;
+ 	}
 }
 
 static void list_card_devices(int card)
@@ -156,14 +166,14 @@ static void device_list(void)
 
 	card = -1;
 	if ((err = snd_card_next(&card)) < 0) {
-		cout<<"No device found"<<endl;
+		std::cout<<"No device found"<<endl;
 		return;
 	}
 	if (card < 0) {
 	
 		return;
 	}
-		cout<<"Dir Device    Name"<<endl;
+		std::cout<<"Dir Device    Name"<<endl;
 	do {
 		list_card_devices(card);
 		if ((err = snd_card_next(&card)) < 0) {
