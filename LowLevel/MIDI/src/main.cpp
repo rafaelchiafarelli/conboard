@@ -206,28 +206,25 @@ int main(int argc, char *argv[])
 	memset(fifoFile,0,256);
     string xmlFileName;
 	int c;
-	while ((c = getopt_long(argc, argv, short_options,
-		     		long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, 
+							argv, 
+							short_options,
+				     		long_options, NULL)) != -1) 
+	{
 		switch (c) {
-
 		case 'p':
-		
 			strcpy(p_name,optarg);
 			break;
 		case 'x':
-		
 			xmlFileName = string(optarg);
 			break;
 		case 'i':
-		
 			sprintf(fifoFile, "%s",optarg);
 			break;
-
 		default:
 			cout<<"Try more information."<<endl;
 			return 1;
-		}
-		
+		}	
 	}
     cout<<"device list"<<endl;
     device_list();

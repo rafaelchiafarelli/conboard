@@ -6,7 +6,7 @@
 #include <vector>
 #include <set>
 #include "keyNumber.hpp"
-
+#include <chrono>
 /**
  * 
  */ 
@@ -121,6 +121,7 @@ class devActions{
     private: 
         unsigned int index;
     public:
+
         devType tp; /* type of the output, either keyboard or mouse ou a midi response*/
 
         //keyboard
@@ -132,7 +133,6 @@ class devActions{
 
         //midi
         midiActions mAct;
-
 
         devActions(){
             index = 0;
