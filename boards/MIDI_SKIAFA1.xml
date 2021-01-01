@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <DEVICE timeout = "0" type="midi" name="MIDI SKIAFA1" input="MIDI SKIAFA1" output="MIDI SKIAFA1">
 <header>
-
+<identifier>
+	<tag name="ID_VENDOR">7603</tag>
+</identifier>
 <action>
 	<output type="midi" b0="91" b1="01" b2="FF" delay="500"></output>
 	<output type="midi" b0="91" b1="02" b2="FF" delay="500"></output>
