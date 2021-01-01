@@ -144,8 +144,10 @@ static void list_card_devices(int card)
 	if ((err = snd_ctl_open(&ctl, name, 0)) < 0) {
 		return;
 	}
+
+	device = -1;
 	for (;;) {
-		device = -1;
+
 		if ((err = snd_ctl_rawmidi_next_device(ctl, &device)) < 0) {
 			break;
 		}
