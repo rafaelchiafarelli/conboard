@@ -15,7 +15,7 @@
 
 #include <unistd.h>
 
-
+#include <chrono>
 void MIDI::Stop()
 {
     stop =true;
@@ -149,27 +149,24 @@ void MIDI::out_func()
     std::cout<<"out_func start: "<<stop<<" input:"<<input<<std::endl;
     while(!stop)
     {
-        //read from queue and launch it to the device.
-        //sleeps otherwise
-        
         if(send)
         {
-
             std::vector<devActions> to_send = oQueue.front();
             for(std::vector<devActions>::iterator out = to_send.begin();
                 out != to_send.end();
                 out++)
             {
-
                 switch(out->tp)
                 {
                     case keyboard:
                         keyboard_send(out->kData);
-                        std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
+                        if(out->kData.delay != 0)
+                            std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
                         break;
                     case midi:
                         send_midi((char *)out->mAct.midi.byte,sizeof(midiSignal));
-                        std::this_thread::sleep_for(std::chrono::milliseconds(out->mAct.delay));
+                        if(out->mAct.delay !=0)
+                             std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
                         break;
                     case mouse:
                         send_mouse(out->mouse);
@@ -249,13 +246,11 @@ void MIDI::in_func()
 				std::cout<<"cannot get poll events: "<<snd_strerror(errno)<<std::endl;
 				break;
 			}
-
 			if (revents & (POLLERR | POLLHUP))
             {
                 ok = -1;
 				break;
             }
-
 			if (!(revents & POLLIN))
 				continue;
 			err = snd_rawmidi_read(input, buf, sizeof(buf));
@@ -281,7 +276,6 @@ void MIDI::in_func()
             midiS.byte[1] = buf[1];
             midiS.byte[2] = buf[2];
             midiS.byte[4] = 0;
-            
             processInput(midiS);
 		}
 	}
