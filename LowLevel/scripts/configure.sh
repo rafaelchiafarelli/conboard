@@ -21,7 +21,7 @@ build() {
 
 preconditions(){
     sudo apt update
-    sudo apt install udev udevil gitk
+    sudo apt install udev udevil gitk libusb-dev
 }
 
 install_gcc() {

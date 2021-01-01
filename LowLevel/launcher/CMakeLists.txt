@@ -12,6 +12,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC "/usr/include")
 target_link_libraries(launcher ${CMAKE_SOURCE_DIR}/../Common/build/libcommon.so)
 target_link_libraries(launcher stdc++fs)
 target_link_libraries(launcher asound)
+target_link_libraries(launcher usb)
 target_link_libraries(launcher pthread)
 set_target_properties(launcher PROPERTIES
                                 CXX_STANDARD 17
