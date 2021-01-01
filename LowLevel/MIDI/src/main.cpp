@@ -99,36 +99,29 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 	
 	std::cout<<"list_device size:"<<subs<<endl;
 
-	for (sub = 0; sub < subs; ++sub) {
-		raw_midi m;
-		m.card = card;
-		m.device = device;
-		m.sub = sub;
-		snd_rawmidi_info_set_stream(info, sub < subs_in ?
-					    SND_RAWMIDI_STREAM_INPUT :
-					    SND_RAWMIDI_STREAM_OUTPUT);
-		snd_rawmidi_info_set_subdevice(info, sub);
-		err = snd_ctl_rawmidi_info(ctl, info);
-		if (err < 0) {
+	raw_midi m;
+	m.card = card;
+	m.device = device;
+	m.sub = sub;
+	snd_rawmidi_info_set_stream(info, sub < subs_in ?
+					SND_RAWMIDI_STREAM_INPUT :
+					SND_RAWMIDI_STREAM_OUTPUT);
+	snd_rawmidi_info_set_subdevice(info, sub);
+	err = snd_ctl_rawmidi_info(ctl, info);
+	if (err < 0) {
 
-			return;
-		}
-		m.name = string(snd_rawmidi_info_get_name(info));
-		m.sub_name = string(snd_rawmidi_info_get_subdevice_name(info));
-		char dev_port[256];
-		if (sub == 0 && sub_name[0] == '\0') {
-			
-			sprintf(dev_port,"hw:%d,%d,%d",
-			       card, device,sub);
-			break;
-		} else {
-			sprintf(dev_port,"hw:%d,%d,%d",
-			       card, device, sub);
-		}
-		m.devName = string(dev_port);
-		hw_ports.push_back(m);
-		std::cout<<dev_port<<endl;
+		return;
 	}
+	m.name = string(snd_rawmidi_info_get_name(info));
+	m.sub_name = string(snd_rawmidi_info_get_subdevice_name(info));
+	char dev_port[256];
+
+	sprintf(dev_port,"hw:%d,%d,%d",
+				card, device, sub);
+
+	m.devName = string(dev_port);
+	hw_ports.push_back(m);
+	std::cout<<dev_port<<endl;
 }
 
 static void list_card_devices(int card)
@@ -229,10 +222,6 @@ int main(int argc, char *argv[])
 	}
     cout<<"device list"<<endl;
     device_list();
-	/*
-		char p_name[] = {"hw:1,0,0"};
-		string xmlFileName("/home/pi/conboard/MIDI_DJTech4Mix.xml");
-	*/
 	cout<<xmlFileName<<endl;
 	if(!hw_ports.empty())
 	{
@@ -275,13 +264,6 @@ int main(int argc, char *argv[])
 		signal(SIGINT, sig_handler);
 		while(!stop)
 		{
-			//listen to a fifo for hi level commands
-			/**
-			 * Commands: 
-			 * 		- reload: will stop the thread, reload the xml file and re-start the thread
-			 * 		- file: send midi cmds to a file
-			 * 		- outstop: stop sending cmds to file.
-			 */ 
 			memset(cmd,0,256);
 			int err = read(fd, cmd, 80); 
 		
@@ -292,7 +274,6 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				// cmd param1 param2 param3....
 				string raw = string(cmd);
 				string command = raw.substr(0,raw.find(' '));
 				if(!command.compare("reload"))
