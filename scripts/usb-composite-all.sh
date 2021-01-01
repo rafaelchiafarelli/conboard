@@ -1,11 +1,15 @@
 #!/bin/bash -e
 
+SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+echo "removing CDC devices"
+$SCRIPTS_DIR/remove_cdc.sh
+
 # this file is from: https://github.com/ckuethe/usbarmory/wiki/USB-Gadgets
 echo "creating composite mass-storage, serial, ethernet, hid..."
 modprobe libcomposite
 
 # assumes a disk image exists here...
-FILE=`pwd`/usbdisk.img
+FILE=/conboard/disk/usbdisk.img
 mkdir -p ${FILE/img/d}
 if [ ! -e $FILE ] ; then
 	dd if=/dev/zero of=$FILE bs=1M count=8

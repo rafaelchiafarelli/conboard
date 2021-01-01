@@ -22,6 +22,7 @@ build() {
 
 compile(){
 	RECIPE=(
+			build_launcher.sh
             build_common.sh
             build_JoyStick.sh
             build_KeyBoard.sh

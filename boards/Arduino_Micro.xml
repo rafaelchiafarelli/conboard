@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<DEVICE timeout = "0" type="midi" name="Arduino Micro" input="Arduino Micro" output="Arduino Micro">
+<header>
+
+<action>
+	<output type="midi" b0="91" b1="01" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="02" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="03" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="03" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="04" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="05" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="06" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="07" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="09" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0A" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0B" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0C" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0D" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0E" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0F" b2="FF" delay="500"></output>
+	
+</action>
+
+<action >
+	<output type="midi" b0="91" b1="01" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="02" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="03" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="03" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="04" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="05" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="06" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="07" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="09" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0A" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0B" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0C" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0D" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0E" b2="FF" delay="500"></output>
+	<output type="midi" b0="91" b1="0F" b2="FF" delay="500"></output>
+</action>
+
+</header>
+
+<body>
+	<mode id="0">
+		<mode_header>
+			<action >
+				<output type="midi" b0="91" b1="01" b2="FF" delay="500"></output>
+				<output type="midi" b0="91" b1="02" b2="FF" delay="500"></output>
+				<output type="midi" b0="91" b1="03" b2="FF" delay="500"></output>
+				<output type="midi" b0="91" b1="03" b2="FF" delay="500"></output>
+			</action>
+		</mode_header>
+		<action >
+			<input type="midi" b0="91" b1="02" b2="7f" ></input>
+			<output type="midi" b0="91" b1="02" b2="7f" ></input>
+			<output type="keyboard" data="letter_r" delay="0" kbType="oneKey" hold="not_hold"></output>
+			<output type="keyboard" data="letter_a" delay="0" kbType="oneKey" hold="not_hold"></output>
+			<output type="keyboard" data="letter_f" delay="0" kbType="oneKey" hold="not_hold"></output>
+			<output type="keyboard" data="letter_a" delay="0" kbType="oneKey" hold="not_hold"></output>
+			
+		</action>
+		<action >
+			<input type="midi" b0="b1" b1="0f" b2="41" ></input>
+			<output type="midi" b0="91" b1="03" b2="7f" ></output>
+		</action>
+		<action >
+			<input type="midi" b0="b1" b1="0f" b2="3f" ></input>
+			<output type="midi" b0="91" b1="04" b2="7f" ></output>
+		</action>
+		<action >
+			<input type="midi" b0="91" b1="0f" b2="00" ></input>
+			<output type="midi" b0="91" b1="03" b2="00" ></output>
+			<output type="midi" b0="91" b1="04" b2="00" ></output>
+		</action>
+		<action >
+			<input type="midi" b0="91" b1="42" b2="7f" ></input>
+			<output type="midi" b0="91" b1="02" b2="7f" ></output>
+		</action>
+		<action >
+			<input type="midi" b0="91" b1="42" b2="00" ></input>
+			<output type="midi" b0="91" b1="02" b2="00" ></output>
+		</action>
+		<action >
+			<input type="midi" b0="93" b1="02" b2="7f" ></input>
+			<output type="midi" b0="93" b1="02" b2="7f" ></output>
+		</action>
+		<action >
+			<input type="midi" b0="93" b1="02" b2="00" ></input>
+			<output type="midi" b0="93" b1="02" b2="00" ></output>
+		</action>
+		<action >
+			<input type="midi" b0="93" b1="42" b2="7f" ></input>
+			<output type="midi" b0="93" b1="02" b2="7f" ></output>
+		</action>
+		<action >
+			<input type="midi" b0="93" b1="42" b2="00" ></input>
+			<output type="midi" b0="93" b1="02" b2="00" ></output>
+		</action>
+
+	</mode>
+	<mode id="1">
+		<mode_header>
+			<action >
+				<output type="midi" b0="90" b1="22" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="23" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="24" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="25" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="26" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="27" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="28" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="29" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="2A" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="2B" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="2C" b2="00" delay="500"></output>
+				<output type="midi" b0="90" b1="2D" b2="00" delay="500"></output>
+			</action>
+		</mode_header>
+		<action >
+			<input type="midi" b0="80" b1="22" b2="7f" delay="250"></input>
+			<output type="keyboard" data="a" delay="250" kbType="hotkey"></output>
+			<output type="keyboard" data="v" delay="250" kbType="text"></output>
+			<output type="keyboard" data="r" delay="250" kbType="oneKey"></output>
+			<output type="midi" b0="80" b1="22" b2="7f" delay="250"></output>
+		</action>
+	</mode>
+</body>
+
+</DEVICE>
