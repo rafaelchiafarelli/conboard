@@ -6,7 +6,7 @@ Documentation=https://github.com/rafaelchiafarelli/conboard
 User=root
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/conboard/usb-composite-all.sh
+ExecStart=/conboard/scripts/usb-composite-all.sh
 
 [Install]
 WantedBy=multi-user.target
