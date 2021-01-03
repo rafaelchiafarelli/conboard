@@ -44,14 +44,20 @@ install_frontend(){
         pip install wheel numpy scipy matplotlib scikit-image scikit-learn ipython
         deactivate
     fi
+    cp /conboard/frontend/assets/frontend.service /etc/systemd/system/
     systemctl daemon-reload
     systemctl enable frontend.service
     systemctl restart frontend.service
-    cp /conboard/frontend/frontend.service /etc/systemd/system/
+    
 
 }
 
 install_lowlevel(){
+    echo "launcher"
+    cp /conboard/LowLevel/assets/launcher.sh /conboard/launcher.sh
+    cp /conboard/LowLevel/assets/launcher.service /etc/systemd/system/
+    systemctl enable launcher.service
+    echo "event handler"
     cp /conboard/LowLevel/assets/100-usb.rules /etc/udev/rules.d/
     udevadm control --reload-rules && sudo udevadm trigger
     service udev restart
@@ -68,6 +74,6 @@ install(){
 }
 
 if (( $# == 0 )); then
-	compile
+	install
 	exit 0
 fi
