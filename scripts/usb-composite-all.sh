@@ -2,7 +2,7 @@
 
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo "removing CDC devices"
-$SCRIPTS_DIR/remove_cdc.sh
+$SCRIPTS_DIR/remove-cdc.sh
 
 # this file is from: https://github.com/ckuethe/usbarmory/wiki/USB-Gadgets
 echo "creating composite mass-storage, serial, ethernet, hid..."
