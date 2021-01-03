@@ -20,8 +20,8 @@
 #include <vector>
 using namespace std;
 
-void read_all(char *folder);
-void verify_xml(char *folder);
+void read_all(char *devInfo, char *path);
+void create_xml(char *devInfo, char *folder);
 void clear(char *folder);
 
 atomic_bool stop;

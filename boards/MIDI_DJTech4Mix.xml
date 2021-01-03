@@ -4,7 +4,6 @@
 <identifier>
 	<tag name="ID_VENDOR">7603</tag>
 </identifier>
-<exec>true</exec>
 <action>
 	<output type="midi" b0="91" b1="01" b2="FF" delay="500"></output>
 	<output type="midi" b0="91" b1="02" b2="FF" delay="500"></output>
