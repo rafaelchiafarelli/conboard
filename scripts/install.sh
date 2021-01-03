@@ -25,6 +25,9 @@ preconditions(){
 
 
 install_usb_otg(){
+    usb-gadget-stop.sh
+    remove-cdc.sh
+    usb-composite-all.sh
     cp /conboard/LowLevel/assets/usb-otg.service /etc/systemd/system/
     systemctl enable usb-otg.service
     systemctl restart usb-otg.service
