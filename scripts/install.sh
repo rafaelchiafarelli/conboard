@@ -5,7 +5,7 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-set -e
+#set -e
 
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -18,17 +18,19 @@ install_process() {
 }
 
 preconditions(){
-    $SCRIPTS_DIR/../LowLevel/scripts/compiler.sh
-    mkdir -p /conboard
-    cp -r $SCRIPTS_DIR/../ /conboard
+echo "duh"
+#    $SCRIPTS_DIR/../LowLevel/scripts/compiler.sh
+#    mkdir -p /conboard
+#    cp -r $SCRIPTS_DIR/../ /conboard
 }
 
 
 install_usb_otg(){
-    $SCRIPTS_DIR/usb-gadget-stop.sh
-    $SCRIPTS_DIR/remove-cdc.sh
-    $SCRIPTS_DIR/usb-composite-all.sh
+    stop=$($SCRIPTS_DIR/usb-gadget-stop.sh)
+    remove=$($SCRIPTS_DIR/remove-cdc.sh)
+    gadget=$($SCRIPTS_DIR/usb-composite-all.sh)
     cp /conboard/LowLevel/assets/usb-otg.service /etc/systemd/system/
+    systemctl daemon-reload
     systemctl enable usb-otg.service
     systemctl restart usb-otg.service
     systemctl enable serial-getty@ttyGS0
@@ -41,10 +43,10 @@ install_frontend(){
     if [ ! -d venv ]; then
         python3 -m venv venv
         source ./venv/bin/activate
-        pip install --upgrade pip
-        pip install update pip
-        pip install -r /conboard/frontend/assets/requirements.txt
-        pip install wheel numpy scipy matplotlib scikit-image scikit-learn ipython
+        pip3 install --upgrade pip
+        pip3 install update pip
+        pip3 install -r /conboard/frontend/assets/requirements.txt
+        pip3 install wheel numpy scipy matplotlib scikit-image scikit-learn ipython
         deactivate
     fi
     cp /conboard/frontend/assets/frontend.service /etc/systemd/system/
