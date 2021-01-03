@@ -18,7 +18,7 @@ install_process() {
 }
 
 preconditions(){
-    $SCRIPTS_DIR/../LowLevel/scripts/compile.sh
+    $SCRIPTS_DIR/../LowLevel/scripts/compiler.sh
     mkdir -p /conboard
     cp -r $SCRIPTS_DIR/../ /conboard
 }
