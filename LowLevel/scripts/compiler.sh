@@ -35,8 +35,8 @@ build_mouse(){
 	$SCRIPTS_DIR/../Mouse/scripts/build_mouse.sh
 }
 
-build_Keyboard(){
-	$SCRIPTS_DIR/../Keyboard/scripts/build_Keyboard.sh
+build_KeyBoard(){
+	$SCRIPTS_DIR/../KeyBoard/scripts/build_KeyBoard.sh
 }
 
 build_JoyStick(){

@@ -20,7 +20,7 @@ ExecRecipe() {
 }
 
 cmake_run(){
-    cd $SCRIPTS_DIR/../MIDI
+    cd $SCRIPTS_DIR/..
     mkdir -p build
     cd build
 	rm -rf ./*
