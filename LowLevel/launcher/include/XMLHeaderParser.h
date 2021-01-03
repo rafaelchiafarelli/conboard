@@ -23,6 +23,7 @@
 #include <sstream>
 #include "actions.h"
 
+#include "keyParser.hpp"
 class Header{
 public:
 
@@ -39,17 +40,22 @@ class XMLHeaderParser
 		std::string DevOutput;
 
 		devType dType;
-
+		bool ParseOK;
 		rapidxml::xml_document<> xmlDoc;
 		
-		
-		void ProcessHeader(rapidxml::xml_node<> *Header);
+		bool ProcessHeader(rapidxml::xml_node<> *Header);
 
 	public:
+		char *ExecLine = NULL;
+		char **argv;
+		int counter = 0;
+		bool GetParseOK(){return ParseOK;};
+		std::vector<KeyValue> keys;
 		devType GetType(){return dType;};
 		bool loadFile(const char *filename);
 		bool createFile(const char *sourceName, const char *destName);
 		XMLHeaderParser(const char *filename);
+		XMLHeaderParser(const char *fileInfo, const char *folder);
 		~XMLHeaderParser();
 };
 
