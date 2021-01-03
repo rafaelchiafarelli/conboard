@@ -53,6 +53,7 @@ install_python3(){
     sudo make altinstall
     echo "alias python=/usr/local/bin/python3.8" >> ~/.bashrc
     source ~/.bashrc
+    sudo apt install python3-venv python3-pip
     sudo python3.8 -m easy_install pip
     sudo pip3.8 install --upgrade pip
     sudo pip3.8 install update pip
