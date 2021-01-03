@@ -32,9 +32,9 @@
 		<generic name="DEVNAME">/dev/bus/usb/003/035</generic>
 		<generic name="ACTION">add</generic>
 		<generic name="_">/usr/bin/env</generic>
-		<executable name="/home/skiafa/conboard/LowLevel/MIDI/build/conMIDI" params="3">
+		<executable name="/conboard/LowLevel/MIDI/build/conMIDI" params="3">
 			<param name="-p">hw:1,0,0</param>
-			<param name="-x">/home/skiafa/conboard/Arduino_Micro.xml</param>
+			<param name="-x">/conboard/boards/Arduino_Micro.xml</param>
 			<param name="-i">/tmp/named.pipe</param>
 		</executable>
 	</identifier>

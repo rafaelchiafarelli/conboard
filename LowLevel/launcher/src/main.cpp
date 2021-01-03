@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
     return 0;
 }
 /**
- * This function will read all xml files from folder, identify witch of the devices are plugged in. 
- * If a device it is pluged in, this function will launch the specific handler for it.
+ * This function will read all xml files from folder, identify witch of them have executables, 
+ * and launch the specific handler for it, if the device is not connected, the handler must handle it.
  */ 
 
 void read_all(char *devInfo, char *path)
@@ -129,40 +129,35 @@ void read_all(char *devInfo, char *path)
 	vector<dirent> xmlFiles;
     struct dirent *entry;
     DIR *dir = opendir(path);
+	bool hasHandler = false;
     if (dir == NULL) {
 		
         return;
     }
 
     while ((entry = readdir(dir)) != NULL) {
-		if(string(entry->d_name).find_last_of(".xml") != std::string::npos)
+		if(string(entry->d_name).find(".xml") != std::string::npos)
         	xmlFiles.push_back(*entry);
     }
     closedir(dir);
 
-	for(vector<dirent>::iterator f_it = xmlFiles.begin();
-		f_it != xmlFiles.end();
-		f_it++)
+	for(vector<dirent>::iterator files_it = xmlFiles.begin();
+		files_it!=xmlFiles.end();
+		files_it++
+		)
 	{
-		XMLHeaderParser *xmlHeader = new XMLHeaderParser(f_it->d_name); 
-		switch (xmlHeader->GetType())
+		//for all the xml files present
+		char *complete_file_name = new char[strlen(path)+strlen(files_it->d_name)];
+		sprintf(complete_file_name, "%s/%s",path,files_it->d_name);
+		XMLHeaderParser *header = new XMLHeaderParser(complete_file_name);
+		if(header->GetParseOK())
 		{
-		case midi:
-			/* code */
-			break;
-		case keyboard:
-			/* code */
-			break;
-		case mouse:
-			/* code */
-			break;
-		case joystick:
-			/* code */
-			break;
-		default:
-		//no device found, no action mus be taken
-			break;
+			pid_t pid;
+			int status;
+			status = posix_spawn(&pid,header->ExecLine,NULL,NULL,header->argv,environ);
 		}
+		delete header;
+		delete complete_file_name;
 	}
 }
 

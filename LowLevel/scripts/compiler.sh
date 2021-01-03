@@ -15,19 +15,43 @@ set -e
 build() {
 	for SCRIPT in "${RECIPE[@]}"; do
 	  echo "running \"$SCRIPT\""
-	  "${SCRIPTS_DIR}/$SCRIPT"
+	  $SCRIPT
 	done
 }
 
+build_launcher(){
+	$SCRIPTS_DIR/../launcher/scripts/build_launcher.sh
+
+}
+build_common(){
+	$SCRIPTS_DIR/../Common/scripts/build_common.sh
+
+}
+build_MIDI(){
+	$SCRIPTS_DIR/../MIDI/scripts/build_MIDI.sh
+}
+
+build_mouse(){
+	$SCRIPTS_DIR/../Mouse/scripts/build_mouse.sh
+}
+
+build_Keyboard(){
+	$SCRIPTS_DIR/../Keyboard/scripts/build_Keyboard.sh
+}
+
+build_JoyStick(){
+	$SCRIPTS_DIR/../Joystick/scripts/build_JoyStick.sh
+
+}
 
 compile(){
 	RECIPE=(
-			build_launcher.sh
-            build_common.sh
-            build_JoyStick.sh
-            build_KeyBoard.sh
-            build_MIDI.sh
-            build_mouse.sh
+			build_launcher
+            build_common
+            build_JoyStick
+            build_KeyBoard
+            build_MIDI
+            build_mouse
 			)   
 	build
 }
