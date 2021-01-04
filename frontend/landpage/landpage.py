@@ -10,7 +10,49 @@ import glob
 
 
 
-def hello():
+
+def midi():
+    context = {
+
+    }
+    return render_template('midi.html',**context)
+
+
+def keyboard():
+    context = {
+        
+    }
+    return render_template('keyboard.html',**context)
+
+
+def joystick():
+    context = {
+        
+    }    
+    return render_template('joystick.html',**context)
+
+
+def mouse():
+    context = {
+        
+    }    
+    return render_template('mouse.html',**context)
+
+
+def dmx():
+    context = {
+        
+    }    
+    return render_template('dmx.html',**context)
+
+
+def noname():
+    context = {
+        
+    }    
+    return render_template('noname.html',**context)
+
+def landpage():
     #read all the files from /conboard/boards
     #parse the xml into variablest to be parsed into the template
     xml_files = glob.glob("/conboard/boards/*.xml")
@@ -24,7 +66,6 @@ def hello():
     for xml in xml_files:
         xmldoc = minidom.parse(xml)
         device = xmldoc.getElementById('DEVICE')
-        device = xmldoc.get
         if device is not None:
             if 'type' in device:
                 if device['type'] == 'midi':
