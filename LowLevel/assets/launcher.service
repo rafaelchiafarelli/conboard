@@ -1,10 +1,10 @@
 [Unit]
-Description=FrontEnd for the conboard
+Description=launcher to find all xml with assosiated files.
 Documentation=https://github.com/rafaelchiafarelli/conboard
 
 [Service]
 User=root
-Type=oneshot
+Type=oneShot
 Restart=always
 RestartSec=5
 TimeoutStopSec=20
