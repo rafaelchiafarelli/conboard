@@ -168,6 +168,25 @@
               {% endfor %}
             </ul>
           </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-table"></i>
+              <p>
+                Desconhecidos
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a>
+            <ul class="nav nav-treeview">
+              {% for noname in none_types %}
+              <li class="nav-item">
+                <a href="noname/" class="nav-link">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>{{noname}}</p>
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </li>
         </ul>
       </nav>
       <!-- /.sidebar-menu -->
