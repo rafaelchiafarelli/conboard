@@ -8,27 +8,27 @@ app = Flask(__name__)
 def landpage():
     return landpage.landpage()
 
-@app.route("midi/")
+@app.route("/midi/")
 def midi():
     return landpage.midi()
 
-@app.route("keyboard/")
+@app.route("/keyboard/")
 def keyboard():
     return landpage.keyboard()
 
-@app.route("joystick/")
+@app.route("/joystick/")
 def joystick():
     return landpage.joystick()
 
-@app.route("mouse/")
+@app.route("/mouse/")
 def mouse():
     return landpage.mouse()
 
-@app.route("dmx/")
+@app.route("/dmx/")
 def dmx():
     return landpage.dmx()
 
-@app.route("noname/")
+@app.route("/noname/")
 def noname():
     return landpage.noname()
 
