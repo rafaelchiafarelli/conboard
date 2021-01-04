@@ -1,12 +1,12 @@
 from flask import Flask
-from landpage import land, midi, keyboard, joystick, mouse, dmx, noname
+from landpage import landpage
 
 
 app = Flask(__name__)
 
 @app.route('/')
-def landpage():
-    return landpage.land()
+def land():
+    return landpage.landpage()
 
 @app.route("/midi/")
 def midi():
