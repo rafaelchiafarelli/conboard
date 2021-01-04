@@ -20,22 +20,30 @@ def hello():
     dmxs = []
     mice = []
     joysticks = []
+    none_type = []
     for xml in xml_files:
         xmldoc = minidom.parse(xml)
         device = xmldoc.getElementById('DEVICE')
+        device = xmldoc.get
         if device is not None:
             if 'type' in device:
                 if device['type'] == 'midi':
                     midis.append(device)
-                if device['type'] == 'keyboard':
+                elif device['type'] == 'keyboard':
                     keyboards.append(device)
-                    
-                if device['type'] == 'DMX':
+                elif device['type'] == 'DMX':
                     dmxs.append(device)
-                if device['type'] == 'mouse':
+                elif device['type'] == 'mouse':
                     mice.append(device)
-                if device['type'] == 'joystick':
+                elif device['type'] == 'joystick':
                     joysticks.append(device)
-
-    return render_template('index.html')
+                else:
+                    none_type.append(device)
+    context = {
+        'midis':midis,
+        'keyboards':keyboards,
+        'dmxs':dmxs,
+        'joysticks':joysticks
+    }
+    return render_template('index.html',**context)
     #renderizando o template lista e as variáveis desejadas. 
