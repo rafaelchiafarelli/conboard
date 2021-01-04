@@ -52,7 +52,7 @@ def noname():
     }    
     return render_template('noname.html',**context)
 
-def landpage():
+def land():
     #read all the files from /conboard/boards
     #parse the xml into variablest to be parsed into the template
     xml_files = glob.glob("/conboard/boards/*.xml")

@@ -1,12 +1,12 @@
 from flask import Flask
-from landpage import landpage
+import landpage
 
 
 app = Flask(__name__)
 
 @app.route('/')
 def landpage():
-    return landpage.landpage()
+    return landpage.land()
 
 @app.route("/midi/")
 def midi():
