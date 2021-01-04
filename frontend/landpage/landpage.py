@@ -52,7 +52,7 @@ def noname():
     }    
     return render_template('noname.html',**context)
 
-def land():
+def landpage():
     #read all the files from /conboard/boards
     #parse the xml into variablest to be parsed into the template
     xml_files = glob.glob("/conboard/boards/*.xml")
@@ -86,5 +86,5 @@ def land():
         'dmxs':dmxs,
         'joysticks':joysticks
     }
-    return render_template('index.html',**context)
+    return render_template('landpage.html',**context)
     #renderizando o template lista e as variáveis desejadas. 
