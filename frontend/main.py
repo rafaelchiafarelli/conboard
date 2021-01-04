@@ -1,5 +1,5 @@
 from flask import Flask
-import landpage
+from landpage import land, midi, keyboard, joystick, mouse, dmx, noname
 
 
 app = Flask(__name__)
