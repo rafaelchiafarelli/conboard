@@ -21,9 +21,15 @@ build() {
 
 preconditions(){
     sudo apt update
-    sudo apt install udev udevil gitk libusb-dev
+    sudo apt install udev udevil gitk libusb-dev python-dev 
 }
 
+install_db(){
+    sudo apt install postgresql
+    sudo apt install postgresql-server-dev-all postgresql-all
+    sudo pip3.8 install psycopg2
+
+}
 install_gcc() {
     sudo apt install -y libc6-armel-cross libc6-dev-armel-cross binutils-arm-linux-gnueabihf libncurses5-dev build-essential bison flex libssl-dev bc
     sudo apt install -y gcc g++ cmake x11-common x11-utils libx11-dev
@@ -72,6 +78,7 @@ compile(){
             install_gcc
             install_alsa
             install_python3
+            install_db
             compile_all
 			)   
 	build

@@ -1,0 +1,220 @@
+{
+    "DEVICE":[ 
+            {"timeout":0}, 
+            {"type":"midi"}, 
+            {"name":"Arduino Micro"}, 
+            {"input":"Arduino Micro"}, 
+            {"output":"Arduino Micro"}
+           ],
+    "header":{
+            "identifier":
+                {
+                "generics":{
+                    "REALTEK_NIC_MODE":1,
+                    "PWD":"/",
+                    "DEVPATH":"/devices/platform/soc/1c1b00.usb/usb3/3-1/3-1.1",
+                    "USEC_INITIALIZED":79890646819,
+                    "SUBSYSTEM":"usb",
+                    "BUSNUM":"03",
+                    "DEVNAME":"/dev/bus/usb/03/035",
+                    "ACTION":"add",
+                    "_":"/usr/bin/env"
+                    },
+                "tags":{
+                    "ID_MODEL":"Arduino_Micro",
+                    "ID_REVISION":"010",
+                    "ID_SERIAL":"Arduino_LLC_Arduino_Micro_MIDI",
+                    "ID_BUS":"usb",
+                    "TYPE":"0/0/0",
+                    "SEQNUM":5534,
+                    "ID_MODEL_ID":8037,
+                    "ID_VENDOR_ENC":"Arduino\\x20LLC",
+                    "ID_VENDOR_ID":2341,
+                    "DEVNUM":"035",
+                    "ID_USB_INTERFACES":"02020:0a00:01010:01030:",
+                    "MINOR":290,
+                    "ID_VENDOR_FROM_DATABASE":"Arduino SA",
+                    "ID_SERIAL_SHORT":"MIDI",
+                    "ID_MODEL_ENC":"Arduino\\x20Micro",
+                    "PRODUCT":"2341/8037/10",
+                    "SHLVL":1,
+                    "DRIVER":"usb",
+                    "DEVTYPE":"usb_device",
+                    "ID_VENDOR":"Arduino_LLC",
+                    "MAJOR":189
+                },
+                "executable":{ 
+                    "exec": "/conboard/LowLevel/MIDI/build/conMIDI", 
+                    "count":"3",
+                    "params":{
+                        "-p":"hw:1,0,0",
+                        "-x":"/conboard/boards/Arduino_Micro.xml",
+                        "-i":"/tmp/named.pipe"
+                        }
+                    }
+                },
+            "actions":
+                [
+                    {"type":"midi","b0":145,"b1":1,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":2,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":3,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":3,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":4,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":5,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":6,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":7,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":9,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":10,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":11,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":12,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":13,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":14,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":15,"b2":255,"delay":50}
+                ]
+        }
+    ,
+    "body":
+        {"mode":
+        [
+            {"id":0},
+            {"active":true},
+            {"mode_header":
+                {"action":
+                    [
+                    {"type":"midi","b0":145,"b1":10,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":11,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":12,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":13,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":14,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":15,"b2":255,"delay":50}
+                    ]
+                }},
+            {"actions":
+            [
+                [{
+                "input":{
+                        "type":"midi", 
+                        "b0":145,
+                        "b1":10,
+                        "b2":0,
+                        "delay":50
+                        }},
+                {"output":[
+                        { "type":"midi", "b0":145, "b1":2, "b2":127 },
+                        { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                        ]
+                }
+                ],
+                [{
+                "input":{
+                        "type":"midi", 
+                        "b0":145,
+                        "b1":10,
+                        "b2":127,
+                        "delay":50
+                        }},
+                {"output":[
+                        { "type":"midi", "b0":145, "b1":2, "b2":127 },
+                        { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                        ]
+                }
+                ],
+                [{
+                "input":{
+                        "type":"midi", 
+                        "b0":145,
+                        "b1":9,
+                        "b2":127,
+                        "delay":50
+                        }},
+                {"output":[
+                        { "type":"midi", "b0":145, "b1":2, "b2":127 },
+                        { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                        ]
+                }
+                ]
+            ]
+            },
+            [
+            {"id":1},
+            {"active":false},
+            {"mode_header":
+                {"action":
+                    [
+                    {"type":"midi","b0":145,"b1":10,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":11,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":12,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":13,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":14,"b2":255,"delay":50},
+                    {"type":"midi","b0":145,"b1":15,"b2":255,"delay":50}
+                    ]
+                }},
+            {"actions":
+            [
+                [
+                {"input":{
+                        "type":"midi",
+                        "b0":145,
+                        "b1":10,
+                        "b2":255,
+                        "delay":50
+                        }},
+                {"output":[
+                        { "type":"midi", "b0":145, "b1":2, "b2":127 },
+                        { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                        ]
+                }
+                ],
+                [
+                {"input":{
+                        "type":"midi", 
+                        "b0":145,
+                        "b1":10,
+                        "b2":0,
+                        "delay":50
+                        }},
+                {"output":[
+                        { "type":"midi", "b0":145, "b1":2, "b2":127 },
+                        { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                        ]
+                }
+                ],
+                [
+                {"input":{
+                        "type":"midi", 
+                        "b0":145,
+                        "b1":9,
+                        "b2":255,
+                        "delay":50
+                        }},
+                {"output":[
+                        { "type":"midi", "b0":145, "b1":2, "b2":127 },
+                        { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
+                        { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                        ]
+                }
+                ]
+            ]
+            }
+            ]
+        ]
+        }
+    }
+    

@@ -1,36 +1,43 @@
 from flask import Flask
-from landpage import landpage
+import landpage.settings as settings
+from landpage.landpage import landPage, midiPage, keyboardPage, joystickPage, mousePage, dmxPage, nonamePage
+
+STATIC_URL_PATH = '/home/rafa/conboard/frontend/static' # Where the css is stored
+STATIC_FOLDER = 'home/rafa/conboard/frontend/static'
+
+app = Flask(__name__, static_folder=STATIC_FOLDER,
+            static_url_path=STATIC_URL_PATH)
 
 
-app = Flask(__name__)
+
 
 @app.route('/')
 def land():
-    return landpage.landpage()
+    return landPage()
 
-@app.route("/midi/")
-def midi():
-    return landpage.midi()
+@app.route("/midi/<string:name>/<string:file>")
+def midi(name, file):
+    return midiPage(name = name, filename=file)
 
-@app.route("/keyboard/")
-def keyboard():
-    return landpage.keyboard()
+@app.route("/keyboard/<string:name>/<string:file>")
+def keyboard(name,file):
+    return keyboardPage()
 
-@app.route("/joystick/")
-def joystick():
-    return landpage.joystick()
+@app.route("/joystick/<string:name>/<string:file>")
+def joystick(name,file):
+    return joystickPage(name=name, filename=file)
 
-@app.route("/mouse/")
-def mouse():
-    return landpage.mouse()
+@app.route("/mouse/<string:name>/<string:file>")
+def mouse(name,file):
+    return mousePage(name=name, filename=file)
 
-@app.route("/dmx/")
-def dmx():
-    return landpage.dmx()
+@app.route("/dmx/<string:name>/<string:file>")
+def dmx(name,file):
+    return dmxPage(name=name, filename=file)
 
-@app.route("/noname/")
-def noname():
-    return landpage.noname()
+@app.route("/noname/<string:file>")
+def noname(file):
+    return nonamePage(filename = file)
 
 if __name__ == '__main__':
     app.run()
