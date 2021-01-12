@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <DEVICE name="" input="" output="" type="">
-	<header test="someCooltest"/>
+<header test="someCooltest">
 	<identifier>
 		<generic name="REALTEK_NIC_MODE">1</generic>
 		<tag name="ID_MODEL">Arduino_Micro</tag>
@@ -33,5 +33,6 @@
 		<generic name="ACTION">add</generic>
 		<generic name="_">/usr/bin/env</generic>
 	</identifier>
+</header>
 </DEVICE>
 
