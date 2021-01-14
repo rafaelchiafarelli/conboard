@@ -54,7 +54,6 @@ MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(),
     stop = false;
     send = false;
     int err = 0;
-    
 	if ((err = snd_rawmidi_open(&input, &output, port_name, SND_RAWMIDI_NONBLOCK)) < 0) {
 		std::cout<<"device not found, no thread will be started. err: "<<err<<std::endl;
         in_thread = NULL;
@@ -63,6 +62,7 @@ MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(),
     else
     {
         SelectedMode = 0;
+        cout<<"number of modes:"<<modes.size()<<endl;
         for(std::vector<ModeType>::iterator m_it = modes.begin();
             m_it != modes.end();
             m_it++)
@@ -70,6 +70,7 @@ MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(),
             if(m_it->is_active)
             {
                 CurrentMode = *m_it;
+                cout<<"got one Active!: "<<SelectedMode<<endl;
                 break;
             }
             SelectedMode++;
