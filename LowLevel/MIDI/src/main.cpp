@@ -35,7 +35,7 @@ using namespace std;
  *  kill threads of devices that are no longer connected.
  *  
  *  setup
- *  The system will read the config file and evaluate the existence of the folders xml folders (/conboard/xml)
+ *  The system will read the config file and evaluate the existence of the folders json folders (/conboard/json)
  *  the config file also contains:
  *   - the timeout information
  *   - the connection with the external world (keyboard and mouse that will launch events to the PC)
@@ -45,18 +45,17 @@ using namespace std;
  *  start of a thread (dispatcher)
  *  when a device is connected, an event will be called. this event will read information from the device (
  *  such as type, file descriptors, name, input, output, etc) then, this event code, will enqueue a new dispatch
- *  order. The starter will read this information and capture the xmlfile assossiated with the device. 
+ *  order. The starter will read this information and capture the jsonfile assossiated with the device. 
  *  start a thread of the type of the device inserted with the 
  *  information available.
  *      information required:
  *  - Human Readable name for input and output;
  *  - type (midi, keyboard, mouse or joystick)
- *  - xmlfile and xsdfile
  *  
  *  end of a thread (dispatcher)
- *  When a xmlfile changes, or a device is removed, this module mus handle the death of the thread.
+ *  When a jsonfile changes, or a device is removed, this module mus handle the death of the thread.
  *  First it will send the kill command to the thread than it will "join" with the thread. 
- *  If the event if just a change in the xml, a new thread will be launched, however, if it is a device disconnected
+ *  If the event if just a change in the json, a new thread will be launched, however, if it is a device disconnected
  *  then just kill the thread.
  *  
  *  
@@ -197,20 +196,20 @@ int main(int argc, char *argv[])
 	static const struct option long_options[] = {
 		{"ID", 1, NULL, 'i'},
 		{"port", 1, NULL, 'p'},
-		{"xml", 1, NULL, 'x'},
+		{"json", 1, NULL, 'x'},
 		{ }
 	};
     
 	if(argc < 4)
 	{
-		cout<<"error, must specifi port and xml. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.xml\""<<endl;
+		cout<<"error, must specifi port and json. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.json\""<<endl;
 		return -1;
 	}
     char p_name[256];
 	memset(p_name,256,0);
 	char fifoFile[256];
 	memset(fifoFile,0,256);
-    string xmlFileName;
+    string jsonFileName;
 	int c;
 	while ((c = getopt_long(argc, 
 							argv, 
@@ -222,7 +221,7 @@ int main(int argc, char *argv[])
 			strcpy(p_name,optarg);
 			break;
 		case 'x':
-			xmlFileName = string(optarg);
+			jsonFileName = string(optarg);
 			break;
 		case 'i':
 			sprintf(fifoFile, "%s",optarg);
@@ -234,7 +233,7 @@ int main(int argc, char *argv[])
 	}
     cout<<"device list"<<endl;
     device_list();
-	cout<<xmlFileName<<endl;
+	cout<<jsonFileName<<endl;
 	if(!hw_ports.empty())
 	{
 		for(vector<raw_midi>::iterator it = hw_ports.begin();
@@ -270,7 +269,7 @@ int main(int argc, char *argv[])
 			cout<<"error opening named pipe (fifo)"<<endl;
 			return -1;
 		}
-		devMIDI = new MIDI(p_name, xmlFileName, (char *)"dsfasdfa");
+		devMIDI = new MIDI(p_name, jsonFileName, (char *)"dsfasdfa");
 
 		char cmd[256];
 		signal(SIGINT, sig_handler);

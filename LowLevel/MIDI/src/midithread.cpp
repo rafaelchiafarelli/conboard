@@ -46,7 +46,7 @@ MIDI::~MIDI(){
         delete out_thread;
 }
 
-MIDI::MIDI(char *p_name, string xmlFileName, char *devName ):modes(), header(), xml(xmlFileName.c_str(),&modes,&header),oActions()
+MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(), json(jsonFileName.c_str(),&modes,&header),oActions()
 {
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
@@ -193,7 +193,7 @@ void MIDI::out_func()
 /**
  * 
  * This is the thread that will read the input's from user and queue the outputs
- *      Start by connecting to the device and sending information present at the header section of the XML file.
+ *      Start by connecting to the device and sending information present at the header section of the json file.
  * 
  * 
  */ 
@@ -293,7 +293,7 @@ while(!oQueue.empty())
 
 header.clear();
 modes.clear();
-xml.Clear();
+json.Clear();
 
 }
 

@@ -46,12 +46,12 @@ build_JoyStick(){
 
 compile(){
 	RECIPE=(
-			build_launcher
             build_common
             build_JoyStick
             build_KeyBoard
             build_MIDI
             build_mouse
+			build_launcher
 			)   
 	build
 }

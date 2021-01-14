@@ -7,9 +7,8 @@
 
 class KeyValue{
     public:
-        std::string key;
-        std::string value;
-    
+        std::string key = "";
+        std::string value = "";
 };
 
 class keyParser
@@ -19,4 +18,5 @@ class keyParser
     public:
         keyParser(const char *fileName, char token);
         std::vector<KeyValue> GetParsed(){return parsed;};
+
 };

@@ -8,130 +8,140 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
-
-#include "JsonMIDIParser.h"
+#include "jsonParser.h"
 
 using namespace rapidjson;
 
-JsonMIDIParser::JsonMIDIParser(const char *_FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
+
+jsonParser::jsonParser(const char *_FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
 	
 	header_actions = h;
 	modes = Mode;
 	loaded = false;
 	FileName = _FileName;
-	
-	Reload();
-	
+	Reload();	
 	
 }
 
-void JsonMIDIParser::Reload(){
+void jsonParser::Reload(){
 	if(loaded == false)
 	{
 		if (loadFile(FileName.c_str())) 
 		{
-	
+			
 			if (Doc.HasMember("DEVICE"))
 			{
+				
 				loaded = Initializer();
 			}
 		}
 	}
 }
 
-JsonMIDIParser::~JsonMIDIParser()
+jsonParser::~jsonParser()
 {
 
 }
 
-void JsonMIDIParser::ProcessMainBody(rapidjson::Value &body)
+void jsonParser::ProcessMainBody(rapidjson::Value &body)
 {
 	if(body.HasMember("modes"))
 	{
-		if(body["modes"].IsArray())
+		rapidjson:Value& modes = body["modes"];
+		if(modes.IsArray())
 		{
 			for(SizeType i = 0;
-			i<body.Size();
-			i++)
+				i<modes.Size();
+				i++)
 			{
 				ModeType mode;
-				rapidjson::Value& jMode = body[i];
+				rapidjson::Value& jMode = modes[i];
+				mode.index = -1;
 				if(jMode.HasMember("id"))
 				{
-					mode.index = jMode["id"].GetInt();
+					if(jMode["id"].IsString())
+						mode.index = jMode["id"].GetInt();
 				}
-				else
-				{
-					mode.index = -1;
-				}
+				//std::cout<<"id done"<<std::endl;
+
+				mode.is_active = false;
 				if(jMode.HasMember("active"))
 				{
-					mode.is_active = jMode["active"].GetBool();
+					if(jMode["active"].IsBool())
+						mode.is_active = jMode["active"].GetBool();
 				}
-				else
-				{
-					mode.is_active = false;
-				}
+				//std::cout<<"active done"<<std::endl;
+
 				if(jMode.HasMember("mode_header"))
 				{
 					rapidjson::Value& mode_header = jMode["mode_header"];
 					if(mode_header.HasMember("actions"))
 					{
 						rapidjson::Value& actions = mode_header["actions"];
-						Actions mhActions;
-						for(SizeType t=0;
-						t<actions.Size();
-						t++)
+						if(actions.IsArray())
 						{
-							rapidjson::Value& act = actions[t];
-							devActions dAct = parseIO(act);
-							mhActions.out.push_back(dAct);
+							Actions mhActions;
+							for(SizeType t=0;
+								t<actions.Size();
+								t++)
+							{
+								rapidjson::Value& act = actions[t];
+								devActions dAct = parseIO(act);
+								mhActions.out.push_back(dAct);
+							}
+							mode.header.push_back(mhActions);
 						}
-						mode.header.push_back(mhActions);
 					}
 				}
+				//std::cout<<"mode_header done"<<std::endl;
 				if(jMode.HasMember("actions"))
 				{
 					rapidjson::Value& bActions = jMode["actions"];
-					for(SizeType t = 0;
-					t<bActions.Size();
-					t++)
+					if(bActions.IsArray())
 					{
-						Actions mActions;
-						rapidjson::Value& Act = bActions[t];
-						if(Act.HasMember("input"))
+						for(SizeType t = 0;
+							t<bActions.Size();
+							t++)
 						{
-							mActions.in = parseIO(Act["input"]);
-						}
-						if(Act.HasMember("output"))
-						{
-							devActions dAct;
-							rapidjson::Value& out = Act["output"];
-							for(SizeType j = 0;
-							j < Act.Size();
-							j++)
+							Actions mActions;
+							rapidjson::Value& Act = bActions[t];
+							if(Act.HasMember("input"))
 							{
-								dAct = parseIO(out[j]);
-								mActions.out.push_back(dAct);
+								mActions.in = parseIO(Act["input"]);
 							}
+							if(Act.HasMember("output"))
+							{
+								devActions dAct;
+								rapidjson::Value& out = Act["output"];
+								if(out.IsArray())
+								{
+									for(SizeType j = 0;
+										j < out.Size();
+										j++)
+									{
+										dAct = parseIO(out[j]);
+										mActions.out.push_back(dAct);
+									}
+								}
+							}
+							mode.body_actions.push_back(mActions);
 						}
-						mode.body_actions.push_back(mActions);
 					}
 				}
+				//std::cout<<"actions done"<<std::endl;
 			}
 		}
 	}
 }
 
-devActions JsonMIDIParser::parseIO(rapidjson::Value& act)
+devActions jsonParser::parseIO(rapidjson::Value& act)
 {
-	
 	devActions ret;
-	
-
 	if(act.HasMember("type"))
 	{
-		std::string tp(act["type"].GetString());
+		std::string tp = "";
+		if(act["type"].IsString())
+			tp = (act["type"].GetString());		
 		ret.tp = GetDevType(tp);
 	}
 	switch(ret.tp)
@@ -248,7 +258,7 @@ devActions JsonMIDIParser::parseIO(rapidjson::Value& act)
 				{
 					ret.kData.type = keyType::hotkey;
 				}
-				if(keyType.compare("text"))
+				else if(keyType.compare("text"))
 				{
 					ret.kData.type = keyType::text;
 				}
@@ -262,7 +272,7 @@ devActions JsonMIDIParser::parseIO(rapidjson::Value& act)
 				{
 					ret.kData.hold = holdType::hold;
 				}
-				if(Hold.compare("hold_delay"))
+				else if(Hold.compare("hold_delay"))
 				{
 					ret.kData.hold = holdType::hold_delay;
 				}
@@ -300,26 +310,98 @@ devActions JsonMIDIParser::parseIO(rapidjson::Value& act)
 		case devType::notype:
 		break;
 	}
-	
-
 	return ret;
 }
 
-void JsonMIDIParser::ProcessHeader(rapidjson::Value& header)
+void jsonParser::ProcessHeader(rapidjson::Value& header)
 {
+	if(header.HasMember("identifier"))
+	{
+		rapidjson::Value& identifier = header["identifier"];
+		if(identifier.HasMember("generics"))
+		{
+			rapidjson::Value& generics = identifier["generics"];
+			if(generics.IsArray())
+			{
+				for (Value::ConstMemberIterator iter = generics.MemberBegin(); iter != generics.MemberEnd(); ++iter)
+				{
+					KeyValue kv;
+					
+					kv.key = iter->name.GetString();
+					kv.value = iter->value.GetString();
+					Generics.push_back(kv);
+				}
+			}
+		}
+		//std::cout<<"generics done"<<std::endl;
+		if(identifier.HasMember("tags"))
+		{
+			rapidjson::Value& tags = identifier["tags"];
+			if(tags.IsArray())
+			{
+				for (Value::ConstMemberIterator iter = tags.MemberBegin(); iter != tags.MemberEnd(); ++iter)
+				{
+					KeyValue kv;
+					kv.key = iter->name.GetString();
+					kv.value = iter->value.GetString();
+					Tags.push_back(kv);
+				}
+			}
+		}
+		//std::cout<<"tags done"<<std::endl;
+		if(identifier.HasMember("executable"))
+		{
+			rapidjson::Value& executable = identifier["executable"];
+			if(executable.HasMember("exec"))
+			{
+				Ex.exec = "";
+				if(executable["exec"].IsString())
+					Ex.exec = executable["exec"].GetString();
+			}
+			//std::cout<<"exec done"<<std::endl;
+			if(executable.HasMember("count"))
+			{
+				Ex.param_count = 0;
+				if(executable["count"].IsInt())
+					Ex.param_count= executable["count"].GetInt();
+			}
+			//std::cout<<"count done"<<std::endl;
+			if(executable.HasMember("params"))
+			{
+				rapidjson::Value& params = executable["params"];
+				if(params.IsArray()){
+					for (Value::ConstMemberIterator iter = params.MemberBegin(); iter != params.MemberEnd(); ++iter)
+					{
+						KeyValue kv;
+						if(iter->name.IsString())
+							kv.key = iter->name.GetString();
+						if(iter->value.IsString())
+							kv.value = iter->value.GetString();
+						Ex.params.push_back(kv);
+					}
+				}
+			}
+			//std::cout<<"params done"<<std::endl;
+		}
+		//std::cout<<"executables done"<<std::endl;
+	}
 	if(header.HasMember("actions"))
 	{
 		Actions action;
 		rapidjson::Value& actions = header["actions"];
-		for(SizeType t; t<actions.Size();t++)
+		if(actions.IsArray())
 		{
-			action.out.push_back(parseIO(actions[t]));
+			for(SizeType t; t<actions.Size();t++)
+			{
+				action.out.push_back(parseIO(actions[t]));
+			}
 		}
 		header_actions->push_back(action);
 	}
+	//std::cout<<"actions done"<<std::endl;
 }
 
-devType JsonMIDIParser::GetDevType(std::string dType)
+devType jsonParser::GetDevType(std::string dType)
 {
 	devType ltype = devType::notype;
 	if(dType.compare("midi"))
@@ -335,29 +417,41 @@ devType JsonMIDIParser::GetDevType(std::string dType)
 	return ltype;
 }
 
-bool JsonMIDIParser::Initializer()
+bool jsonParser::Initializer()
 {
 	
 	bool ret = false;
-
+		
 	if(Doc.HasMember("DEVICE"))
 	{
+		//std::cout<<"here"<<std::endl;
 		rapidjson::Value& Device = Doc["DEVICE"];
 
 		if (Device.HasMember("type"))
 		{
-			std::string dType = Device["type"].GetString();
-
+			if(Device["type"].IsString())
+			{
+				std::string dType = Device["type"].GetString();
+				type = GetDevType(dType);
+			}
+			else
+			{
+				type = devType::notype;
+			}
 		}
 		else
 		{
 			type = devType::notype;
 		}
+
 		if (Device.HasMember("timeout"))
 		{
 			if(Device["timeout"].IsInt())
 				timeout = (unsigned int ) Device["timeout"].GetInt();
-			//timeout = (unsigned int) atoi(Device->first_attribute("timeout", 7, true)->value());
+			else
+			{
+				timeout = 0;
+			}
 		}
 		else
 		{
@@ -366,54 +460,66 @@ bool JsonMIDIParser::Initializer()
 
 		if (Device.HasMember("name"))
 		{
-			JsonMIDIParser::DevName = Device["name"].GetString();
+			if(Device["name"].IsString())
+				jsonParser::DevName = Device["name"].GetString();
+			else
+				jsonParser::DevName = "";
 		}
 		else
 		{
-			JsonMIDIParser::DevName = "";
+			jsonParser::DevName = "";
 		}
 		
 		if (Device.HasMember("input"))
 		{
-			JsonMIDIParser::DevInput = Device["input"].GetString();
+			if(Device["input"].IsString())
+				jsonParser::DevInput = Device["input"].GetString();
+			else
+				jsonParser::DevInput = "";
 		}
 		else
 		{
-			JsonMIDIParser::DevInput = "";
+			jsonParser::DevInput = "";
 		}   
 		
 		if (Device.HasMember("output"))
 		{
-			JsonMIDIParser::DevOutput = Device["output"].GetString();
+			if(Device["output"].IsString())
+				jsonParser::DevOutput = Device["output"].GetString();
+			else
+				jsonParser::DevOutput = "";
 		}
 		else
 		{
-			JsonMIDIParser::DevOutput = "";
+			jsonParser::DevOutput = "";
 		}
 	ret = true;
 	}
+	//std::cout<<"device done"<<std::endl;
 	if(Doc.HasMember("header"))
 	{
+
 		rapidjson::Value& header = Doc["header"];
 		ProcessHeader(header);
+		//std::cout<<"header done"<<std::endl;
 	}
 	if(Doc.HasMember("body"))
 	{
 		rapidjson::Value& body = Doc["body"];
 		ProcessMainBody(body);
+		//std::cout<<"body done"<<std::endl;
 	}
-	
-
 	return ret;
 }
 
-bool JsonMIDIParser::loadFile(const char *filename) {
-	
-	JsonMIDIParser::filename = std::string(filename);
-	std::ifstream file(filename);
+bool jsonParser::loadFile(const char *filename)
+{
+	jsonParser::FileName = std::string(filename);
+	std::ifstream file(FileName);
 	data<<file.rdbuf();
 	ParseResult res = Doc.Parse(data.str());
-	return res.IsError();
+	//std::cout<<"oia:"<<res.IsError()<<std::endl;
+	return (res.IsError())? false:true;
 }
 
 

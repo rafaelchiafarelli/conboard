@@ -21,7 +21,7 @@
 using namespace std;
 
 void read_all(char *devInfo, char *path);
-void create_xml(char *devInfo, char *folder);
+void create_json(char *devInfo, char *folder);
 void clear(char *folder);
 
 atomic_bool stop;
