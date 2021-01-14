@@ -97,13 +97,11 @@
                     {
                     "input":{
                             "type":"midi", 
-                            "b0":145,
-                            "b1":10,
-                            "b2":0,
-                            "delay":50
+                            "b0":144,
+                            "b1":1,
+                            "b2":64                            
                             },
                     "output":[
-                            { "type":"midi", "b0":145, "b1":2, "b2":127 },
                             { "type":"keyboard" , "data":"letter_r" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
                             { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
                             { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},

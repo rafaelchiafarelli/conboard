@@ -60,6 +60,7 @@ class MIDI : private oActions{
 
         std::vector<Actions> header;
         std::vector<ModeType> modes;
+        ModeType CurrentMode;
         jsonParser json;
 
         unsigned int SelectedMode;

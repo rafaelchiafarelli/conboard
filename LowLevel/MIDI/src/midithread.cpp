@@ -63,6 +63,17 @@ MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(),
     else
     {
         SelectedMode = 0;
+        for(std::vector<ModeType>::iterator m_it = modes.begin();
+            m_it != modes.end();
+            m_it++)
+        {
+            if(m_it->is_active)
+            {
+                CurrentMode = *m_it;
+                break;
+            }
+            SelectedMode++;
+        }
         in_thread = new thread(&MIDI::in_func,this);
         out_thread = new thread(&MIDI::out_func,this);
     }
@@ -125,11 +136,10 @@ void MIDI::processInput(midiSignal midiS)
     l_mode.index = SelectedMode;
     l_action.in.mAct.midi = midiS;
 
-    std::vector<ModeType>::iterator it_mode =modes.begin();
-    
-    if(it_mode != modes.end())
+
+    if(CurrentMode.is_active)
     {
-        for( std::vector<Actions>::iterator it_act = it_mode->body_actions.begin(); it_act != it_mode->body_actions.end(); it_act++)
+        for( std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin(); it_act != CurrentMode.body_actions.end(); it_act++)
         {
             if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
                (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
