@@ -20,7 +20,7 @@
 
 #include "stdio.h"
 #include "actions.h"
-#include "XMLMIDIParser.h"
+#include "jsonParser.h"
 
 #include <alsa/asoundlib.h>
 #include <thread>
@@ -52,7 +52,6 @@ class MIDI : private oActions{
         std::string outFileName;
         ofstream outFileStream;
 
-
         atomic_bool send;
         atomic_bool stop;
         int timeout;
@@ -61,14 +60,13 @@ class MIDI : private oActions{
 
         std::vector<Actions> header;
         std::vector<ModeType> modes;
-        XMLMIDIParser xml;
+        jsonParser json;
 
         unsigned int SelectedMode;
 
         snd_rawmidi_t *input;
         snd_rawmidi_t *output;
         char port_name[PORT_NAME_SIZE];
-        
         
         void execHeader();
         void parse();
@@ -78,6 +76,7 @@ class MIDI : private oActions{
         void send_joystick(){};
 
     public:
+    
         void Stop();
         void Reload();
         void outStop();

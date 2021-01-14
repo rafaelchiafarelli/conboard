@@ -10,10 +10,10 @@
             "identifier":
                 {
                 "generics":{
-                    "REALTEK_NIC_MODE":1,
+                    "REALTEK_NIC_MODE":"1",
                     "PWD":"/",
                     "DEVPATH":"/devices/platform/soc/1c1b00.usb/usb3/3-1/3-1.1",
-                    "USEC_INITIALIZED":79890646819,
+                    "USEC_INITIALIZED":"79890646819",
                     "SUBSYSTEM":"usb",
                     "BUSNUM":"03",
                     "DEVNAME":"/dev/bus/usb/03/035",
@@ -26,25 +26,25 @@
                     "ID_SERIAL":"Arduino_LLC_Arduino_Micro_MIDI",
                     "ID_BUS":"usb",
                     "TYPE":"0/0/0",
-                    "SEQNUM":5534,
-                    "ID_MODEL_ID":8037,
+                    "SEQNUM":"5534",
+                    "ID_MODEL_ID":"8037",
                     "ID_VENDOR_ENC":"Arduino\\x20LLC",
-                    "ID_VENDOR_ID":2341,
+                    "ID_VENDOR_ID":"2341",
                     "DEVNUM":"035",
                     "ID_USB_INTERFACES":"02020:0a00:01010:01030:",
-                    "MINOR":290,
+                    "MINOR":"290",
                     "ID_VENDOR_FROM_DATABASE":"Arduino SA",
                     "ID_SERIAL_SHORT":"MIDI",
                     "ID_MODEL_ENC":"Arduino\\x20Micro",
                     "PRODUCT":"2341/8037/10",
-                    "SHLVL":1,
+                    "SHLVL":"1",
                     "DRIVER":"usb",
                     "DEVTYPE":"usb_device",
                     "ID_VENDOR":"Arduino_LLC",
-                    "MAJOR":189
+                    "MAJOR":"189"
                 },
                 "executable":{ 
-                    "exec": "/conboard/LowLevel/MIDI/build/conMIDI", 
+                    "exec": "/conboard/LowLevel/MIDI/build/conMouse", 
                     "count":"3",
                     "params":{
                         "-p":"hw:1,0,0",

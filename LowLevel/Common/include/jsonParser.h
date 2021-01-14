@@ -14,11 +14,13 @@
 #include "list"
 #include <cstddef>
 #include <cassert>
+#include <sstream>
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 
+#include "keyParser.hpp"
 
 #include "actions.h"
 
@@ -37,20 +39,27 @@ public:
 	bool operator > ( const ModeType &rhs) const {return index>rhs.index;}
 };
 
-class JsonMIDIParser
+class Executable{
+	public:
+		std::string exec;
+		int param_count;
+		std::vector<KeyValue> params;
+};
+
+
+class jsonParser
 {
 	private:
 		bool loaded;
-		std::string FileName;
-		std::string DevName;
-		std::string DevInput;
-		std::string DevOutput;
 		
+		std::vector<KeyValue> Tags;
+		std::vector<KeyValue> Generics;
+		
+
 		std::vector<Actions> *header_actions;
 		std::vector<ModeType> *modes;
 		
 		//loading and parsing
-		std::string filename;
 		std::stringstream data;
 		rapidjson::Document Doc;
 
@@ -65,14 +74,21 @@ class JsonMIDIParser
 		void ProcessMainBody(rapidjson::Value &body);
 		devType GetDevType(std::string dType);
 	public:
+		Executable Ex;
+		std::string FileName;
+		std::string DevName;
+		std::string DevInput;
+		std::string DevOutput;
 		void Clear(){
-		
 			loaded = false;
 		}
 		void Reload();
+		
 		devType GetType(){return type;};
 		unsigned int GetTimeOut(){return timeout;};
-		JsonMIDIParser(const char *filename,std::vector<ModeType> *Mode,std::vector<Actions> *h);
-		~JsonMIDIParser();
+		bool GetLoaded(){return loaded;};
+		std::vector<KeyValue> GetTags(){return Tags;};
+		jsonParser(const char *filename, std::vector<ModeType> *Mode,std::vector<Actions> *h);
+		~jsonParser();
 };
 
