@@ -136,11 +136,14 @@ void MIDI::processInput(midiSignal midiS)
     l_mode.index = SelectedMode;
     l_action.in.mAct.midi = midiS;
 
-
+    cout<<"Currentmode active:"<<CurrentMode.is_active<<endl;
     if(CurrentMode.is_active)
     {
         for( std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin(); it_act != CurrentMode.body_actions.end(); it_act++)
         {
+            midiActions tmp;
+            tmp.midi = midiS;
+            cout<<"Is:"<<tmp<<" equal to:"<<it_act->in.mAct<<endl;
             if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
                (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
                (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
