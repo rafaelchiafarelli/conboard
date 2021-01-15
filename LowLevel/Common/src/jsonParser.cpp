@@ -266,11 +266,11 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 				if(act.IsString())
 					keyType = act["keyType"].GetString();
 
-				if(keyType.compare("hotKey"))
+				if(!keyType.compare("hotKey"))
 				{
 					ret.kData.type = keyType::hotkey;
 				}
-				else if(keyType.compare("text"))
+				else if(!keyType.compare("text"))
 				{
 					ret.kData.type = keyType::text;
 				}
@@ -283,11 +283,11 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 				if(act["hold"].IsString())
 					Hold = act["hold"].GetString();
 
-				if(Hold.compare("hold"))
+				if(!Hold.compare("hold"))
 				{
 					ret.kData.hold = holdType::hold;
 				}
-				else if(Hold.compare("hold_delay"))
+				else if(!Hold.compare("hold_delay"))
 				{
 					ret.kData.hold = holdType::hold_delay;
 				}
