@@ -149,9 +149,10 @@ void MIDI::processInput(midiSignal midiS)
                (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
                (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
             {
-
+                cout<<"yes! it is!"<<endl;
                 oQueue.push(it_act->out);
                 send = true;
+                break;
             }
 
         }
