@@ -250,7 +250,8 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 		{
 			if(act.HasMember("data"))
 			{
-				ret.kData.data = act["data"].GetString();
+				if(act["data"].IsString())
+					ret.kData.data = act["data"].GetString();
 			}
 			else
 			{
@@ -260,7 +261,9 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 			ret.kData.type = keyType::oneKey;
 			if(act.HasMember("keyType"))
 			{
-				std::string keyType = act["keyType"].GetString();
+				std::string keyType = "";
+				if(act.IsString())
+					keyType = act["keyType"].GetString();
 
 				if(keyType.compare("hotKey"))
 				{
@@ -275,7 +278,10 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 			ret.kData.hold = holdType::not_hold;
 			if(act.HasMember("hold"))
 			{
-				std::string Hold = act["hold"].GetString();
+				std::string Hold = "";
+				if(act["hold"].IsString())
+					Hold = act["hold"].GetString();
+
 				if(Hold.compare("hold"))
 				{
 					ret.kData.hold = holdType::hold;
@@ -287,7 +293,6 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 			}
 			if(act.HasMember("delay"))
 			{
-				std::string Delay = act["delay"].GetString();
 				ret.kData.delay = 0;
 				if(act["delay"].IsInt())
 				{
