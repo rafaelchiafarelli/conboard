@@ -412,15 +412,16 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 devType jsonParser::GetDevType(std::string dType)
 {
 	devType ltype = devType::notype;
-	if(dType.compare("midi"))
+	std::cout<<"Type: "<<dType<<std::endl;
+	if(!dType.compare("midi"))
 		ltype = devType::midi;
-	if(dType.compare("keyboard"))
+	else if(!dType.compare("keyboard"))
 		ltype = devType::keyboard;
-	if(dType.compare("mouse"))
+	else if(!dType.compare("mouse"))
 		ltype = devType::mouse;
-	if(dType.compare("joystick"))
+	else if(!dType.compare("joystick"))
 		ltype = devType::joystick;
-	if(dType.compare("notype"))
+	else if(!dType.compare("notype"))
 		ltype = devType::notype;
 	return ltype;
 }
