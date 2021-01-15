@@ -57,7 +57,7 @@ class jsonParser
 		
 
 		std::vector<Actions> *header_actions;
-		std::vector<ModeType> *modes;
+		std::vector<ModeType> *op_modes;
 		
 		//loading and parsing
 		std::stringstream data;
