@@ -16,7 +16,7 @@ using namespace rapidjson;
 jsonParser::jsonParser(const char *_FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
 	
 	header_actions = h;
-	modes = Mode;
+	op_modes = Mode;
 	loaded = false;
 	FileName = _FileName;
 	Reload();	
@@ -137,6 +137,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 					}
 				}
 				//std::cout<<"actions done"<<std::endl;
+				op_modes->push_back(mode);
 			}
 		}
 	}
