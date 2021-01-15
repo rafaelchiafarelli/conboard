@@ -97,29 +97,37 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 				if(jMode.HasMember("actions"))
 				{
 					rapidjson::Value& bActions = jMode["actions"];
+					std::cout<<"actions IsArray:"<<bActions.IsArray()<<std::endl;
 					if(bActions.IsArray())
 					{
+						std::cout<<"actions.size"<<bActions.Size()<<std::endl;
 						for(SizeType t = 0;
 							t<bActions.Size();
 							t++)
 						{
 							Actions mActions;
 							rapidjson::Value& Act = bActions[t];
+							std::cout<<"has input:"<<Act.HasMember("input")<<std::endl;
 							if(Act.HasMember("input"))
 							{
 								mActions.in = parseIO(Act["input"]);
+								std::cout<<"input:"<<mActions.in.mAct<<std::endl;
 							}
+							std::cout<<"has output:"<<Act.HasMember("output")<<std::endl;
 							if(Act.HasMember("output"))
 							{
 								devActions dAct;
 								rapidjson::Value& out = Act["output"];
+								std::cout<<"out IsArray"<<out.IsArray()<<std::endl;
 								if(out.IsArray())
 								{
+									std::cout<<"output size:"<<out.Size()<<std::endl;
 									for(SizeType j = 0;
 										j < out.Size();
 										j++)
 									{
 										dAct = parseIO(out[j]);
+										std::cout<<"action out:"<<dAct<<std::endl;
 										mActions.out.push_back(dAct);
 									}
 								}
