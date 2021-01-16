@@ -171,25 +171,31 @@ void MIDI::out_func()
                 out != to_send.end();
                 out++)
             {
+                std::cout<<"out type:"<<out->tp;
                 switch(out->tp)
                 {
                     case keyboard:
+                        std::cout<<out->kData<<std::endl;
                         keyboard_send(out->kData);
                         if(out->kData.delay != 0)
                             std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
                         break;
                     case midi:
+                        std::cout<<out->mAct<<std::endl;
                         send_midi((char *)out->mAct.midi.byte,sizeof(midiSignal));
                         if(out->mAct.delay !=0)
                              std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
                         break;
                     case mouse:
+                        std::cout<<out->mouse<<std::endl;
                         send_mouse(out->mouse);
                         break;
                     case joystick:
+                        std::cout<<out->joy<<std::endl;
                         send_joystick();
                         break;
                     default:
+                        std::cout<<std::endl;
                         break;
                 }
             }
