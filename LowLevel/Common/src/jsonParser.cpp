@@ -13,7 +13,7 @@
 using namespace rapidjson;
 
 
-jsonParser::jsonParser(const char *_FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
+jsonParser::jsonParser(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
 	
 	header_actions = h;
 	op_modes = Mode;

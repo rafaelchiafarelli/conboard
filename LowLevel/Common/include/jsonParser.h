@@ -88,7 +88,7 @@ class jsonParser
 		unsigned int GetTimeOut(){return timeout;};
 		bool GetLoaded(){return loaded;};
 		std::vector<KeyValue> GetTags(){return Tags;};
-		jsonParser(const char *filename, std::vector<ModeType> *Mode,std::vector<Actions> *h);
+		jsonParser(std::string filename, std::vector<ModeType> *Mode,std::vector<Actions> *h);
 		~jsonParser();
 };
 

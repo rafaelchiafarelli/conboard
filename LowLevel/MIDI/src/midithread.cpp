@@ -46,7 +46,7 @@ MIDI::~MIDI(){
         delete out_thread;
 }
 
-MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(), json(jsonFileName.c_str(),&modes,&header),oActions()
+MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(), json(jsonFileName,&modes,&header),oActions()
 {
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
