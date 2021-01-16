@@ -28,7 +28,7 @@ jsonParser::jsonParser(std::string _FileName, std::vector<ModeType> *Mode,std::v
 void jsonParser::Reload(){
 	if(loaded == false)
 	{
-		if (loadFile(FileName.c_str())) 
+		if (loadFile()) 
 		{
 			
 			if (Doc.HasMember("DEVICE"))
@@ -530,14 +530,14 @@ bool jsonParser::Initializer()
 	return ret;
 }
 
-bool jsonParser::loadFile(const char *filename)
+bool jsonParser::loadFile()
 {
-	jsonParser::FileName = std::string(filename);
 	std::ifstream file(FileName);
-	data<<file.rdbuf();
-	ParseResult res = Doc.Parse(data.str());
-	std::cout<<"is error:"<<res.Code()<<" in:"<<res.Offset()<<"reading the file:"<<res.IsError()<<std::endl;
+	std::stringstream buff;
+	buff<<file.rdbuf();
+	data = buff.str();
+	std::cout<<data.c_str()<<std::endl;
+	ParseResult res = Doc.Parse(data);
+	std::cout<<"File Name"<<FileName<<" is error:"<<res.Code()<<" in:"<<res.Offset()<<"reading the file:"<<res.IsError()<<std::endl;
 	return (res.IsError())? false:true;
 }
-
-
