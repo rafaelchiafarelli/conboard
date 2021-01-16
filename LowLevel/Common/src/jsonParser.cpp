@@ -265,15 +265,15 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 			ret.kData.type = keyType::oneKey;
 			if(act.HasMember("keyType"))
 			{
-				std::string keyType = "";
+				std::string lkeyType = "";
 				if(act.IsString())
-					keyType = act["keyType"].GetString();
-
-				if(!keyType.compare("hotKey"))
+					lkeyType = act["keyType"].GetString();
+				std::cout<<lkeyType.c_str()<<std::endl;
+				if(!lkeyType.compare("hotKey"))
 				{
 					ret.kData.type = keyType::hotkey;
 				}
-				else if(!keyType.compare("text"))
+				else if(!lkeyType.compare("text"))
 				{
 					ret.kData.type = keyType::text;
 				}
