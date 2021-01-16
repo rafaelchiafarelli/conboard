@@ -48,6 +48,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 	if(body.HasMember("modes"))
 	{
 		rapidjson:Value& modes = body["modes"];
+		std::cout<<"modes is array: "<<modes.IsArray()<<std::endl;
 		if(modes.IsArray())
 		{
 			for(SizeType i = 0;
@@ -93,7 +94,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 						}
 					}
 				}
-				//std::cout<<"mode_header done"<<std::endl;
+				std::cout<<"mode_header done"<<std::endl;
 				if(jMode.HasMember("actions"))
 				{
 					rapidjson::Value& bActions = jMode["actions"];
@@ -136,7 +137,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 						}
 					}
 				}
-				//std::cout<<"actions done"<<std::endl;
+				std::cout<<"actions done"<<std::endl;
 				op_modes->push_back(mode);
 			}
 		}
@@ -518,11 +519,12 @@ bool jsonParser::Initializer()
 		ProcessHeader(header);
 		//std::cout<<"header done"<<std::endl;
 	}
+	std::cout<<"Doc has a body:"<<Doc.HasMember("body")<<std::endl;
 	if(Doc.HasMember("body"))
 	{
 		rapidjson::Value& body = Doc["body"];
 		ProcessMainBody(body);
-		//std::cout<<"body done"<<std::endl;
+		
 	}
 	return ret;
 }

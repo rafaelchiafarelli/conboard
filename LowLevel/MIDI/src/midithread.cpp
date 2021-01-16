@@ -137,7 +137,7 @@ void MIDI::processInput(midiSignal midiS)
     l_mode.index = SelectedMode;
     l_action.in.mAct.midi = midiS;
 
-    cout<<"Currentmode active:"<<CurrentMode.is_active<<endl;
+    cout<<"Currentmode number:"<<CurrentMode.index<<" is active: "<<CurrentMode.is_active<<endl;
     if(CurrentMode.is_active)
     {
         for( std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin(); it_act != CurrentMode.body_actions.end(); it_act++)
