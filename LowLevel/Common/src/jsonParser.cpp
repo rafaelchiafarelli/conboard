@@ -19,6 +19,8 @@ jsonParser::jsonParser(const char *_FileName, std::vector<ModeType> *Mode,std::v
 	op_modes = Mode;
 	loaded = false;
 	FileName = _FileName;
+
+	std::cout<<"helo"<<std::endl;
 	Reload();	
 	
 }
@@ -514,7 +516,6 @@ bool jsonParser::Initializer()
 	//std::cout<<"device done"<<std::endl;
 	if(Doc.HasMember("header"))
 	{
-
 		rapidjson::Value& header = Doc["header"];
 		ProcessHeader(header);
 		//std::cout<<"header done"<<std::endl;
@@ -535,7 +536,7 @@ bool jsonParser::loadFile(const char *filename)
 	std::ifstream file(FileName);
 	data<<file.rdbuf();
 	ParseResult res = Doc.Parse(data.str());
-	//std::cout<<"oia:"<<res.IsError()<<std::endl;
+	std::cout<<"is error in reading the file:"<<res.IsError()<<std::endl;
 	return (res.IsError())? false:true;
 }
 
