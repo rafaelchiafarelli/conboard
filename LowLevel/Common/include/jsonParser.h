@@ -60,7 +60,7 @@ class jsonParser
 		std::vector<ModeType> *op_modes;
 		
 		//loading and parsing
-		std::stringstream data;
+		std::string data;
 		rapidjson::Document Doc;
 
 		devType type;
@@ -68,7 +68,7 @@ class jsonParser
 		devActions parseIO(rapidjson::Value& act);
 		bool Initializer();
 		
-		bool loadFile(const char *filename);
+		bool loadFile();
 
 		void ProcessHeader(rapidjson::Value &header);
 		void ProcessMainBody(rapidjson::Value &body);
