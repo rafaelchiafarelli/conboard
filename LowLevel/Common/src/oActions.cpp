@@ -119,7 +119,6 @@ int oActions::keyboard_send(keyboardActions act)
 				str_it++
 			)
 			{
-				std::cout<<"text"<<std::endl;
 				textCharSet cmd_to_send=textToCmdList[(unsigned int)(*str_it)];
 				if(cmd_to_send.cmd)
 				{
@@ -130,21 +129,26 @@ int oActions::keyboard_send(keyboardActions act)
 				{
 					namedKeyCodes key=oneKeySet(cmd_to_send.first,strlen(cmd_to_send.first));
 					fillReport(key, report);
+					write(fd, report, to_send);
+
 				}
 				if(cmd_to_send.second)
 				{
 					namedKeyCodes key=oneKeySet(cmd_to_send.second,strlen(cmd_to_send.second));
 					fillReport(key, report);
+					write(fd, report, to_send);
 				}
 				if(cmd_to_send.third)
 				{
 					namedKeyCodes key=oneKeySet(cmd_to_send.third,strlen(cmd_to_send.third));
 					fillReport(key, report);
+					write(fd, report, to_send);
 				}
 				if(cmd_to_send.fourth)
 				{
 					namedKeyCodes key=oneKeySet(cmd_to_send.fourth,strlen(cmd_to_send.fourth));
 					fillReport(key, report);
+					write(fd, report, to_send);
 				}
 				int sent = write(fd, report, to_send);
 				memset(report, 0x0, sizeof(report));
