@@ -536,7 +536,7 @@ bool jsonParser::loadFile(const char *filename)
 	std::ifstream file(FileName);
 	data<<file.rdbuf();
 	ParseResult res = Doc.Parse(data.str());
-	std::cout<<"is error in reading the file:"<<res.IsError()<<std::endl;
+	std::cout<<"is error in:"<<res.Offset()<<"reading the file:"<<res.IsError()<<std::endl;
 	return (res.IsError())? false:true;
 }
 
