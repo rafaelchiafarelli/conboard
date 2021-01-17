@@ -267,9 +267,9 @@ void create_json(char *devInfo, char *folder)
 			}
 			if(hasHandler)
 			{
-				argv = new char*[json->Ex.params.size()];
-				param_count = json->Ex.exec.length();
-				ExecLine = new char[param_count];
+				param_count = json->Ex.params.size();
+				argv = new char*[param_count];
+				ExecLine = new char[json->Ex.exec.length()];
 				strcpy(ExecLine,json->Ex.exec.c_str());
 				int count = 0;
 				for(std::vector<KeyValue>::iterator param_it = json->Ex.params.begin();
