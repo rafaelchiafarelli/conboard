@@ -44,13 +44,13 @@
                     "MAJOR":"189"
                 },
                 "executable":{ 
-                    "exec": "/conboard/LowLevel/MIDI/build/conMouse", 
+                    "exec": "/conboard/LowLevel/MIDI/build/conMIDI", 
                     "count":"3",
-                    "params":{
-                        "-p":"hw:1,0,0",
-                        "-x":"/conboard/boards/Arduino_Micro.xml",
-                        "-i":"/tmp/named.pipe"
-                        }
+                    "params":[
+                            {"-p":"hw:1,0,0"},
+                            {"-x":"/conboard/boards/Arduino_Micro.xml"},
+                            {"-i":"/tmp/named.pipe"}
+                        ]
                     }
                 },
             "actions":

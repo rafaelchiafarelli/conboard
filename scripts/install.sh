@@ -99,6 +99,8 @@ install_lowlevel(){
     echo "launcher"
     cp /conboard/LowLevel/assets/launcher.service /etc/systemd/system/
     systemctl enable launcher.service
+    cp /conboard/LowLevel/assets/launcher.sh /conboard/
+
 
     echo "event handler"
     cp /conboard/LowLevel/assets/100-usb.rules /etc/udev/rules.d/
