@@ -258,6 +258,10 @@ void create_json(char *devInfo, char *folder)
 							break;
 						}
 					}	
+					if(!hasHandler)
+					{
+						break;
+					}
 				}
 			}
 			if(hasHandler)
