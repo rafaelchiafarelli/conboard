@@ -518,12 +518,13 @@ bool jsonParser::Initializer()
 		{
 			jsonParser::DevOutput = "";
 		}
-	ret = true;
+	ret = false;
 	}
 	std::cout<<"device done"<<std::endl;
 	if(Doc.HasMember("header"))
 	{
 		rapidjson::Value& header = Doc["header"];
+		ret = true;
 		ProcessHeader(header);
 		//std::cout<<"header done"<<std::endl;
 	}
