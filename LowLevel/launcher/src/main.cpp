@@ -146,43 +146,49 @@ void read_all(char *devInfo, char *path)
         	jsonFiles.push_back(*entry);
     }
     closedir(dir);
-
+	char complete_file_name[1024];
 	for(vector<dirent>::iterator files_it = jsonFiles.begin();
 		files_it!=jsonFiles.end();
 		files_it++
 		)
 	{
 		//for all the json files present
-		char *complete_file_name = new char[strlen(path)+strlen(files_it->d_name)];
+
 		sprintf(complete_file_name, "%s/%s",path,files_it->d_name);
 		
 		std::vector<ModeType> Mode;
 		std::vector<Actions> h;
+
 		jsonParser *header;
 		char **argv;
 		char *ExecLine;
 		header = new jsonParser(complete_file_name,&Mode,&h);
+		
 		if(header->GetLoaded())
 		{
 			argv = new char*[header->Ex.params.size()];
 			ExecLine = new char[header->Ex.exec.length()];
 			strcpy(ExecLine,header->Ex.exec.c_str());
 			int count = 0;
+			std::cout<<"number of parameters:"<<header->Ex.params.size()<<std::endl;
 			for(std::vector<KeyValue>::iterator param_it = header->Ex.params.begin();
 				param_it != header->Ex.params.end();
 				param_it++)
 				{
 					argv[count] = new char[256];
 					sprintf(argv[count],"%s %s",param_it->key.c_str(), param_it->value.c_str());
+					std::cout<<"argv["<<count<<"]:"<<argv[count]<<std::endl;
 				}
 
 			pid_t pid;
 			int status;
 			status = posix_spawn(&pid,ExecLine,NULL,NULL,argv,environ);
+			std::cout<<"spanwned "<<ExecLine<<" and result is:"<<status<<std::endl;
+			delete argv;
+			delete ExecLine;
 		}
 
 		delete header;
-		delete complete_file_name;
 	}
 }
 

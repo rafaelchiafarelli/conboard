@@ -1,15 +1,10 @@
 [Unit]
-Description=launcher to find all xml with assosiated files.
+Description=launcher to find all json with assosiated files.
 Documentation=https://github.com/rafaelchiafarelli/conboard
 
 [Service]
 User=root
-Restart=always
-RestartSec=5
-TimeoutStopSec=20
-Environment=PYTHONPATH=/conboard/frontend/venv/bin
-Environment=PATH=/conboard/frontend/venv/bin
-WorkingDirectory=/conboard/frontend
+Type=oneshot
 ExecStart=/conboard/LowLevel/launcher/build/launcher  -r -x /conboard/boards/ -d /conboard/boards/ 
 
 
