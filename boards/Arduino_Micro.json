@@ -111,33 +111,29 @@
                     {
                     "input":{
                             "type":"midi", 
-                            "b0":145,
-                            "b1":10,
-                            "b2":127,
+                            "b0":144,
+                            "b1":2,
+                            "b2":64,
                             "delay":50
                             },
                     "output":[
-                            { "type":"midi", "b0":145, "b1":2, "b2":127 },
-                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                            { "type":"keyboard" , "data":"sudo systemctl status " , "delay":0 , "keyType":"text" , "hold":"not_hold"}
                             ]
                     },
                     {
                     "input":{
                             "type":"midi", 
-                            "b0":145,
-                            "b1":9,
-                            "b2":127,
+                            "b0":144,
+                            "b1":3,
+                            "b2":64,
                             "delay":50
                             },
                     "output":[
-                            { "type":"midi", "b0":145, "b1":2, "b2":127 },
-                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                            
+                            { "type":"keyboard" , "data":"lShift letter_r" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"lShift letter_a" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"}
                             ]
                     }
                 ]
@@ -185,10 +181,10 @@
                             },
                     "output":[
                             { "type":"midi", "b0":145, "b1":2, "b2":127 },
-                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"}
                             ]
                     },
                     {
@@ -201,10 +197,10 @@
                             },
                     "output":[
                             { "type":"midi", "b0":145, "b1":2, "b2":127 },
-                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "kbType":"oneKey" , "hold":"not_hold"}
+                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"}
                             ]
                     }
                 ]
