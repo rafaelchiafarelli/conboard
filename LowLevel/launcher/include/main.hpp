@@ -20,7 +20,7 @@
 #include <vector>
 using namespace std;
 
-void read_all(char *devInfo, char *path);
+void read_all(char *path);
 void create_json(char *devInfo, char *folder);
 void clear(char *folder);
 

@@ -338,65 +338,72 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 		if(identifier.HasMember("generics"))
 		{
 			rapidjson::Value& generics = identifier["generics"];
-			if(generics.IsArray())
+
+			for (Value::ConstMemberIterator iter = generics.MemberBegin(); iter != generics.MemberEnd(); ++iter)
 			{
-				for (Value::ConstMemberIterator iter = generics.MemberBegin(); iter != generics.MemberEnd(); ++iter)
-				{
-					KeyValue kv;
-					
-					kv.key = iter->name.GetString();
-					kv.value = iter->value.GetString();
-					Generics.push_back(kv);
-				}
+				KeyValue kv;
+				
+				kv.key = iter->name.GetString();
+				kv.value = iter->value.GetString();
+				Generics.push_back(kv);
 			}
+
 		}
 		//std::cout<<"generics done"<<std::endl;
 		if(identifier.HasMember("tags"))
 		{
 			rapidjson::Value& tags = identifier["tags"];
-			if(tags.IsArray())
+
+			for (Value::ConstMemberIterator iter = tags.MemberBegin(); iter != tags.MemberEnd(); ++iter)
 			{
-				for (Value::ConstMemberIterator iter = tags.MemberBegin(); iter != tags.MemberEnd(); ++iter)
-				{
-					KeyValue kv;
-					kv.key = iter->name.GetString();
-					kv.value = iter->value.GetString();
-					Tags.push_back(kv);
-				}
+				KeyValue kv;
+				kv.key = iter->name.GetString();
+				kv.value = iter->value.GetString();
+				Tags.push_back(kv);
 			}
+
 		}
-		//std::cout<<"tags done"<<std::endl;
+		
 		if(identifier.HasMember("executable"))
 		{
 			rapidjson::Value& executable = identifier["executable"];
 			if(executable.HasMember("exec"))
 			{
+			
 				Ex.exec = "";
 				if(executable["exec"].IsString())
 					Ex.exec = executable["exec"].GetString();
 			}
-			//std::cout<<"exec done"<<std::endl;
+			
 			if(executable.HasMember("count"))
 			{
 				Ex.param_count = 0;
 				if(executable["count"].IsInt())
 					Ex.param_count= executable["count"].GetInt();
 			}
-			//std::cout<<"count done"<<std::endl;
+			
 			if(executable.HasMember("params"))
 			{
 				rapidjson::Value& params = executable["params"];
-				if(params.IsArray()){
-					for (Value::ConstMemberIterator iter = params.MemberBegin(); iter != params.MemberEnd(); ++iter)
+				
+
+				for (Value::ConstMemberIterator iter = params.MemberBegin(); iter != params.MemberEnd(); ++iter)
+				{
+					
+					KeyValue kv;
+					if(iter->name.IsString())
 					{
-						KeyValue kv;
-						if(iter->name.IsString())
-							kv.key = iter->name.GetString();
-						if(iter->value.IsString())
-							kv.value = iter->value.GetString();
-						Ex.params.push_back(kv);
+						kv.key = iter->name.GetString();
+						std::cout<<kv.key<<std::endl;
 					}
+					if(iter->value.IsString())
+					{
+						kv.value = iter->value.GetString();
+						std::cout<<kv.value<<std::endl;
+					}
+					Ex.params.push_back(kv);
 				}
+
 			}
 			//std::cout<<"params done"<<std::endl;
 		}
@@ -513,7 +520,7 @@ bool jsonParser::Initializer()
 		}
 	ret = true;
 	}
-	//std::cout<<"device done"<<std::endl;
+	std::cout<<"device done"<<std::endl;
 	if(Doc.HasMember("header"))
 	{
 		rapidjson::Value& header = Doc["header"];
