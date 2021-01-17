@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
  	switch (work)
 	{
 	case modType::read_devices:
-		read_all(dt_name,json_name);
+		read_all(json_name);
 		break;
 	case modType::verify_devices:
 		/* code */
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
  * and launch the specific handler for it, if the device is not connected, the handler must handle it.
  */ 
 
-void read_all(char *devInfo, char *path)
+void read_all(char *path)
 {
 	vector<dirent> jsonFiles;
     struct dirent *entry;

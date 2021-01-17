@@ -191,6 +191,7 @@ static void sig_handler(int dummy)
 
 int main(int argc, char *argv[])
 {
+
 	stop = true;
 	static const char short_options[] = "i:p:x:";
 	static const struct option long_options[] = {
@@ -320,6 +321,7 @@ int main(int argc, char *argv[])
 		std::cout<<"File not found"<<endl;
 	}
     return 0;
+
 }
 
 
