@@ -200,6 +200,7 @@ void create_json(char *devInfo, char *folder)
 {
 	bool hasHandler = false;
 	char **argv;
+	int param_count=0;
 	char *ExecLine;
 	vector<dirent> jsonFiles;
     struct dirent *entry;
@@ -267,7 +268,8 @@ void create_json(char *devInfo, char *folder)
 			if(hasHandler)
 			{
 				argv = new char*[json->Ex.params.size()];
-				ExecLine = new char[json->Ex.exec.length()];
+				param_count = json->Ex.exec.length();
+				ExecLine = new char[param_count];
 				strcpy(ExecLine,json->Ex.exec.c_str());
 				int count = 0;
 				for(std::vector<KeyValue>::iterator param_it = json->Ex.params.begin();
@@ -276,6 +278,7 @@ void create_json(char *devInfo, char *folder)
 				{
 					argv[count] = new char[256];
 					sprintf(argv[count],"%s %s",param_it->key.c_str(), param_it->value.c_str());
+					count++;
 				}
 			}
 		}
@@ -291,7 +294,8 @@ void create_json(char *devInfo, char *folder)
 		pid_t pid;
 		int status;
 		status = posix_spawn(&pid,ExecLine,NULL,NULL,argv,environ);
-		delete argv;
+		for(int i=0;i<param_count;i++)
+			delete argv[i];
 		delete ExecLine;
 	}
 	else
