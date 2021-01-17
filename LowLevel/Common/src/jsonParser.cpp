@@ -20,7 +20,7 @@ jsonParser::jsonParser(std::string _FileName, std::vector<ModeType> *Mode,std::v
 	loaded = false;
 	FileName = _FileName;
 
-	std::cout<<"helo"<<std::endl;
+	//std::cout<<"helo"<<std::endl;
 	Reload();	
 	
 }
@@ -50,7 +50,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 	if(body.HasMember("modes"))
 	{
 		rapidjson:Value& modes = body["modes"];
-		std::cout<<"modes is array: "<<modes.IsArray()<<std::endl;
+		//std::cout<<"modes is array: "<<modes.IsArray()<<std::endl;
 		if(modes.IsArray())
 		{
 			for(SizeType i = 0;
@@ -96,41 +96,41 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 						}
 					}
 				}
-				std::cout<<"mode_header done"<<std::endl;
+				//std::cout<<"mode_header done"<<std::endl;
 				if(jMode.HasMember("actions"))
 				{
 					rapidjson::Value& bActions = jMode["actions"];
-					std::cout<<"actions IsArray:"<<bActions.IsArray()<<std::endl;
+					//std::cout<<"actions IsArray:"<<bActions.IsArray()<<std::endl;
 					if(bActions.IsArray())
 					{
-						std::cout<<"actions.size"<<bActions.Size()<<std::endl;
+						//std::cout<<"actions.size"<<bActions.Size()<<std::endl;
 						for(SizeType t = 0;
 							t<bActions.Size();
 							t++)
 						{
 							Actions mActions;
 							rapidjson::Value& Act = bActions[t];
-							std::cout<<"has input:"<<Act.HasMember("input")<<std::endl;
+							//std::cout<<"has input:"<<Act.HasMember("input")<<std::endl;
 							if(Act.HasMember("input"))
 							{
 								mActions.in = parseIO(Act["input"]);
-								std::cout<<"input:"<<mActions.in.mAct<<std::endl;
+								//std::cout<<"input:"<<mActions.in.mAct<<std::endl;
 							}
-							std::cout<<"has output:"<<Act.HasMember("output")<<std::endl;
+							//std::cout<<"has output:"<<Act.HasMember("output")<<std::endl;
 							if(Act.HasMember("output"))
 							{
 								devActions dAct;
 								rapidjson::Value& out = Act["output"];
-								std::cout<<"out IsArray"<<out.IsArray()<<std::endl;
+								//std::cout<<"out IsArray"<<out.IsArray()<<std::endl;
 								if(out.IsArray())
 								{
-									std::cout<<"output size:"<<out.Size()<<std::endl;
+									//std::cout<<"output size:"<<out.Size()<<std::endl;
 									for(SizeType j = 0;
 										j < out.Size();
 										j++)
 									{
 										dAct = parseIO(out[j]);
-										std::cout<<"action out:"<<dAct<<std::endl;
+										//std::cout<<"action out:"<<dAct<<std::endl;
 										mActions.out.push_back(dAct);
 									}
 								}
@@ -139,7 +139,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 						}
 					}
 				}
-				std::cout<<"actions done"<<std::endl;
+				//std::cout<<"actions done"<<std::endl;
 				op_modes->push_back(mode);
 			}
 		}
@@ -268,7 +268,7 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 				std::string lkeyType = "";
 				if(act["keyType"].IsString())
 					lkeyType = act["keyType"].GetString();
-				std::cout<<lkeyType.c_str()<<std::endl;
+				//std::cout<<lkeyType.c_str()<<std::endl;
 				if(!lkeyType.compare("hotKey"))
 				{
 					ret.kData.type = keyType::hotkey;
@@ -421,7 +421,7 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 devType jsonParser::GetDevType(std::string dType)
 {
 	devType ltype = devType::notype;
-	std::cout<<"Type: "<<dType<<std::endl;
+	//std::cout<<"Type: "<<dType<<std::endl;
 	if(!dType.compare("midi"))
 		ltype = devType::midi;
 	else if(!dType.compare("keyboard"))
@@ -520,7 +520,7 @@ bool jsonParser::Initializer()
 		ProcessHeader(header);
 		//std::cout<<"header done"<<std::endl;
 	}
-	std::cout<<"Doc has a body:"<<Doc.HasMember("body")<<std::endl;
+	//std::cout<<"Doc has a body:"<<Doc.HasMember("body")<<std::endl;
 	if(Doc.HasMember("body"))
 	{
 		rapidjson::Value& body = Doc["body"];
@@ -536,8 +536,8 @@ bool jsonParser::loadFile()
 	std::stringstream buff;
 	buff<<file.rdbuf();
 	data = buff.str();
-	std::cout<<data.c_str()<<std::endl;
+	//std::cout<<data.c_str()<<std::endl;
 	ParseResult res = Doc.Parse(data);
-	std::cout<<"File Name"<<FileName<<" is error:"<<res.Code()<<" in:"<<res.Offset()<<"reading the file:"<<res.IsError()<<std::endl;
+	//std::cout<<"File Name"<<FileName<<" is error:"<<res.Code()<<" in:"<<res.Offset()<<"reading the file:"<<res.IsError()<<std::endl;
 	return (res.IsError())? false:true;
 }

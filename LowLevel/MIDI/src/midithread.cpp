@@ -62,7 +62,7 @@ MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(),
     else
     {
         SelectedMode = 0;
-        cout<<"number of modes:"<<modes.size()<<endl;
+        
         for(std::vector<ModeType>::iterator m_it = modes.begin();
             m_it != modes.end();
             m_it++)
@@ -70,7 +70,6 @@ MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(),
             if(m_it->is_active)
             {
                 CurrentMode = *m_it;
-                cout<<"got one Active!: "<<SelectedMode<<endl;
                 break;
             }
             SelectedMode++;
@@ -137,19 +136,19 @@ void MIDI::processInput(midiSignal midiS)
     l_mode.index = SelectedMode;
     l_action.in.mAct.midi = midiS;
 
-    cout<<"Currentmode number:"<<CurrentMode.index<<" is active: "<<CurrentMode.is_active<<endl;
+
     if(CurrentMode.is_active)
     {
         for( std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin(); it_act != CurrentMode.body_actions.end(); it_act++)
         {
             midiActions tmp;
             tmp.midi = midiS;
-            cout<<"Is:"<<tmp<<" equal to:"<<it_act->in.mAct<<endl;
+
             if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
                (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
                (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
             {
-                cout<<"yes! it is!"<<endl;
+
                 oQueue.push(it_act->out);
                 send = true;
                 break;
@@ -171,31 +170,31 @@ void MIDI::out_func()
                 out != to_send.end();
                 out++)
             {
-                std::cout<<"out type:"<<out->tp;
+                
                 switch(out->tp)
                 {
                     case keyboard:
-                        std::cout<<out->kData<<std::endl;
+                        
                         keyboard_send(out->kData);
                         if(out->kData.delay != 0)
                             std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
                         break;
                     case midi:
-                        std::cout<<out->mAct<<std::endl;
+                        
                         send_midi((char *)out->mAct.midi.byte,sizeof(midiSignal));
                         if(out->mAct.delay !=0)
                              std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
                         break;
                     case mouse:
-                        std::cout<<out->mouse<<std::endl;
+                        
                         send_mouse(out->mouse);
                         break;
                     case joystick:
-                        std::cout<<out->joy<<std::endl;
+                        
                         send_joystick();
                         break;
                     default:
-                        std::cout<<std::endl;
+                        
                         break;
                 }
             }
@@ -224,7 +223,7 @@ void MIDI::in_func()
 	int ok = 0;
     int err;
     int lTimeOut = timeout;
-    std::cout<<"in_func start: "<<stop<<" input:"<<input<<std::endl;
+    
 	if (input)
 		snd_rawmidi_read(input, NULL, 0); /* trigger reading */
 
@@ -245,14 +244,14 @@ void MIDI::in_func()
 			err = poll(pfds, npfds, MILLISECONDS_TIMEOUT);
 			if (stop || (err < 0 && errno == EINTR))
             {
-                std::cout<<"poll failed: "<<stop<<" "<<err<<std::endl;
+                
                 stop = true;
 				break;
             }
 			if (err < 0) {
 				ok=-1;
                 stop = true;
-                std::cout<<"poll failed: "<<strerror(errno)<<std::endl;
+                
 				break;
 			}
 			if (err == 0) {
@@ -264,7 +263,7 @@ void MIDI::in_func()
 			}
 			if ((err = snd_rawmidi_poll_descriptors_revents(input, pfds, npfds, &revents)) < 0) {
                 ok = -1;
-				std::cout<<"cannot get poll events: "<<snd_strerror(errno)<<std::endl;
+				
 				break;
 			}
 			if (revents & (POLLERR | POLLHUP))
@@ -281,7 +280,7 @@ void MIDI::in_func()
             
 			if (err < 0) {
                 ok = -1;
-				std::cout<<"cannot read from port "<<port_name<<" , "<<snd_strerror(err)<<std::endl;
+				
 				break;
 			}
             std::cout<<std::hex<<(unsigned int)buf[0]<<" "<<std::hex<<(unsigned int)buf[1]<<" "<<std::hex<<(unsigned int)buf[2]<<std::endl;
