@@ -255,12 +255,14 @@ void create_json(char *devInfo, char *folder)
 						}
 						else
 						{
+							std::cout<<"found:"<<info_it->key.c_str()<<std::endl;
 							hasHandler = true;
 							break;
 						}
 					}	
 					if(!hasHandler)
 					{
+						std::cout<<"a key was not found:"<<header_it->key.c_str()<<std::endl;
 						break;
 					}
 				}
@@ -278,6 +280,7 @@ void create_json(char *devInfo, char *folder)
 				{
 					argv[count] = new char[256];
 					sprintf(argv[count],"%s %s",param_it->key.c_str(), param_it->value.c_str());
+					std::cout<<"param:"<<argv[count]<<std::endl;
 					count++;
 				}
 			}
@@ -300,6 +303,7 @@ void create_json(char *devInfo, char *folder)
 	}
 	else
 	{
+	std::cout<<"no handler! generate the dummy"<<std::endl;
 	std::string dummyjson("{\"DEVICE\":{\"type\":\"\", \"name\":\"\", \"input\":\"\", \"output\":\"\"}, \"header\":{\"identifier\":{\"generics\":{");
 	for(std::vector<KeyValue>::iterator info_it = info_from_dev.begin();
 		info_it != info_from_dev.end();
@@ -320,6 +324,7 @@ void create_json(char *devInfo, char *folder)
 		snprintf(dummy_filename,256, "%s/%d-%d-%d.json",folder,unit,tens,hundreds);
 
 		std::ofstream dummyJsonFile(dummy_filename, std::ofstream::out);
+		std::cout<<"Dummy file name:"<<dummy_filename<<std::endl;
 		dummyJsonFile<<dummyjson;
 		dummyJsonFile.close();
 	}
