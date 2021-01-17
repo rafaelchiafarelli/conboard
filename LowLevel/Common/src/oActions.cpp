@@ -120,39 +120,59 @@ int oActions::keyboard_send(keyboardActions act)
 			)
 			{
 				textCharSet cmd_to_send=textToCmdList[(unsigned int)(*str_it)];
+				namedKeyCodes key;
 				if(cmd_to_send.cmd)
 				{
-					namedKeyCodes key=oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
+					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
 					fillReport(key, report);
+					write(fd, report, to_send);
 				}
 				if(cmd_to_send.first)
 				{
-					namedKeyCodes key=oneKeySet(cmd_to_send.first,strlen(cmd_to_send.first));
+					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
+					fillReport(key, report);
+					key = oneKeySet(cmd_to_send.first,strlen(cmd_to_send.first));
 					fillReport(key, report);
 					write(fd, report, to_send);
-
+					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
+					fillReport(key, report);
+					write(fd, report, to_send);
 				}
 				if(cmd_to_send.second)
 				{
-					namedKeyCodes key=oneKeySet(cmd_to_send.second,strlen(cmd_to_send.second));
+					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
+					fillReport(key, report);					
+					key = oneKeySet(cmd_to_send.second,strlen(cmd_to_send.second));
+					fillReport(key, report);
+					write(fd, report, to_send);
+					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
 					fillReport(key, report);
 					write(fd, report, to_send);
 				}
 				if(cmd_to_send.third)
 				{
-					namedKeyCodes key=oneKeySet(cmd_to_send.third,strlen(cmd_to_send.third));
+					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
+					fillReport(key, report);					
+					key = oneKeySet(cmd_to_send.third,strlen(cmd_to_send.third));
+					fillReport(key, report);
+					write(fd, report, to_send);
+					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
 					fillReport(key, report);
 					write(fd, report, to_send);
 				}
 				if(cmd_to_send.fourth)
 				{
-					namedKeyCodes key=oneKeySet(cmd_to_send.fourth,strlen(cmd_to_send.fourth));
+					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
+					fillReport(key, report);
+					key = oneKeySet(cmd_to_send.fourth,strlen(cmd_to_send.fourth));
 					fillReport(key, report);
 					write(fd, report, to_send);
+					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
+					fillReport(key, report);
+					write(fd, report, to_send);					
 				}
-				int sent = write(fd, report, to_send);
 				memset(report, 0x0, sizeof(report));
-				sent = write(fd, report, to_send);
+				int sent = write(fd, report, to_send);
 			}
 
 		break;
