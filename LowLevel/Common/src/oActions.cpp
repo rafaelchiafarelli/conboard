@@ -134,6 +134,7 @@ int oActions::keyboard_send(keyboardActions act)
 					key = oneKeySet(cmd_to_send.first,strlen(cmd_to_send.first));
 					fillReport(key, report);
 					write(fd, report, to_send);
+					memset(report, 0x0, sizeof(report));
 					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
 					fillReport(key, report);
 					write(fd, report, to_send);
@@ -145,6 +146,7 @@ int oActions::keyboard_send(keyboardActions act)
 					key = oneKeySet(cmd_to_send.second,strlen(cmd_to_send.second));
 					fillReport(key, report);
 					write(fd, report, to_send);
+					memset(report, 0x0, sizeof(report));
 					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
 					fillReport(key, report);
 					write(fd, report, to_send);
@@ -156,6 +158,7 @@ int oActions::keyboard_send(keyboardActions act)
 					key = oneKeySet(cmd_to_send.third,strlen(cmd_to_send.third));
 					fillReport(key, report);
 					write(fd, report, to_send);
+					memset(report, 0x0, sizeof(report));
 					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
 					fillReport(key, report);
 					write(fd, report, to_send);
@@ -167,6 +170,7 @@ int oActions::keyboard_send(keyboardActions act)
 					key = oneKeySet(cmd_to_send.fourth,strlen(cmd_to_send.fourth));
 					fillReport(key, report);
 					write(fd, report, to_send);
+					memset(report, 0x0, sizeof(report));
 					key = oneKeySet(cmd_to_send.cmd,strlen(cmd_to_send.cmd));
 					fillReport(key, report);
 					write(fd, report, to_send);					
