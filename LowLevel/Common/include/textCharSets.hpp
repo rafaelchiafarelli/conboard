@@ -140,8 +140,8 @@ class textCharSet {
       { .cmd="lShift", .first="backSlash",NULL,NULL,NULL},\
       { .cmd="lShift", .first="cBracket",NULL,NULL,NULL},\
       { .cmd="Tilde",NULL,NULL,NULL,NULL},\
-      {.cmd =NULL,NULL,NULL,NULL,NULL},\
-      {.cmd = "lAlt", .first="n_one",.second="n_two", .third="n_eight",NULL},\
+      { .cmd=NULL,NULL,NULL,NULL,NULL},\
+      { .cmd="lAlt", .first="n_one",.second="n_two", .third="n_eight",NULL},\
       { .cmd="lAlt", .first="n_one", .second="n_two", .third="n_nine",NULL},\
       { .cmd="lAlt", .first="n_one", .second="n_three",.third="n_zero",NULL},\
       { .cmd="lAlt", .first="n_one", .second="n_three",.third="n_one",NULL},\
@@ -161,7 +161,7 @@ class textCharSet {
       { .cmd="lAlt", .first="n_one", .second="n_four",.third="n_eight",NULL},\
       { .cmd="lAlt", .first="n_one", .second="n_four",.third="n_nine",NULL},\
       { .cmd="lAlt", .first="n_one", .second="n_five",.third="n_zero",NULL},\
-      { .cmd="lAlt",    "n_one", 	 .second="n_five",.third="n_one",NULL},\
+      { .cmd="lAlt", .first="n_one", .second="n_five",.third="n_one",NULL},\
       { .cmd="lAlt", .first="n_one", .second="n_five",.third="n_two",NULL},\
       { .cmd="lAlt", .first="n_one", .second="n_five",.third="n_five",NULL},\
       { .cmd="lAlt", .first="n_one", .second="n_five",.third="n_six",NULL},\

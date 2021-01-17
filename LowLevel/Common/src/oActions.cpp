@@ -107,13 +107,13 @@ int oActions::keyboard_send(keyboardActions act)
 		case hotkey:
 			// do stuff
 			{
-				std::cout<<"hotKey"<<std::endl;
+				
 				std::vector<std::string> str_hotkey = words_seperate(act.data);
 				sendHotKey(str_hotkey);
 			}
 		break;
 		case text:
-			std::cout<<act.data<<std::endl;
+			
 			for(std::string::iterator str_it = act.data.begin();
 				str_it != act.data.end();
 				str_it++
@@ -182,7 +182,7 @@ int oActions::keyboard_send(keyboardActions act)
 		break;
 		case oneKey:
 			namedKeyCodes key=oneKeySet(act.data.c_str(),act.data.size());
-			std::cout<<"oneKey"<<std::endl;
+			
 			if(key.number){
 				report[3] = key.number;
 				to_send = 8;
