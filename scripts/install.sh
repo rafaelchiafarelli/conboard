@@ -24,7 +24,7 @@ preconditions(){
     cd ../
     LOCAL_REPO=$(pwd)
     echo $LOCAL_REPO
-    #$LOCAL_REPO/LowLevel/scripts/compiler.sh
+    $LOCAL_REPO/LowLevel/scripts/compiler.sh
 
     if [ -d /conboard ]; then
         systemctl stop usb-otg.service
