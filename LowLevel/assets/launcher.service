@@ -4,7 +4,6 @@ Documentation=https://github.com/rafaelchiafarelli/conboard
 
 [Service]
 User=root
-Type=oneShot
 Restart=always
 RestartSec=5
 TimeoutStopSec=20
