@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	modType work = none;
 	struct usb_bus *bus;
     struct usb_device *dev;
-
+	srand(time(NULL));
     usb_init();
     usb_find_busses();
     usb_find_devices();
@@ -239,17 +239,18 @@ void create_json(char *devInfo, char *folder)
 			}
 			else
 			{
-				for(vector<KeyValue>::iterator header_it = tags.begin();
-					header_it != tags.end();
-					header_it++)
-				{ //check if all the keys and values from json are present in devInfo and equal!
+			for(vector<KeyValue>::iterator info_it = info_from_dev.begin();
+				info_it != info_from_dev.end();
+				info_it++)
+				{
+					for(vector<KeyValue>::iterator header_it = tags.begin();
+						header_it != tags.end();
+						header_it++)
+					{ //check if all the keys and values from json are present in devInfo and equal!
+					std::cout<<"key:"<<header_it->key.c_str()<<" value:"<<header_it->value.c_str()<<std::endl;
 
-					for(vector<KeyValue>::iterator info_it = info_from_dev.begin();
-						info_it != info_from_dev.end();
-						info_it++)
-					{
-						if((!info_it->key.compare(header_it->key)) || 
-							(!info_it->value.compare(header_it->value)))
+						if((info_it->key.compare(header_it->key)) || 
+							(info_it->value.compare(header_it->value)))
 						{
 							hasHandler = false;
 						}
@@ -262,7 +263,7 @@ void create_json(char *devInfo, char *folder)
 					}	
 					if(!hasHandler)
 					{
-						std::cout<<"a key was not found:"<<header_it->key.c_str()<<std::endl;
+						std::cout<<"a key was not found:"<<info_it->key.c_str()<<std::endl;
 						break;
 					}
 				}
@@ -321,7 +322,7 @@ void create_json(char *devInfo, char *folder)
 		int unit = rand() % 100;
 		int tens = rand() % 100;
 		int hundreds = rand() % 100;
-		snprintf(dummy_filename,256, "%s/%d-%d-%d.json",folder,unit,tens,hundreds);
+		snprintf(dummy_filename,256, "%s%d-%d-%d.json",folder,unit,tens,hundreds);
 
 		std::ofstream dummyJsonFile(dummy_filename, std::ofstream::out);
 		std::cout<<"Dummy file name:"<<dummy_filename<<std::endl;
