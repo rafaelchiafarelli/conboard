@@ -71,6 +71,7 @@ class jsonParser
 		bool loadFile();
 
 		void ProcessHeader(rapidjson::Value &header);
+		bool hasExec=false;
 		void ProcessMainBody(rapidjson::Value &body);
 		devType GetDevType(std::string dType);
 	public:
@@ -87,6 +88,7 @@ class jsonParser
 		devType GetType(){return type;};
 		unsigned int GetTimeOut(){return timeout;};
 		bool GetLoaded(){return loaded;};
+		bool GetHasExec(){return hasExec;};
 		std::vector<KeyValue> GetTags(){return Tags;};
 		jsonParser(std::string filename, std::vector<ModeType> *Mode,std::vector<Actions> *h);
 		~jsonParser();

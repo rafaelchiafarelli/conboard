@@ -1,1 +1,1 @@
-ACTION=="add", SUBSYSTEM=="usb", DRIVER=="usb", RUN+="/conboard/launcher.sh"
+ACTION=="add", SUBSYSTEM=="usb", DRIVER=="usb", RUN+="/conboard/event_handler.sh"

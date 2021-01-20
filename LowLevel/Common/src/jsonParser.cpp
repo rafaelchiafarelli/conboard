@@ -373,6 +373,8 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 				Ex.exec = "";
 				if(executable["exec"].IsString())
 					Ex.exec = executable["exec"].GetString();
+						if(!Ex.exec.empty())
+							hasExec = true;
 			}
 			
 			if(executable.HasMember("count"))
@@ -518,13 +520,13 @@ bool jsonParser::Initializer()
 		{
 			jsonParser::DevOutput = "";
 		}
-	ret = false;
+	
 	}
 	std::cout<<"device done"<<std::endl;
 	if(Doc.HasMember("header"))
 	{
 		rapidjson::Value& header = Doc["header"];
-		ret = true;
+		
 		ProcessHeader(header);
 		//std::cout<<"header done"<<std::endl;
 	}
@@ -535,7 +537,7 @@ bool jsonParser::Initializer()
 		ProcessMainBody(body);
 		
 	}
-	return ret;
+	return true;
 }
 
 bool jsonParser::loadFile()
