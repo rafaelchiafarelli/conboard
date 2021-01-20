@@ -126,8 +126,8 @@ int main(int argc, char *argv[])
     return 0;
 }
 /**
- * This function will read all json files from folder, identify witch of them have executables, 
- * and launch the specific handler for it, if the device is not connected, the handler must handle it.
+ * This function will read all json files from folder, identify witch of them have executables and services, 
+ * and launch the specific server for it, if the device is not connected, the handler must handle it.
  */ 
 
 void read_all(char *path)
@@ -166,26 +166,31 @@ void read_all(char *path)
 		
 		if(header->GetLoaded())
 		{
-			argv = new char*[header->Ex.params.size()];
-			ExecLine = new char[header->Ex.exec.length()];
-			strcpy(ExecLine,header->Ex.exec.c_str());
-			int count = 0;
-			std::cout<<"number of parameters:"<<header->Ex.params.size()<<std::endl;
-			for(std::vector<KeyValue>::iterator param_it = header->Ex.params.begin();
-				param_it != header->Ex.params.end();
-				param_it++)
+			vector<dirent> serviceFiles;
+			struct dirent *entry;
+			char service_folder[] = {"/etc/systemd/system/"};
+			DIR *dir = opendir(service_folder);
+			if (dir == NULL) {
+				return;
+			}
+			while ((entry = readdir(dir)) != NULL) {
+				if(string(entry->d_name).find(".service") != std::string::npos)
+					serviceFiles.push_back(*entry);
+			}
+			std::string serviceName = header->DevName;
+			serviceName.append(".service");
+			for(vector<dirent>::iterator files_it = serviceFiles.begin();
+				files_it!=jsonFiles.end();
+				files_it++)
+			{
+				if(!serviceName.compare(files_it->d_name))
 				{
-					argv[count] = new char[256];
-					sprintf(argv[count],"%s %s",param_it->key.c_str(), param_it->value.c_str());
-					std::cout<<"argv["<<count<<"]:"<<argv[count]<<std::endl;
+					char cmd[512];
+					sprintf(cmd,"systemctl restart %s",files_it->d_name);
+					system(cmd);
+					break;
 				}
-
-			pid_t pid;
-			int status;
-			status = posix_spawn(&pid,ExecLine,NULL,NULL,argv,environ);
-			std::cout<<"spanwned "<<ExecLine<<" and result is:"<<status<<std::endl;
-			delete argv;
-			delete ExecLine;
+			}
 		}
 
 		delete header;
@@ -199,9 +204,7 @@ void read_all(char *path)
 void create_json(char *devInfo, char *folder)
 {
 	bool hasHandler = false;
-	char **argv;
-	int param_count=0;
-	char *ExecLine;
+
 	vector<dirent> jsonFiles;
     struct dirent *entry;
     DIR *dir = opendir(folder);
@@ -224,14 +227,14 @@ void create_json(char *devInfo, char *folder)
 		sprintf(complete_file_name, "%s/%s",folder,files_it->d_name);
 		std::vector<ModeType> Mode;
 		std::vector<Actions> h;
-		jsonParser *json;
+		jsonParser *local_json;
 
 		hasHandler = false;
-		json = new jsonParser(complete_file_name,&Mode,&h);
+		local_json = new jsonParser(complete_file_name,&Mode,&h);
 
-		if(json->GetLoaded())
+		if(local_json->GetLoaded())
 		{
-			std::vector<KeyValue> tags = json->GetTags();
+			std::vector<KeyValue> tags = local_json->GetTags();
 			
 			if(tags.size() == 0)
 			{
@@ -268,66 +271,110 @@ void create_json(char *devInfo, char *folder)
 					}
 				}
 			}
-			if(hasHandler)
+			bool has_service = false;
+			if(hasHandler && local_json->GetHasExec())
 			{
-				param_count = json->Ex.params.size();
-				argv = new char*[param_count];
-				ExecLine = new char[json->Ex.exec.length()];
-				strcpy(ExecLine,json->Ex.exec.c_str());
-				int count = 0;
-				for(std::vector<KeyValue>::iterator param_it = json->Ex.params.begin();
-					param_it != json->Ex.params.end();
-					param_it++)
+				vector<dirent> serviceFiles;
+				struct dirent *entry;
+				char service_folder[] = {"/etc/systemd/system/"};
+				DIR *dir = opendir(service_folder);
+				if (dir == NULL) {
+					return;
+				}
+				while ((entry = readdir(dir)) != NULL) {
+					if(string(entry->d_name).find(".service") != std::string::npos)
+						serviceFiles.push_back(*entry);
+				}
+				std::string serviceName = local_json->DevName;
+				serviceName.append(".service");
+				for(vector<dirent>::iterator files_it = serviceFiles.begin();
+					files_it!=jsonFiles.end();
+					files_it++)
 				{
-					argv[count] = new char[256];
-					sprintf(argv[count],"%s %s",param_it->key.c_str(), param_it->value.c_str());
-					std::cout<<"param:"<<argv[count]<<std::endl;
-					count++;
+					if(!serviceName.compare(files_it->d_name))
+					{
+						char cmd[512];
+						sprintf(cmd,"systemctl restart %s",files_it->d_name);
+						system(cmd);
+						has_service = true;
+						break;
+					}
+					else
+					{
+						has_service = false;
+					}
 				}
 			}
-		}
-		
-		delete complete_file_name;
-		if(hasHandler)
-			break;
-		delete json;
-	}
-	if(hasHandler)
-	{
-		cout<<"has a handler and the cmd line is:"<<ExecLine<<endl;
-		pid_t pid;
-		int status;
-		status = posix_spawn(&pid,ExecLine,NULL,NULL,argv,environ);
-		for(int i=0;i<param_count;i++)
-			delete argv[i];
-		delete ExecLine;
-	}
-	else
-	{
-	std::cout<<"no handler! generate the dummy"<<std::endl;
-	std::string dummyjson("{\"DEVICE\":{\"type\":\"\", \"name\":\"\", \"input\":\"\", \"output\":\"\"}, \"header\":{\"identifier\":{\"generics\":{");
-	for(std::vector<KeyValue>::iterator info_it = info_from_dev.begin();
-		info_it != info_from_dev.end();
-		info_it++)
-		{
-			dummyjson.append("\"");
-			dummyjson.append(info_it->key);
-			dummyjson.append("\":\"");
-			dummyjson.append(info_it->value);
-			dummyjson.append("\",");
-		}
-		dummyjson.append("},\"executable\": {\"exec\":\"\", \"count\":\"\",\"params\":{}}}}}");
-		
-		char dummy_filename[256];
-		int unit = rand() % 100;
-		int tens = rand() % 100;
-		int hundreds = rand() % 100;
-		snprintf(dummy_filename,256, "%s%d-%d-%d.json",folder,unit,tens,hundreds);
 
-		std::ofstream dummyJsonFile(dummy_filename, std::ofstream::out);
-		std::cout<<"Dummy file name:"<<dummy_filename<<std::endl;
-		dummyJsonFile<<dummyjson;
-		dummyJsonFile.close();
+			if(!has_service && hasHandler && local_json->GetHasExec())
+			{
+			std::string ExecLine;
+			ExecLine = "";
+			ExecLine.append(local_json->Ex.exec);
+			ExecLine.append(" ");
+			
+			for(std::vector<KeyValue>::iterator param_it = local_json->Ex.params.begin();
+				param_it != local_json->Ex.params.end();
+				param_it++)
+				{
+					std::cout<<"param:"<<param_it->key.c_str()<<" "<<param_it->value.c_str()<<std::endl;
+					ExecLine.append(param_it->key);
+					ExecLine.append(" ");
+					ExecLine.append(param_it->value);
+					ExecLine.append(" ");
+				}
+				std::string filename = "";
+				filename.append("/etc/systemd/system/");
+				filename.append(local_json->DevName);
+				filename.append(".service");
+				std::ofstream serviFileStream(filename, std::ofstream::out);
+				std::cout<<"service file name:"<<filename<<std::endl;
+				std::string service_data = "";
+				service_data.append("[Unit]\r\n");
+				service_data.append("Description=auto generated service file.\r\n");
+				service_data.append("Documentation=https://github.com/rafaelchiafarelli/conboard\r\n\r\n");
+				service_data.append("[Install]\r\n");
+				service_data.append("WantedBy=multi-user.target\r\n");
+				service_data.append("[Service]\r\n");
+				service_data.append("User=root\r\n");
+				service_data.append("Type=simple\r\n");
+				service_data.append("ExecStart=");
+				service_data.append(ExecLine);
+				service_data.append("\r\n");				
+				serviFileStream<<service_data;
+				serviFileStream.close();					
+			}
+
+			if(!hasHandler)
+			{
+				std::cout<<"no handler! generate the dummy"<<std::endl;
+				std::string dummyjson("{\"DEVICE\":{\"type\":\"\", \"name\":\"\", \"input\":\"\", \"output\":\"\"}, \"header\":{\"identifier\":{\"generics\":{");
+				for(std::vector<KeyValue>::iterator info_it = info_from_dev.begin();
+					info_it != info_from_dev.end();
+					info_it++)
+					{
+						dummyjson.append("\"");
+						dummyjson.append(info_it->key);
+						dummyjson.append("\":\"");
+						dummyjson.append(info_it->value);
+						dummyjson.append("\",");
+					}
+					dummyjson.append("},\"executable\": {\"exec\":\"\", \"count\":\"\",\"params\":{}}}}}");
+					
+					char dummy_filename[256];
+					int unit = rand() % 100;
+					int tens = rand() % 100;
+					int hundreds = rand() % 100;
+					snprintf(dummy_filename,256, "%s%d-%d-%d.json",folder,unit,tens,hundreds);
+
+					std::ofstream dummyJsonFile(dummy_filename, std::ofstream::out);
+					std::cout<<"Dummy file name:"<<dummy_filename<<std::endl;
+					dummyJsonFile<<dummyjson;
+					dummyJsonFile.close();
+			}
+		}
+		delete complete_file_name;
+		delete local_json;
 	}
 }
 

@@ -104,6 +104,7 @@ install_lowlevel(){
 
     echo "event handler"
     cp /conboard/LowLevel/assets/100-usb.rules /etc/udev/rules.d/
+    cp /conboard/LowLevel/assets/event_handler.sh /conboard/
     udevadm control --reload-rules && sudo udevadm trigger
     service udev restart
 
