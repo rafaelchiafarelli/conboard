@@ -183,7 +183,7 @@ void read_all(char *path)
 			serviceName.append(".service");
 			std::cout<<"now here"<<std::endl;
 			for(vector<dirent>::iterator service_it = serviceFiles.begin();
-				service_it!=jsonFiles.end();
+				service_it!=serviceFiles.end();
 				service_it++)
 			{
 				std::cout<<"buh here"<<std::endl;
