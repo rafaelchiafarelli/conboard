@@ -147,6 +147,11 @@ void read_all(char *path)
     }
     closedir(dir);
 	char complete_file_name[1024];
+	memset(complete_file_name,0,1024);
+	std::vector<ModeType> Mode;
+	std::vector<Actions> h;
+	jsonParser header(complete_file_name,&Mode,&h);
+	bool has_service = false;
 	for(vector<dirent>::iterator files_it = jsonFiles.begin();
 		files_it!=jsonFiles.end();
 		files_it++
@@ -155,16 +160,12 @@ void read_all(char *path)
 		//for all the json files present
 
 		sprintf(complete_file_name, "%s/%s",path,files_it->d_name);
-		
-		std::vector<ModeType> Mode;
-		std::vector<Actions> h;
-
-		jsonParser *header;
+		header.Reload(complete_file_name,&Mode,&h);
 		char **argv;
 		char *ExecLine;
-		header = new jsonParser(complete_file_name,&Mode,&h);
 		
-		if(header->GetLoaded())
+		
+		if(header.GetLoaded())
 		{
 			vector<dirent> serviceFiles;
 			struct dirent *entry;
@@ -177,7 +178,7 @@ void read_all(char *path)
 				if(string(entry->d_name).find(".service") != std::string::npos)
 					serviceFiles.push_back(*entry);
 			}
-			std::string serviceName = header->DevName;
+			std::string serviceName = header.DevName;
 			serviceName.append(".service");
 			for(vector<dirent>::iterator files_it = serviceFiles.begin();
 				files_it!=jsonFiles.end();
@@ -188,12 +189,15 @@ void read_all(char *path)
 					char cmd[512];
 					sprintf(cmd,"systemctl restart %s",files_it->d_name);
 					system(cmd);
+					has_service = true;
 					break;
+				}
+				else
+				{
+					has_service = false;
 				}
 			}
 		}
-
-		delete header;
 	}
 }
 
@@ -218,6 +222,9 @@ void create_json(char *devInfo, char *folder)
     closedir(dir);
 	keyParser info(devInfo,'=');
 	vector<KeyValue> info_from_dev = info.GetParsed();
+	std::vector<ModeType> Mode;
+	std::vector<Actions> h;
+	jsonParser local_json("",&Mode,&h);
 	for(vector<dirent>::iterator files_it = jsonFiles.begin();
 		files_it!=jsonFiles.end();
 		files_it++
@@ -225,16 +232,12 @@ void create_json(char *devInfo, char *folder)
 	{//for all the json files present
 		char *complete_file_name = new char[strlen(folder)+strlen(files_it->d_name)];
 		sprintf(complete_file_name, "%s/%s",folder,files_it->d_name);
-		std::vector<ModeType> Mode;
-		std::vector<Actions> h;
-		jsonParser *local_json;
-
 		hasHandler = false;
-		local_json = new jsonParser(complete_file_name,&Mode,&h);
+		local_json.Reload(complete_file_name,&Mode,&h);
 
-		if(local_json->GetLoaded())
+		if(local_json.GetLoaded())
 		{
-			std::vector<KeyValue> tags = local_json->GetTags();
+			std::vector<KeyValue> tags = local_json.GetTags();
 			
 			if(tags.size() == 0)
 			{
@@ -272,7 +275,7 @@ void create_json(char *devInfo, char *folder)
 				}
 			}
 			bool has_service = false;
-			if(hasHandler && local_json->GetHasExec())
+			if(hasHandler && local_json.GetHasExec())
 			{
 				vector<dirent> serviceFiles;
 				struct dirent *entry;
@@ -285,7 +288,7 @@ void create_json(char *devInfo, char *folder)
 					if(string(entry->d_name).find(".service") != std::string::npos)
 						serviceFiles.push_back(*entry);
 				}
-				std::string serviceName = local_json->DevName;
+				std::string serviceName = local_json.DevName;
 				serviceName.append(".service");
 				for(vector<dirent>::iterator files_it = serviceFiles.begin();
 					files_it!=jsonFiles.end();
@@ -306,15 +309,15 @@ void create_json(char *devInfo, char *folder)
 				}
 			}
 
-			if(!has_service && hasHandler && local_json->GetHasExec())
+			if(!has_service && hasHandler && local_json.GetHasExec())
 			{
 			std::string ExecLine;
 			ExecLine = "";
-			ExecLine.append(local_json->Ex.exec);
+			ExecLine.append(local_json.Ex.exec);
 			ExecLine.append(" ");
 			
-			for(std::vector<KeyValue>::iterator param_it = local_json->Ex.params.begin();
-				param_it != local_json->Ex.params.end();
+			for(std::vector<KeyValue>::iterator param_it = local_json.Ex.params.begin();
+				param_it != local_json.Ex.params.end();
 				param_it++)
 				{
 					std::cout<<"param:"<<param_it->key.c_str()<<" "<<param_it->value.c_str()<<std::endl;
@@ -325,7 +328,7 @@ void create_json(char *devInfo, char *folder)
 				}
 				std::string filename = "";
 				filename.append("/etc/systemd/system/");
-				filename.append(local_json->DevName);
+				filename.append(local_json.DevName);
 				filename.append(".service");
 				std::ofstream serviFileStream(filename, std::ofstream::out);
 				std::cout<<"service file name:"<<filename<<std::endl;
@@ -374,7 +377,7 @@ void create_json(char *devInfo, char *folder)
 			}
 		}
 		delete complete_file_name;
-		delete local_json;
+
 	}
 }
 

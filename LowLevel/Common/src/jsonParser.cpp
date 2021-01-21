@@ -15,17 +15,35 @@ using namespace rapidjson;
 
 jsonParser::jsonParser(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
 	
+
+	loaded = false;
+	//std::cout<<"helo"<<std::endl;
+	if(!_FileName.empty())
+		Reload(	_FileName, Mode, h);	
+	
+}
+
+void jsonParser::Reload(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h){
 	header_actions = h;
 	op_modes = Mode;
 	loaded = false;
 	FileName = _FileName;
 
-	//std::cout<<"helo"<<std::endl;
-	Reload();	
-	
-}
+	data = "";
+	Doc.Clear();
+	type = devType::notype;
+	timeout = 0;
+	hasExec=false;
 
-void jsonParser::Reload(){
+	Ex.exec = "";
+	Ex.param_count = 0;
+	Ex.params.clear();
+	
+	DevName = "";
+	DevInput = "";
+
+	header_actions->clear();
+	op_modes->clear();
 	if(loaded == false)
 	{
 		if (loadFile()) 

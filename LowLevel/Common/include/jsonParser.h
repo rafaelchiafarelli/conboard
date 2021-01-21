@@ -83,7 +83,7 @@ class jsonParser
 		void Clear(){
 			loaded = false;
 		}
-		void Reload();
+		void Reload(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h);
 		
 		devType GetType(){return type;};
 		unsigned int GetTimeOut(){return timeout;};
