@@ -30,7 +30,7 @@ void jsonParser::Reload(std::string _FileName, std::vector<ModeType> *Mode,std::
 	FileName = _FileName;
 
 	data = "";
-	Doc.Clear();
+	
 	type = devType::notype;
 	timeout = 0;
 	hasExec=false;
