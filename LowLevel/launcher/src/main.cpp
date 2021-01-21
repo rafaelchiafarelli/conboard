@@ -132,20 +132,35 @@ int main(int argc, char *argv[])
 
 void read_all(char *path)
 {
+	/* Get all directories */
 	vector<dirent> jsonFiles;
-    struct dirent *entry;
-    DIR *dir = opendir(path);
+    struct dirent *json_entry;
+    DIR *json_dir = opendir(path);
 	bool hasHandler = false;
-    if (dir == NULL) {
+    if (json_dir == NULL) {
 		
         return;
     }
 
-    while ((entry = readdir(dir)) != NULL) {
-		if(string(entry->d_name).find(".json") != std::string::npos)
-        	jsonFiles.push_back(*entry);
+    while ((json_entry = readdir(json_dir)) != NULL) {
+		if(string(json_entry->d_name).find(".json") != std::string::npos)
+        	jsonFiles.push_back(*json_entry);
     }
-    closedir(dir);
+    closedir(json_dir);
+	/* Get all services */
+	vector<dirent> serviceFiles;
+	struct dirent *service_entry;
+	char service_folder[] = {"/etc/systemd/system/"};
+	DIR *service_dir = opendir(service_folder);
+	if (service_dir == NULL) {
+		return;
+	}
+	while ((service_entry = readdir(service_dir)) != NULL) {
+		if(string(service_entry->d_name).find(".service") != std::string::npos)
+			serviceFiles.push_back(*service_entry);
+	}
+	closedir(service_dir);
+
 	char complete_file_name[1024];
 	memset(complete_file_name,0,1024);
 	std::vector<ModeType> Mode;
@@ -158,36 +173,20 @@ void read_all(char *path)
 		)
 	{
 		//for all the json files present
-
 		sprintf(complete_file_name, "%s/%s",path,files_it->d_name);
 		header.Reload(complete_file_name,&Mode,&h);
-		char **argv;
-		char *ExecLine;
-		
-		
 		if(header.GetLoaded())
 		{
-			vector<dirent> serviceFiles;
-			struct dirent *entry;
-			char service_folder[] = {"/etc/systemd/system/"};
-			DIR *dir = opendir(service_folder);
-			if (dir == NULL) {
-				return;
-			}
-			while ((entry = readdir(dir)) != NULL) {
-				if(string(entry->d_name).find(".service") != std::string::npos)
-					serviceFiles.push_back(*entry);
-			}
 			std::string serviceName = header.DevName;
 			serviceName.append(".service");
-			for(vector<dirent>::iterator files_it = serviceFiles.begin();
-				files_it!=jsonFiles.end();
-				files_it++)
+			for(vector<dirent>::iterator service_it = serviceFiles.begin();
+				service_it!=jsonFiles.end();
+				service_it++)
 			{
-				if(!serviceName.compare(files_it->d_name))
+				if(!serviceName.compare(service_it->d_name))
 				{
 					char cmd[512];
-					sprintf(cmd,"systemctl restart %s",files_it->d_name);
+					sprintf(cmd,"systemctl restart %s",service_it->d_name);
 					system(cmd);
 					has_service = true;
 					break;
