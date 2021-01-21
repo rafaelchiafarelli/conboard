@@ -181,13 +181,16 @@ void read_all(char *path)
 		{
 			std::string serviceName = header.DevName;
 			serviceName.append(".service");
+			std::cout<<"now here"<<std::endl;
 			for(vector<dirent>::iterator service_it = serviceFiles.begin();
 				service_it!=jsonFiles.end();
 				service_it++)
 			{
+				std::cout<<"buh here"<<std::endl;
 				if(!serviceName.compare(service_it->d_name))
 				{
 					char cmd[512];
+					std::cout<<"and here"<<std::endl;
 					sprintf(cmd,"systemctl restart %s",service_it->d_name);
 					system(cmd);
 					has_service = true;
