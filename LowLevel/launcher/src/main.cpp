@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h> 
 #include <usb.h>
-
+#include <algorithm>
 #include <unistd.h>
 #include <spawn.h>
 #include <fstream>
@@ -176,21 +176,20 @@ void read_all(char *path)
 		//for all the json files present
 		sprintf(complete_file_name, "%s/%s",path,files_it->d_name);
 		header.Reload(complete_file_name,&Mode,&h);
-		std::cout<<"and here"<<std::endl;
+
 		if(header.GetLoaded())
 		{
 			std::string serviceName = header.DevName;
 			serviceName.append(".service");
-			std::cout<<"now here"<<std::endl;
+			serviceName.erase(remove_if(serviceName.begin(), serviceName.end(), ::isspace), serviceName.end());
 			for(vector<dirent>::iterator service_it = serviceFiles.begin();
 				service_it!=serviceFiles.end();
 				service_it++)
 			{
-				std::cout<<"buh here"<<std::endl;
 				if(!serviceName.compare(service_it->d_name))
 				{
 					char cmd[512];
-					std::cout<<"and here"<<std::endl;
+					std::cout<<"found a service"<<std::endl;
 					sprintf(cmd,"systemctl restart %s",service_it->d_name);
 					system(cmd);
 					has_service = true;
@@ -213,29 +212,48 @@ void create_json(char *devInfo, char *folder)
 {
 	bool hasHandler = false;
 
+	/* Get all directories */
 	vector<dirent> jsonFiles;
-    struct dirent *entry;
-    DIR *dir = opendir(folder);
-    if (dir == NULL) {
+    struct dirent *json_entry;
+    DIR *json_dir = opendir(folder);
+    if (json_dir == NULL) {
+		
         return;
     }
-    while ((entry = readdir(dir)) != NULL) {
-		if(string(entry->d_name).find(".json") != std::string::npos)
-        	jsonFiles.push_back(*entry);
+    while ((json_entry = readdir(json_dir)) != NULL) {
+		if(string(json_entry->d_name).find(".json") != std::string::npos)
+        	jsonFiles.push_back(*json_entry);
     }
-    closedir(dir);
+    closedir(json_dir);
+
+	/* Get all services */
+	vector<dirent> serviceFiles;
+	struct dirent *service_entry;
+	char service_folder[] = {"/etc/systemd/system/"};
+	DIR *service_dir = opendir(service_folder);
+	if (service_dir == NULL) {
+		return;
+	}
+	while ((service_entry = readdir(service_dir)) != NULL) {
+		if(string(service_entry->d_name).find(".service") != std::string::npos)
+			serviceFiles.push_back(*service_entry);
+	}
+	closedir(service_dir);
+
 	keyParser info(devInfo,'=');
 	vector<KeyValue> info_from_dev = info.GetParsed();
 	std::vector<ModeType> Mode;
 	std::vector<Actions> h;
 	jsonParser local_json("",&Mode,&h);
-	for(vector<dirent>::iterator files_it = jsonFiles.begin();
-		files_it!=jsonFiles.end();
-		files_it++
+	char complete_file_name[1024];
+	memset(complete_file_name,0,1024);
+	for(vector<dirent>::iterator json_it = jsonFiles.begin();
+		json_it!=jsonFiles.end();
+		json_it++
 		)
 	{//for all the json files present
-		char *complete_file_name = new char[strlen(folder)+strlen(files_it->d_name)];
-		sprintf(complete_file_name, "%s/%s",folder,files_it->d_name);
+		
+		sprintf(complete_file_name, "%s/%s",folder,json_it->d_name);
 		hasHandler = false;
 		local_json.Reload(complete_file_name,&Mode,&h);
 
@@ -249,16 +267,15 @@ void create_json(char *devInfo, char *folder)
 			}
 			else
 			{
-			for(vector<KeyValue>::iterator info_it = info_from_dev.begin();
-				info_it != info_from_dev.end();
-				info_it++)
-				{
-					for(vector<KeyValue>::iterator header_it = tags.begin();
-						header_it != tags.end();
-						header_it++)
-					{ //check if all the keys and values from json are present in devInfo and equal!
-					std::cout<<"key:"<<header_it->key.c_str()<<" value:"<<header_it->value.c_str()<<std::endl;
-
+			for(vector<KeyValue>::iterator header_it = tags.begin();
+				header_it != tags.end();
+				header_it++)
+				{ //check if all the keys and values from json are present in devInfo and equal!
+				for(vector<KeyValue>::iterator info_it = info_from_dev.begin();
+					info_it != info_from_dev.end();
+					info_it++)
+					{
+						std::cout<<"key:"<<header_it->key.c_str()<<" value:"<<header_it->value.c_str()<<std::endl;
 						if((info_it->key.compare(header_it->key)) || 
 							(info_it->value.compare(header_it->value)))
 						{
@@ -273,7 +290,7 @@ void create_json(char *devInfo, char *folder)
 					}	
 					if(!hasHandler)
 					{
-						std::cout<<"a key was not found:"<<info_it->key.c_str()<<std::endl;
+						std::cout<<"a key was not found:"<<header_it->key.c_str()<<std::endl;
 						break;
 					}
 				}
@@ -281,27 +298,19 @@ void create_json(char *devInfo, char *folder)
 			bool has_service = false;
 			if(hasHandler && local_json.GetHasExec())
 			{
-				vector<dirent> serviceFiles;
-				struct dirent *entry;
-				char service_folder[] = {"/etc/systemd/system/"};
-				DIR *dir = opendir(service_folder);
-				if (dir == NULL) {
-					return;
-				}
-				while ((entry = readdir(dir)) != NULL) {
-					if(string(entry->d_name).find(".service") != std::string::npos)
-						serviceFiles.push_back(*entry);
-				}
+
 				std::string serviceName = local_json.DevName;
 				serviceName.append(".service");
-				for(vector<dirent>::iterator files_it = serviceFiles.begin();
-					files_it!=serviceFiles.end();
-					files_it++)
+				serviceName.erase(remove_if(serviceName.begin(), serviceName.end(), ::isspace), serviceName.end());
+
+				for(vector<dirent>::iterator service_it = serviceFiles.begin();
+					service_it!=serviceFiles.end();
+					service_it++)
 				{
-					if(!serviceName.compare(files_it->d_name))
+					if(!serviceName.compare(service_it->d_name))
 					{
 						char cmd[512];
-						sprintf(cmd,"systemctl restart %s",files_it->d_name);
+						sprintf(cmd,"systemctl restart %s",service_it->d_name);
 						system(cmd);
 						has_service = true;
 						break;
@@ -333,7 +342,11 @@ void create_json(char *devInfo, char *folder)
 				std::string filename = "";
 				filename.append("/etc/systemd/system/");
 				filename.append(local_json.DevName);
+				
 				filename.append(".service");
+
+				filename.erase(remove_if(filename.begin(), filename.end(), ::isspace), filename.end());
+
 				std::ofstream serviFileStream(filename, std::ofstream::out);
 				std::cout<<"service file name:"<<filename<<std::endl;
 				std::string service_data = "";
@@ -349,21 +362,27 @@ void create_json(char *devInfo, char *folder)
 				service_data.append(ExecLine);
 				service_data.append("\r\n");				
 				serviFileStream<<service_data;
-				serviFileStream.close();					
+				serviFileStream.close();	
+				char cmd[512];
+				std::string servName = local_json.DevName;	
+				servName.append(".service");
+				servName.erase(remove_if(servName.begin(), servName.end(), ::isspace), servName.end());
+				sprintf(cmd,"systemctl restart %s",servName.c_str());
+				system(cmd);				
 			}
 
 			if(!hasHandler)
 			{
 				std::cout<<"no handler! generate the dummy"<<std::endl;
 				std::string dummyjson("{\"DEVICE\":{\"type\":\"\", \"name\":\"\", \"input\":\"\", \"output\":\"\"}, \"header\":{\"identifier\":{\"generics\":{");
-				for(std::vector<KeyValue>::iterator info_it = info_from_dev.begin();
-					info_it != info_from_dev.end();
-					info_it++)
+				for(std::vector<KeyValue>::iterator dev_it = info_from_dev.begin();
+					dev_it != info_from_dev.end();
+					dev_it++)
 					{
 						dummyjson.append("\"");
-						dummyjson.append(info_it->key);
+						dummyjson.append(dev_it->key);
 						dummyjson.append("\":\"");
-						dummyjson.append(info_it->value);
+						dummyjson.append(dev_it->value);
 						dummyjson.append("\",");
 					}
 					dummyjson.append("},\"executable\": {\"exec\":\"\", \"count\":\"\",\"params\":{}}}}}");
@@ -380,8 +399,6 @@ void create_json(char *devInfo, char *folder)
 					dummyJsonFile.close();
 			}
 		}
-		delete complete_file_name;
-
 	}
 }
 
