@@ -295,7 +295,7 @@ void create_json(char *devInfo, char *folder)
 				std::string serviceName = local_json.DevName;
 				serviceName.append(".service");
 				for(vector<dirent>::iterator files_it = serviceFiles.begin();
-					files_it!=jsonFiles.end();
+					files_it!=serviceFiles.end();
 					files_it++)
 				{
 					if(!serviceName.compare(files_it->d_name))
