@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 		break;
 	}
 
-	
+	std::cout<<"end of program"<<std::endl;
     return 0;
 }
 /**
@@ -166,6 +166,7 @@ void read_all(char *path)
 	std::vector<ModeType> Mode;
 	std::vector<Actions> h;
 	jsonParser header(complete_file_name,&Mode,&h);
+	std::cout<<"here"<<std::endl;
 	bool has_service = false;
 	for(vector<dirent>::iterator files_it = jsonFiles.begin();
 		files_it!=jsonFiles.end();
@@ -175,6 +176,7 @@ void read_all(char *path)
 		//for all the json files present
 		sprintf(complete_file_name, "%s/%s",path,files_it->d_name);
 		header.Reload(complete_file_name,&Mode,&h);
+		std::cout<<"and here"<<std::endl;
 		if(header.GetLoaded())
 		{
 			std::string serviceName = header.DevName;
