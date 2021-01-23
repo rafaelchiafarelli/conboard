@@ -324,21 +324,12 @@ void create_json(char *devInfo, char *folder)
 
 			if(!has_service && hasHandler && local_json.GetHasExec())
 			{
-			std::string ExecLine;
-			ExecLine = "";
-			ExecLine.append(local_json.Ex.exec);
-			ExecLine.append(" ");
-			
-			for(std::vector<KeyValue>::iterator param_it = local_json.Ex.params.begin();
-				param_it != local_json.Ex.params.end();
-				param_it++)
-				{
-					std::cout<<"param:"<<param_it->key.c_str()<<" "<<param_it->value.c_str()<<std::endl;
-					ExecLine.append(param_it->key);
-					ExecLine.append(" ");
-					ExecLine.append(param_it->value);
-					ExecLine.append(" ");
-				}
+				std::string ExecLine;
+				ExecLine = "";
+				ExecLine.append(local_json.Ex.exec);
+				ExecLine.append(" -x ");
+				ExecLine.append(complete_file_name);
+
 				std::string filename = "";
 				filename.append("/etc/systemd/system/");
 				filename.append(local_json.DevName);

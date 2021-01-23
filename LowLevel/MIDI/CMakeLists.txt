@@ -9,7 +9,8 @@ add_executable(conMIDI ${SOURCES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC "/usr/include")
 
-
+find_package(cppzmq)
+target_link_libraries(conMIDI cppzmq)
 target_link_libraries(conMIDI ${CMAKE_SOURCE_DIR}/../Common/build/libcommon.so)
 target_link_libraries(conMIDI stdc++fs)
 target_link_libraries(conMIDI asound)

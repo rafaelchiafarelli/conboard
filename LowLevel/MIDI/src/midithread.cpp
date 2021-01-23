@@ -14,7 +14,7 @@
 #include <fcntl.h>
 
 #include <unistd.h>
-
+#include <zmq.hpp>
 #include <chrono>
 void MIDI::Stop()
 {
@@ -46,11 +46,23 @@ MIDI::~MIDI(){
         delete out_thread;
 }
 
-MIDI::MIDI(char *p_name, string jsonFileName, char *devName ):modes(), header(), json(jsonFileName,&modes,&header),oActions()
+MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), json(jsonFileName,&modes,&header),oActions()
 {
+    zmq::context_t ctx;
+    zmq::socket_t sock(ctx, zmq::socket_type::push);
+    sock.bind("inproc://test");
+    const std::string_view m = "Hello, world";
+    sock.send(zmq::buffer(m), zmq::send_flags::dontwait);
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
-    memcpy(port_name,p_name,strlen(p_name));
+    for(vector<raw_midi>::iterator ports_it = hw_ports.begin();
+        ports_it != hw_ports.end();
+        ports_it++)
+        {
+            if(!json.DevName.compare(ports_it->devName))
+                sprintf(port_name,"%s",json.DevName.c_str());
+        }
+
     stop = false;
     send = false;
     int err = 0;
@@ -148,7 +160,6 @@ void MIDI::processInput(midiSignal midiS)
                (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
                (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
             {
-
                 oQueue.push(it_act->out);
                 send = true;
                 break;
@@ -170,31 +181,25 @@ void MIDI::out_func()
                 out != to_send.end();
                 out++)
             {
-                
                 switch(out->tp)
                 {
                     case keyboard:
-                        
                         keyboard_send(out->kData);
                         if(out->kData.delay != 0)
                             std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
                         break;
                     case midi:
-                        
                         send_midi((char *)out->mAct.midi.byte,sizeof(midiSignal));
                         if(out->mAct.delay !=0)
                              std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));
                         break;
                     case mouse:
-                        
                         send_mouse(out->mouse);
                         break;
                     case joystick:
-                        
                         send_joystick();
                         break;
                     default:
-                        
                         break;
                 }
             }
@@ -320,8 +325,8 @@ json.Clear();
 bool MIDI::outFile(string name)
 {
 lock_guard<mutex> locker(locking_mechanism);
-bool ret = false;
-    if(!outFileStream.is_open())
+bool ret = outFileStream.is_open();
+    if(!ret)
     {
         outFileName = name;
         outFileStream.open(name, std::ofstream::out | std::ofstream::app);
@@ -336,7 +341,7 @@ void MIDI::outStop()
 {
 lock_guard<mutex> locker(locking_mechanism);
 outToFile =false;
-    if(outFileStream)
+    if(outFileStream.is_open())
     {
         outFileStream.close();
     }

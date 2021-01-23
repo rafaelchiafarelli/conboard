@@ -47,6 +47,35 @@ install_alsa(){
 
 }
 
+install_zeromq(){
+sudo apt-get install libtool pkg-config build-essential autoconf automake
+
+# Install libsodium
+git clone git://github.com/jedisct1/libsodium.git
+cd libsodium
+./autogen.sh
+./configure && make check
+sudo make install
+sudo ldconfig
+
+cd ~
+git clone https://github.com/zeromq/libzmq.git
+cd libzmq
+./autogen.sh
+./configure
+make -j$(nproc)
+sudo make install
+sudo ldconfig
+# Install zeromq
+# latest version as of this post is 4.1.4
+sudo wget http://download.zeromq.org/zeromq-4.1.4.tar.gz
+sudo tar -xvf zeromq-4.1.4.tar.gz
+cd zeromq-4.1.4
+sudo ./configure
+sudo make
+sudo make install
+
+}
 install_python3(){
     wget https://www.python.org/ftp/python/3.8.0/Python-3.8.0.tgz
     sudo apt-get update
@@ -77,6 +106,7 @@ compile(){
             preconditions
             install_gcc
             install_alsa
+            install_zeromq
             install_python3
             install_db
             compile_all
