@@ -36,8 +36,7 @@ void jsonParser::Reload(std::string _FileName, std::vector<ModeType> *Mode,std::
 	hasExec=false;
 
 	Ex.exec = "";
-	Ex.param_count = 0;
-	Ex.params.clear();
+
 	
 	DevName = "";
 	DevInput = "";
@@ -395,35 +394,11 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 							hasExec = true;
 			}
 			
-			if(executable.HasMember("count"))
+			if(executable.HasMember("port"))
 			{
-				Ex.param_count = 0;
-				if(executable["count"].IsInt())
-					Ex.param_count= executable["count"].GetInt();
-			}
-			
-			if(executable.HasMember("params"))
-			{
-				rapidjson::Value& params = executable["params"];
-				
-
-				for (Value::ConstMemberIterator iter = params.MemberBegin(); iter != params.MemberEnd(); ++iter)
-				{
-					
-					KeyValue kv;
-					if(iter->name.IsString())
-					{
-						kv.key = iter->name.GetString();
-						std::cout<<kv.key<<std::endl;
-					}
-					if(iter->value.IsString())
-					{
-						kv.value = iter->value.GetString();
-						std::cout<<kv.value<<std::endl;
-					}
-					Ex.params.push_back(kv);
-				}
-
+				Ex.port = "";
+				if(executable["port"].IsString())
+					Ex.port = executable["port"].GetString();
 			}
 			//std::cout<<"params done"<<std::endl;
 		}

@@ -193,23 +193,17 @@ int main(int argc, char *argv[])
 {
 
 	stop = true;
-	static const char short_options[] = "i:p:x:";
+	static const char short_options[] = "x:";
 	static const struct option long_options[] = {
-		{"ID", 1, NULL, 'i'},
-		{"port", 1, NULL, 'p'},
 		{"json", 1, NULL, 'x'},
 		{ }
 	};
     
 	if(argc < 4)
 	{
-		cout<<"error, must specifi port and json. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.json\""<<endl;
+		cout<<"error, must specifi port and json. Usage ./midi -x \"/home/user/file.json\""<<endl;
 		return -1;
 	}
-    char p_name[256];
-	memset(p_name,256,0);
-	char fifoFile[256];
-	memset(fifoFile,0,256);
     string jsonFileName;
 	int c;
 	while ((c = getopt_long(argc, 
@@ -218,14 +212,8 @@ int main(int argc, char *argv[])
 				     		long_options, NULL)) != -1) 
 	{
 		switch (c) {
-		case 'p':
-			strcpy(p_name,optarg);
-			break;
 		case 'x':
 			jsonFileName = string(optarg);
-			break;
-		case 'i':
-			sprintf(fifoFile, "%s",optarg);
 			break;
 		default:
 			cout<<"Try more information."<<endl;
@@ -235,91 +223,20 @@ int main(int argc, char *argv[])
     cout<<"device list"<<endl;
     device_list();
 	cout<<jsonFileName<<endl;
-	if(!hw_ports.empty())
-	{
-		for(vector<raw_midi>::iterator it = hw_ports.begin();
-			it!=hw_ports.end();
-			it++)
-		{
-			cout<<it->devName<<endl;
-			if(!it->devName.compare(p_name))
-			{
-				stop = false;
-				cout<<"Found a compatible port"<<endl;
-				break;
-			}
-		}
-	}
-	else
-	{
-		stop = true;
-	}
-	if(!stop)
-	{
 		MIDI *devMIDI;
-		int fd = 0;
-		int fifoerr = mkfifo(fifoFile, 0666); 
-		fd = open(fifoFile,O_RDONLY| O_NONBLOCK); 
-		if(fifoerr<0)
-		{
-			cout<<"fifo err"<<endl;
-		}
-
-		if(fd < 0)
-		{
-			cout<<"error opening named pipe (fifo)"<<endl;
-			return -1;
-		}
-		devMIDI = new MIDI(p_name, jsonFileName, (char *)"dsfasdfa");
+		
+		devMIDI = new MIDI(jsonFileName,hw_ports);
 
 		char cmd[256];
 		signal(SIGINT, sig_handler);
 		while(!stop)
 		{
-			memset(cmd,0,256);
-			int err = read(fd, cmd, 80); 
-		
-			if(err<0)
-			{
-				cout<<"Fifo closed"<<endl;
-				stop = true;
-			}
-			else
-			{
-				string raw = string(cmd);
-				string command = raw.substr(0,raw.find(' '));
-				if(!command.compare("reload"))
-				{
-					std::cout<<"Reload!"<<endl;
-					devMIDI->Reload();
-				}
-				else if(!command.compare("file"))
-				{
-					string param = raw.substr(raw.find(' '), raw.size());
-					bool isOpen = devMIDI->outFile(param);
-					if(isOpen)
-						cout<<"file openned"<<endl;
-					else
-						cout<<"NOT openned"<<endl;
-					
-				}
-				else if(!command.compare("outstop"))
-				{
-					devMIDI->outStop();
-				}
-			}
-			
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
-		if(fd)
-			close(fd); 
+
 		devMIDI->Stop();
 		delete devMIDI;
-	}
-	else
-	{
-		std::cout<<"File not found"<<endl;
-	}
+
     return 0;
 
 }

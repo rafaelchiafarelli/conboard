@@ -40,12 +40,7 @@
                 },
                 "executable":{ 
                     "exec": "/conboard/LowLevel/MIDI/build/conMIDI", 
-                    "count":"3",
-                    "params":{
-                            "-p":"hw:1,0,0",
-                            "-x":"/conboard/boards/Arduino_Micro.json",
-                            "-i":"/tmp/named.pipe"
-                        }
+                    "port":"hw:1,0,0"
                     }
                 },
             "actions":

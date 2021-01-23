@@ -23,6 +23,7 @@
 #include "jsonParser.h"
 
 #include <alsa/asoundlib.h>
+#include "aconfig.h"
 #include <thread>
 #include <set>
 #include <atomic>
@@ -36,6 +37,16 @@ using namespace std;
 #define PORT_NAME_SIZE 10
 #define MILLISECONDS_TIMEOUT 10
 
+class raw_midi{
+    public:
+        string port;
+        string devName;
+        string sub_name;
+        string name;
+        int sub;
+        int card;
+        int device;
+};
 
 class MIDI : private oActions{
 
@@ -86,7 +97,7 @@ class MIDI : private oActions{
         
         void oJoystick(joystickActions){};
         void oKeyboard(keyboardActions){};
-        MIDI(char *port_name, string xmlFileName, char *hid_name);
+        MIDI( string xmlFileName, vector<raw_midi> hw_ports);
         ~MIDI();
 
 };

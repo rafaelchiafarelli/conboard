@@ -42,8 +42,8 @@ public:
 class Executable{
 	public:
 		std::string exec;
-		int param_count;
-		std::vector<KeyValue> params;
+		
+		std::string port;
 };
 
 
