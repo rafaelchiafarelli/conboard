@@ -114,7 +114,7 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 			return;
 		}
 		m.name = string(snd_rawmidi_info_get_name(info));
-		std::cout<<m.name<<std::endl;
+		
 		sub_name = snd_rawmidi_info_get_subdevice_name(info);
 		m.sub_name = string(snd_rawmidi_info_get_subdevice_name(info));
 		char dev_port[256];
@@ -127,9 +127,10 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 			sprintf(dev_port,"hw:%d,%d,%d",
 			       card, device, sub);
 		}
-		m.devName = string(dev_port);
+		m.port = string(dev_port);
+		std::cout<<m<<endl;
 		hw_ports.push_back(m);
-		std::cout<<dev_port<<endl;
+		
 
  	}
 }
