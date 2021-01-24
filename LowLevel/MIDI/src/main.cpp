@@ -114,6 +114,7 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 			return;
 		}
 		m.name = string(snd_rawmidi_info_get_name(info));
+		std::cout<<m.name<<std::endl;
 		sub_name = snd_rawmidi_info_get_subdevice_name(info);
 		m.sub_name = string(snd_rawmidi_info_get_subdevice_name(info));
 		char dev_port[256];
