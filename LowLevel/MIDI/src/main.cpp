@@ -194,7 +194,7 @@ static void sig_handler(int dummy)
 int main(int argc, char *argv[])
 {
 
-	stop = true;
+	stop = false;
 	static const char short_options[] = "x:";
 	static const struct option long_options[] = {
 		{"json", 1, NULL, 'x'},
