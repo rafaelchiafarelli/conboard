@@ -48,13 +48,12 @@ MIDI::~MIDI(){
 
 MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), json(jsonFileName,&modes,&header),oActions()
 {
-    zmq::context_t ctx;
-    zmq::socket_t sock(ctx, zmq::socket_type::push);
-    sock.bind("inproc://test");
-    const std::string_view m = "Hello, world";
-    sock.send(zmq::buffer(m), zmq::send_flags::dontwait);
 
-    
+
+    /*ZMQ connection -- send user cmds*/
+    io_socket.connect("tcp://localhost:5555");
+    coms_socket.connect("tcp://localhost:5550");
+
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
     for(vector<raw_midi>::iterator ports_it = hw_ports.begin();
@@ -120,8 +119,72 @@ void MIDI::execHeader()
         }
     }
 }
+void MIDI::handler()
+{
+
+    // set up some static data to send
+    const std::string data{"Hello"};
+    zmq::message_t reply{};
+    zmq::recv_result_t recv_res = coms_socket.recv(reply, zmq::recv_flags::none);
+
+    std::cout << "Received " << reply.to_string()<< std::endl;; 
+    
+    /*msg structure is
+    * device cmd params
+    * 
+    * cmd: reload
+    * reload 
+    * 
+    * cmd file
+    * file <complete file_name with path>
+    * 
+    * cmd outstop
+    * outstop
+    * 
+    */
+    std::string raw = reply.to_string();
+    
+    std::vector<std::string> parsed_msg = explode(raw,' ');
+    std::vector<std::string>::iterator msg_it = parsed_msg.begin();
+    if(!msg_it->compare(json.DevName))
+    {
+        msg_it++;
+        std::string command = *msg_it;
+        if(!command.compare("reload"))
+        {
+            std::cout<<"Reload!"<<endl;
+            Reload();
+        }
+        else if(!command.compare("outstop"))
+        {
+            outStop();
+        }
+        else if(!command.compare("file"))
+        {
+            msg_it++;
+            string param = *msg_it;
+            bool isOpen = outFile(param);
+            if(isOpen)
+                cout<<"file openned"<<endl;
+            else
+                cout<<"NOT openned"<<endl;
+        }
+    }
+}
 
 
+std::vector<std::string> MIDI::explode(std::string const & s, char delim)
+{
+    std::vector<std::string> result;
+    std::istringstream iss(s);
+
+    for (std::string token; std::getline(iss, token, delim); )
+    {
+        result.push_back(std::move(token));
+    }
+
+    return result;
+}
 
 void MIDI::send_mouse(mouseActions mouse)
 {
@@ -144,23 +207,28 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
 void MIDI::processInput(midiSignal midiS)
 {
     lock_guard<mutex> locker(locking_mechanism);
+    midiActions tmp;
+    tmp.midi = midiS;
+    std::string snd_data = "{\"";
+    snd_data.append(json.DevName);
+    snd_data.append("\": \"");
+    snd_data.append(std::string(tmp));
+    snd_data.append("\"}");
 
+    zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
+    
     if(outToFile)
     {
-        outFileStream<<midiS.byte<<endl;
+        outFileStream<<tmp<<endl;
     }
 
     l_mode.index = SelectedMode;
     l_action.in.mAct.midi = midiS;
 
-
     if(CurrentMode.is_active)
     {
         for( std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin(); it_act != CurrentMode.body_actions.end(); it_act++)
         {
-            midiActions tmp;
-            tmp.midi = midiS;
-
             if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
                (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
                (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
@@ -169,7 +237,6 @@ void MIDI::processInput(midiSignal midiS)
                 send = true;
                 break;
             }
-
         }
     }
 }

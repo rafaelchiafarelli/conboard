@@ -1,29 +1,24 @@
 import glob
 import os
 import landpage.settings as settings
-from xml.dom import minidom
-import xml.etree.ElementTree as ElementTree
-from landpage.xmlParser import XmlDictConfig
-from landpage.model import DevModel
+
 class sidebar():
     def __init__(self):
         self.ctx = {}
     def get(self):
-        xml_files = glob.glob(settings.XML_LOCATION + "/../boards/*.xml")
-        context = {}
+        json_files = glob.glob(settings.XML_LOCATION + "/conboard/boards/*.json")
         midis = []
         keyboards = []
         dmxs = []
         mice = []
         joysticks = []
         none_type = []
-        for xml in xml_files:
-            tree = ElementTree.parse(xml)
-            root = tree.getroot()
-            device = XmlDictConfig(root)
-            if device is not None:
+        for json in json_files:
+            tree = json.load(json)
+            if tree['DEVICE'] is not None:
+                device = tree['DEVICE']
                 if 'type' in device:
-                    device['FileName'] = os.path.basename(xml)
+                    device['FileName'] = os.path.basename(json)
                     if device['type'] == 'midi':
                         midis.append(device)
                     elif device['type'] == 'keyboard':
@@ -46,6 +41,5 @@ class sidebar():
         }
         return self.ctx
 
-    def getFile(self, filename):
-        dev = DevModel()
-        return dev.GetHeader(filename)
+
+        

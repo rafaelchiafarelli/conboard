@@ -2,6 +2,8 @@
 #define ACTIONS_H
 #include "string"
 #include <iostream>
+#include <sstream>
+
 #include <ostream>
 #include <vector>
 #include <set>
@@ -56,6 +58,13 @@ class midiActions{
         os<<std::hex<<(unsigned int)dt.midi.byte[0]<<" "<<std::hex<<(unsigned int)dt.midi.byte[1]<<" "<<std::hex<<(unsigned int)dt.midi.byte[2]<<std::endl;
         return os;
     };
+    operator std::string (){
+           std::stringstream s;
+            s << midi.byte[0] << " "<< midi.byte[1] << " "<< midi.byte[2];
+            // assign to std::string
+            std::string str = s.str();
+        return str;
+        }
 
 };
 
