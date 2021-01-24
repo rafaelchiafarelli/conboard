@@ -199,9 +199,9 @@ int main(int argc, char *argv[])
 		{ }
 	};
     
-	if(argc < 4)
+	if(argc < 2)
 	{
-		cout<<"error, must specifi port and json. Usage ./midi -x \"/home/user/file.json\""<<endl;
+		cout<<"error, must specifi json. Usage ./midi -x \"/home/user/file.json\""<<endl;
 		return -1;
 	}
     string jsonFileName;
