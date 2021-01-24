@@ -46,6 +46,10 @@ class raw_midi{
         int sub;
         int card;
         int device;
+    friend std::ostream& operator<<(std::ostream &os, const raw_midi &dt){
+        os<<"port:"<<dt.port<<" devName:"<<dt.devName<<" sub_name:"<<dt.sub_name<<" name:"<<dt.name;
+        return os;
+    };
 };
 
 class MIDI : private oActions{
