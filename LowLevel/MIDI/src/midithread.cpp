@@ -63,7 +63,7 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
         {
             std::cout<<"hw_port:"<<ports_it->name<<" jsondevname:"<<json.DevName<<std::endl;
             if(!json.DevName.compare(ports_it->name))
-                sprintf(port_name,"%s",json.DevName.c_str());
+                sprintf(port_name,"%s",ports_it->port);
         }
 
     stop = false;
