@@ -15,6 +15,9 @@ socketio = SocketIO(app)
 
 coms = DevComs(send=send)
 
+@socketio.on('message')
+def handle_message(data):
+    print('received message: ' + data)
 
 @app.route('/')
 def land():
