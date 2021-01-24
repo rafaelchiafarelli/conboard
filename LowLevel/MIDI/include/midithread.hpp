@@ -21,7 +21,8 @@
 #include "stdio.h"
 #include "actions.h"
 #include "jsonParser.h"
-
+#include <sstream>
+#include <string>
 #include <alsa/asoundlib.h>
 #include "aconfig.h"
 #include <thread>
@@ -32,7 +33,7 @@
 #include <queue>
 #include <mutex>
 #include <oActions.hpp>
-
+#include <zmq.hpp>
 using namespace std;
 #define PORT_NAME_SIZE 10
 #define MILLISECONDS_TIMEOUT 10
@@ -91,8 +92,15 @@ class MIDI : private oActions{
         void send_mouse(mouseActions mouse);
         void send_joystick(){};
 
+        /*zmq related functions and variables*/
+        zmq::context_t io_context{1};
+        zmq::socket_t io_socket{io_context, zmq::socket_type::push};
+
+        zmq::context_t coms_context{1};
+        zmq::socket_t coms_socket{coms_context, zmq::socket_type::rep};
+        std::vector<std::string> explode(std::string const & s, char delim);
     public:
-    
+        void handler();
         void Stop();
         void Reload();
         void outStop();

@@ -1,4 +1,7 @@
 from flask import Flask
+from flask_socketio import SocketIO, send
+
+from DevComs import DevComs
 import landpage.settings as settings
 from landpage.landpage import landPage, midiPage, keyboardPage, joystickPage, mousePage, dmxPage, nonamePage
 
@@ -7,8 +10,10 @@ STATIC_FOLDER = 'home/rafa/conboard/frontend/static'
 
 app = Flask(__name__, static_folder=STATIC_FOLDER,
             static_url_path=STATIC_URL_PATH)
+app.config['SECRET_KEY'] = 'some_cool_secret'
+socketio = SocketIO(app)
 
-
+coms = DevComs(send=send)
 
 
 @app.route('/')
@@ -40,4 +45,4 @@ def noname(file):
     return nonamePage(filename = file)
 
 if __name__ == '__main__':
-    app.run()
+    socketio.run(app)
