@@ -53,12 +53,15 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
     sock.bind("inproc://test");
     const std::string_view m = "Hello, world";
     sock.send(zmq::buffer(m), zmq::send_flags::dontwait);
+
+    
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
     for(vector<raw_midi>::iterator ports_it = hw_ports.begin();
         ports_it != hw_ports.end();
         ports_it++)
         {
+            std::cout<<"hw_port:"<<ports_it->devName<<" jsondevname:"<<json.DevName<<std::endl;
             if(!json.DevName.compare(ports_it->devName))
                 sprintf(port_name,"%s",json.DevName.c_str());
         }
