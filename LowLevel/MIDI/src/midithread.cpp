@@ -212,8 +212,7 @@ void MIDI::processInput(midiSignal midiS)
     {
         outFileStream<<tmp<<endl;
     }
-    l_mode.index = SelectedMode;
-    l_action.in.mAct.midi = midiS;
+    
     if(CurrentMode.is_active)
     {
         for( std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin(); it_act != CurrentMode.body_actions.end(); it_act++)
@@ -221,6 +220,7 @@ void MIDI::processInput(midiSignal midiS)
             switch(it_act->in.mAct.midi_mode)
             {
                 case midi_normal:
+                {
                 if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
                     (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
                     (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
@@ -242,13 +242,14 @@ void MIDI::processInput(midiSignal midiS)
                                     CurrentMode.is_active=true;
                                 }
                             }
-                        break;
                     }
+                }
                 break;
-                case midi_trigger:
+                case midi_trigger_higher:
+                {
                 if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
                     (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
-                    (it_act->in.mAct.midi.byte[2] >= midiS.byte[2]))
+                    (it_act->in.mAct.midi.byte[2] < midiS.byte[2]))
                     {
                         oQueue.push(it_act->out);
                         send = true;
@@ -267,10 +268,37 @@ void MIDI::processInput(midiSignal midiS)
                                     CurrentMode.is_active=true;
                                 }
                             }
-                        break;
                     }
+                }
+                break;                
+                case midi_trigger_lower:
+                {
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
+                    (it_act->in.mAct.midi.byte[2] > midiS.byte[2]))
+                    {
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode)
+                        for(vector<ModeType>::iterator m_it = modes.begin();
+                            m_it!=modes.end();
+                            m_it++)
+                            {
+                                if(m_it->index == it_act->mode_idx)
+                                {
+                                    //Current mode must be turned off, in memory, not in file 
+                                    CurrentMode.is_active=false;
+                                    //changed the mode to the newly selected one
+                                    CurrentMode = *m_it;
+                                    //Activete this new one
+                                    CurrentMode.is_active=true;
+                                }
+                            }
+                    }
+                }
                 break;
                 case midi_spot:
+                {
                 if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
                     (it_act->in.mAct.midi.byte[1] == midiS.byte[1]))
                     {
@@ -278,7 +306,7 @@ void MIDI::processInput(midiSignal midiS)
                             out_it!=it_act->out.end();
                             out_it++)
                             {
-                                out_it->spot = midiS.byte[2];
+                                out_it->spot = (int) midiS.byte[2];
                             }
                         oQueue.push(it_act->out);
                         send = true;
@@ -297,11 +325,10 @@ void MIDI::processInput(midiSignal midiS)
                                     CurrentMode.is_active=true;
                                 }
                             }
-                        break;
                     }
+                }
                 break;
             }
-           
         }
     }
 }
@@ -321,6 +348,7 @@ void MIDI::out_func()
                 switch(out->tp)
                 {
                     case keyboard:
+                        out->kData.spot = out->spot;
                         keyboard_send(out->kData);
                         if(out->kData.delay != 0)
                             std::this_thread::sleep_for(std::chrono::milliseconds(out->kData.delay));

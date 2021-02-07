@@ -121,10 +121,22 @@
                             "b0":176,
                             "b1":4,
                             "b2":85,
-                            "mode":"trigger"
+                            "mode":"trigger_higher"
                             },
                     "output":[
                             { "type":"midi" ,"b0":145,"b1":3,"b2":127}
+                            ]
+                    },
+                    {
+                    "input":{
+                            "type":"midi", 
+                            "b0":176,
+                            "b1":4,
+                            "b2":23,
+                            "mode":"trigger_lower"
+                            },
+                    "output":[
+                            { "type":"midi" ,"b0":145,"b1":3,"b2":0}
                             ]
                     },
                     {

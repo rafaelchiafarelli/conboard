@@ -50,9 +50,10 @@ typedef union {
 typedef enum
 {
     midi_normal = 0,
-    midi_trigger = 1,
-    midi_spot = 2,
-    midi_nomode = 3
+    midi_trigger_higher = 1,
+    midi_trigger_lower = 2,
+    midi_spot = 3,
+    midi_nomode = 4
 
 }midi_action_mode;
 class midiActions{
