@@ -227,21 +227,6 @@ void MIDI::processInput(midiSignal midiS)
                     {
                         oQueue.push(it_act->out);
                         send = true;
-                        if(it_act->change_mode)
-                        for(vector<ModeType>::iterator m_it = modes.begin();
-                            m_it!=modes.end();
-                            m_it++)
-                            {
-                                if(m_it->index == it_act->mode_idx)
-                                {
-                                    //Current mode must be turned off, in memory, not in file 
-                                    CurrentMode.is_active=false;
-                                    //changed the mode to the newly selected one
-                                    CurrentMode = *m_it;
-                                    //Activete this new one
-                                    CurrentMode.is_active=true;
-                                }
-                            }
                     }
                 }
                 break;
@@ -253,21 +238,7 @@ void MIDI::processInput(midiSignal midiS)
                     {
                         oQueue.push(it_act->out);
                         send = true;
-                        if(it_act->change_mode)
-                        for(vector<ModeType>::iterator m_it = modes.begin();
-                            m_it!=modes.end();
-                            m_it++)
-                            {
-                                if(m_it->index == it_act->mode_idx)
-                                {
-                                    //Current mode must be turned off, in memory, not in file 
-                                    CurrentMode.is_active=false;
-                                    //changed the mode to the newly selected one
-                                    CurrentMode = *m_it;
-                                    //Activete this new one
-                                    CurrentMode.is_active=true;
-                                }
-                            }
+
                     }
                 }
                 break;                
@@ -279,21 +250,6 @@ void MIDI::processInput(midiSignal midiS)
                     {
                         oQueue.push(it_act->out);
                         send = true;
-                        if(it_act->change_mode)
-                        for(vector<ModeType>::iterator m_it = modes.begin();
-                            m_it!=modes.end();
-                            m_it++)
-                            {
-                                if(m_it->index == it_act->mode_idx)
-                                {
-                                    //Current mode must be turned off, in memory, not in file 
-                                    CurrentMode.is_active=false;
-                                    //changed the mode to the newly selected one
-                                    CurrentMode = *m_it;
-                                    //Activete this new one
-                                    CurrentMode.is_active=true;
-                                }
-                            }
                     }
                 }
                 break;
@@ -310,25 +266,25 @@ void MIDI::processInput(midiSignal midiS)
                             }
                         oQueue.push(it_act->out);
                         send = true;
-                        if(it_act->change_mode)
-                        for(vector<ModeType>::iterator m_it = modes.begin();
-                            m_it!=modes.end();
-                            m_it++)
-                            {
-                                if(m_it->index == it_act->mode_idx)
-                                {
-                                    //Current mode must be turned off, in memory, not in file 
-                                    CurrentMode.is_active=false;
-                                    //changed the mode to the newly selected one
-                                    CurrentMode = *m_it;
-                                    //Activete this new one
-                                    CurrentMode.is_active=true;
-                                }
-                            }
                     }
                 }
                 break;
             }
+        if(it_act->change_mode)
+        for(vector<ModeType>::iterator m_it = modes.begin();
+            m_it!=modes.end();
+            m_it++)
+            {
+                if(m_it->index == it_act->mode_idx)
+                {
+                    //Current mode must be turned off, in memory, not in file 
+                    CurrentMode.is_active=false;
+                    //changed the mode to the newly selected one
+                    CurrentMode = *m_it;
+                    //Activete this new one
+                    CurrentMode.is_active=true;
+                }
+            }                
         }
     }
 }
