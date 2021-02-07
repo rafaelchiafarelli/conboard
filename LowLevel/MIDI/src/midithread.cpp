@@ -22,7 +22,6 @@ void MIDI::Stop()
     if(outToFile)
         {
             outFileStream.close();
-            
         }
 
     outToFile = false;
@@ -48,12 +47,9 @@ MIDI::~MIDI(){
 
 MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), json(jsonFileName,&modes,&header),oActions()
 {
-
-
     /*ZMQ connection -- send user cmds*/
     io_socket.connect("tcp://localhost:5555");
     coms_socket.connect("tcp://localhost:5550");
-
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
     for(vector<raw_midi>::iterator ports_it = hw_ports.begin();
@@ -66,7 +62,6 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
                 break;
             }
         }
-
     stop = false;
     send = false;
     int err = 0;
@@ -78,7 +73,6 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
     else
     {
         SelectedMode = 0;
-        
         for(std::vector<ModeType>::iterator m_it = modes.begin();
             m_it != modes.end();
             m_it++)
@@ -101,18 +95,15 @@ void MIDI::execHeader()
         it != header.end();
         it++)
     {
-    
         for(std::vector<devActions>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
         {
-         
             if(devIt->tp == midi)
             {
                 send_midi(devIt->mAct.midi.byte,sizeof(midiSignal));
                 if(devIt->mAct.delay > 0)
                 {
-         
                     std::this_thread::sleep_for(std::chrono::milliseconds(devIt->mAct.delay));
                 }
             }
@@ -216,28 +207,101 @@ void MIDI::processInput(midiSignal midiS)
     snd_data.append("\"}");
     std::cout<<snd_data.c_str()<<std::endl;
     zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
-    
-    
+
     if(outToFile)
     {
         outFileStream<<tmp<<endl;
     }
-
     l_mode.index = SelectedMode;
     l_action.in.mAct.midi = midiS;
-
     if(CurrentMode.is_active)
     {
         for( std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin(); it_act != CurrentMode.body_actions.end(); it_act++)
         {
-            if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
-               (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
-               (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
+            switch(it_act->in.mAct.midi_mode)
             {
-                oQueue.push(it_act->out);
-                send = true;
+                case midi_normal:
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
+                    (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
+                    {
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode)
+                        for(vector<ModeType>::iterator m_it = modes.begin();
+                            m_it!=modes.end();
+                            m_it++)
+                            {
+                                if(m_it->index == it_act->mode_idx)
+                                {
+                                    //Current mode must be turned off, in memory, not in file 
+                                    CurrentMode.is_active=false;
+                                    //changed the mode to the newly selected one
+                                    CurrentMode = *m_it;
+                                    //Activete this new one
+                                    CurrentMode.is_active=true;
+                                }
+                            }
+                        break;
+                    }
+                break;
+                case midi_trigger:
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
+                    (it_act->in.mAct.midi.byte[2] >= midiS.byte[2]))
+                    {
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode)
+                        for(vector<ModeType>::iterator m_it = modes.begin();
+                            m_it!=modes.end();
+                            m_it++)
+                            {
+                                if(m_it->index == it_act->mode_idx)
+                                {
+                                    //Current mode must be turned off, in memory, not in file 
+                                    CurrentMode.is_active=false;
+                                    //changed the mode to the newly selected one
+                                    CurrentMode = *m_it;
+                                    //Activete this new one
+                                    CurrentMode.is_active=true;
+                                }
+                            }
+                        break;
+                    }
+                break;
+                case midi_spot:
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]))
+                    {
+                        for(vector<devActions>::iterator out_it=it_act->out.begin();
+                            out_it!=it_act->out.end();
+                            out_it++)
+                            {
+                                out_it->spot = midiS.byte[2];
+                            }
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode)
+                        for(vector<ModeType>::iterator m_it = modes.begin();
+                            m_it!=modes.end();
+                            m_it++)
+                            {
+                                if(m_it->index == it_act->mode_idx)
+                                {
+                                    //Current mode must be turned off, in memory, not in file 
+                                    CurrentMode.is_active=false;
+                                    //changed the mode to the newly selected one
+                                    CurrentMode = *m_it;
+                                    //Activete this new one
+                                    CurrentMode.is_active=true;
+                                }
+                            }
+                        break;
+                    }
                 break;
             }
+           
         }
     }
 }
@@ -297,19 +361,15 @@ void MIDI::out_func()
  */ 
 void MIDI::in_func()
 {
-    
-	int ok = 0;
+ 	int ok = 0;
     int err;
     int lTimeOut = timeout;
     
 	if (input)
 		snd_rawmidi_read(input, NULL, 0); /* trigger reading */
-
 	if (input) {
-		
 		int npfds, time = 0;
 		struct pollfd *pfds;
-        
 		npfds = snd_rawmidi_poll_descriptors_count(input);
 		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
@@ -318,7 +378,6 @@ void MIDI::in_func()
             unsigned char buf[256];
 			int i, length;
 			unsigned short revents;
-
 			err = poll(pfds, npfds, MILLISECONDS_TIMEOUT);
 			if (stop || (err < 0 && errno == EINTR))
             {
@@ -381,18 +440,15 @@ void MIDI::in_func()
 		snd_rawmidi_close(input);
 	if (output)
 		snd_rawmidi_close(output);
-    
 }
 
 void MIDI::Reload(){
 lock_guard<mutex> locker(locking_mechanism);
 while(!oQueue.empty())
     oQueue.pop();
-
 header.clear();
 modes.clear();
 json.Clear();
-
 }
 
 bool MIDI::outFile(string name)
