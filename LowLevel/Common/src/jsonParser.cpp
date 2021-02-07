@@ -169,7 +169,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 												if(ch_to.IsInt())
 												{
 													mActions.change_mode = true;
-													mActions.mode = ch_to.GetInt();
+													mActions.mode_idx = ch_to.GetInt();
 												}
 											}
 										}
@@ -348,18 +348,41 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 		break;
 		case devType::midi:
 		{
+			ret.mAct.midi.byte[0] = 0;
+			ret.mAct.midi.byte[1] = 0;
+			ret.mAct.midi.byte[2] = 0;
+			ret.mAct.midi_mode = midi_normal;
 			if(act.HasMember("b0"))
 			{
-				ret.mAct.midi.byte[0] = 0;
-				ret.mAct.midi.byte[1] = 0;
-				ret.mAct.midi.byte[2] = 0;
 				if(act["b0"].IsInt())
 					ret.mAct.midi.byte[0] = act["b0"].GetInt();
+			}
+			if(act.HasMember("b1"))
+			{
+
 				if(act["b1"].IsInt())
 					ret.mAct.midi.byte[1] = act["b1"].GetInt();
+			}
+			if(act.HasMember("b2"))
+			{
 				if(act["b2"].IsInt())
 					ret.mAct.midi.byte[2] = act["b2"].GetInt();
-				
+			}
+			if(act.HasMember("mode"))
+			{
+				rapidjson::Value& midi_mode = act["mode"];
+
+				if(midi_mode.IsString())
+				{
+					std::string mode_str = midi_mode.GetString();
+					if(!mode_str.compare("trigger"))
+					{
+						ret.mAct.midi_mode = midi_trigger;
+					}else if(!mode_str.compare("spot"))
+					{
+						ret.mAct.midi_mode = midi_spot;
+					}	
+				}
 			}
 		}
 		break;

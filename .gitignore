@@ -36,3 +36,8 @@ frontend/venv/
 *.pyc
 *__pycache__
 .vscode/
+
+scripts/Python-3.8.0.tgz
+scripts/Python-3.8.0/
+scripts/cppzmq/
+scripts/install

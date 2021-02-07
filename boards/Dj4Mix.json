@@ -64,7 +64,8 @@
                             "type":"midi", 
                             "b0":145,
                             "b1":2,
-                            "b2":127                            
+                            "b2":127,
+                            "mode":"normal"
                             },
                     "output":[
                             { "type":"midi" ,"b0":145,"b1":2,"b2":127}
@@ -78,21 +79,49 @@
                     {
                     "input":{
                             "type":"midi", 
-                            "b0":145,
-                            "b1":2,
-                            "b2":0                            
+                            "b0":176,
+                            "b1":1,
+                            "mode":"spot"
                             },
                     "output":[
                             { "type":"midi" ,"b0":145,"b1":2,"b2":0},
-                            { "type":"keyboard" , "data":"sudo systemctl status " , "delay":0 , "keyType":"text" , "hold":"not_hold"}
+                            { "type":"keyboard" , "data":"{{spot}}" , "delay":0 , "keyType":"text" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"{enter}" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
                             ]
                     },
                     {
                     "input":{
                             "type":"midi", 
-                            "b0":145,
+                            "b0":176,
+                            "b1":2,
+                            "mode":"spot"
+                            },
+                    "output":[
+                            { "type":"midi" ,"b0":145,"b1":2,"b2":0},
+                            { "type":"keyboard" , "data":"{{spot}}" , "delay":0 , "keyType":"text" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"{enter}" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
+                            ]
+                    },
+                    {
+                    "input":{
+                            "type":"midi", 
+                            "b0":176,
                             "b1":3,
-                            "b2":127                            
+                            "mode":"spot"
+                            },
+                    "output":[
+                            { "type":"midi" ,"b0":145,"b1":2,"b2":0},
+                            { "type":"keyboard" , "data":"{{spot}}" , "delay":0 , "keyType":"text" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"{enter}" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
+                            ]
+                    },
+                    {
+                    "input":{
+                            "type":"midi", 
+                            "b0":176,
+                            "b1":4,
+                            "b2":85,
+                            "mode":"trigger"
                             },
                     "output":[
                             { "type":"midi" ,"b0":145,"b1":3,"b2":127}
