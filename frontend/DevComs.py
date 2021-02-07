@@ -16,7 +16,6 @@ class DevComs(threading.Thread):
         self.io_context = zmq.Context()
         self.coms_context = zmq.Context()
 
-        print("Connecting to hello world server…")
         self.io_socket = self.io_context.socket(zmq.PULL)
         self.io_socket.connect("tcp://localhost:5555")
         self.poller = zmq.Poller()
@@ -36,9 +35,11 @@ class DevComs(threading.Thread):
         while self.alive:
             socks = dict(self.poller.poll(100))
             if socks:
+                print("received something")
                 if socks.get(self.io_socket) == zmq.POLLIN:
                     #print "got message ",
                     rec_msg = self.io_socket.recv(zmq.NOBLOCK)
+                    print(rec_msg)
                     self.send(rec_msg,broadcast=True)
             else:
                 pass
