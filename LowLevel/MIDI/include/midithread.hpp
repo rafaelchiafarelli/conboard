@@ -71,8 +71,8 @@ class MIDI : private oActions{
         atomic_bool send;
         atomic_bool stop;
         int timeout;
-        ModeType l_mode;
-        Actions l_action;
+        
+        
 
         std::vector<Actions> header;
         std::vector<ModeType> modes;
