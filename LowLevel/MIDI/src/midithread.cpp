@@ -26,11 +26,9 @@ void MIDI::Stop()
 
     outToFile = false;
     if(in_thread)
-        if(in_thread->joinable())
-            in_thread->join();
+         in_thread->join();
     if(out_thread)
-        if(out_thread->joinable())
-            out_thread->join();
+        out_thread->join();
 
 }
 void MIDI::parse()

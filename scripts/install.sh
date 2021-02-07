@@ -19,9 +19,9 @@ install_process() {
 }
 
 preconditions(){
-    sudo apt install nginx
-    sudo rm /etc/nginx/sites-enabled/default
-    sudo systemctl restart nginx.service
+    
+    rm /etc/nginx/sites-enabled/default
+    systemctl restart nginx.service
     echo "compilation"
     cd $SCRIPTS_DIR
     cd ../
@@ -69,15 +69,16 @@ install_usb_otg(){
 install_frontend(){
 
     echo "python install"
+    USER_NAME=$(whoami)
     cd /conboard/frontend
     if [ ! -d venv ]; then
-        python3 -m venv venv
-        source ./venv/bin/activate
-        pip3 install --upgrade pip
-        pip3 install update pip
-        pip3 install wheel numpy scipy matplotlib scikit-image scikit-learn ipython
-        pip3 install -r /conboard/frontend/assets/requirements.txt
-        deactivate
+        sudo -u $USER_NAME python3 -m venv venv
+        sudo -u $USER_NAME source ./venv/bin/activate
+        sudo -u $USER_NAME pip3 install --upgrade pip
+        sudo -u $USER_NAME pip3 install update pip
+        sudo -u $USER_NAME pip3 install wheel numpy scipy matplotlib scikit-image scikit-learn ipython
+        sudo -u $USER_NAME pip3 install -r /conboard/frontend/assets/requirements.txt
+        sudo -u $USER_NAME deactivate
     fi
 
     echo "services"
