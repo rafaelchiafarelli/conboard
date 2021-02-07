@@ -375,9 +375,12 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 				if(midi_mode.IsString())
 				{
 					std::string mode_str = midi_mode.GetString();
-					if(!mode_str.compare("trigger"))
+					if(!mode_str.compare("trigger_higher"))
 					{
-						ret.mAct.midi_mode = midi_trigger;
+						ret.mAct.midi_mode = midi_trigger_higher;
+					}else if(!mode_str.compare("trigger_lower"))
+					{
+						ret.mAct.midi_mode = midi_trigger_higher;
 					}else if(!mode_str.compare("spot"))
 					{
 						ret.mAct.midi_mode = midi_spot;
