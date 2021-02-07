@@ -124,7 +124,7 @@
                             "mode":"trigger_higher"
                             },
                     "output":[
-                            { "type":"midi" ,"b0":145,"b1":3,"b2":127}
+                            { "type":"midi" ,"b0":145,"b1":3,"b2":0}
                             ]
                     },
                     {
@@ -136,7 +136,7 @@
                             "mode":"trigger_lower"
                             },
                     "output":[
-                            { "type":"midi" ,"b0":145,"b1":3,"b2":0}
+                            { "type":"midi" ,"b0":145,"b1":3,"b2":127}
                             ]
                     },
                     {
