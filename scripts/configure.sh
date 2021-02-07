@@ -48,6 +48,7 @@ install_alsa(){
 }
 
 install_zeromq(){
+<<<<<<< HEAD
 sudo apt-get install libtool pkg-config build-essential autoconf automake
 sudo apt -y install git libssl-dev libzmq3-dev
 cd $SCRIPTS_DIR
@@ -58,6 +59,26 @@ cd build
 cmake -DCPPZMQ_BUILD_TESTS=False ..
 sudo make -j4 install
 sudo cp ${SCRIPTS_DIR}/cppzmq/zmq.hpp /usr/include/
+=======
+sudo apt-get install libtool pkg-config build-essential autoconf automake cacth
+
+# Install libsodium
+git clone git://github.com/jedisct1/libsodium.git
+cd libsodium
+git checkout origin/stable
+./autogen.sh
+./configure && make check
+sudo make install
+sudo ldconfig
+
+cd ~
+git clone https://github.com/zeromq/libzmq.git
+cd libzmq
+./autogen.sh
+./configure
+make -j$(nproc)
+sudo make install
+>>>>>>> dd837bf7904e372284cfeb9a90c400d0b8ad17ee
 sudo ldconfig
 
 }

@@ -230,7 +230,11 @@ int main(int argc, char *argv[])
 		devMIDI = new MIDI(jsonFileName,hw_ports);
 
 		char cmd[256];
-		signal(SIGINT, sig_handler);
+		signal(SIGINT,  sig_handler);
+		signal(SIGTERM, sig_handler);
+		signal(SIGKILL, sig_handler);
+		signal(SIGQUIT, sig_handler);
+
 		while(!stop)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));

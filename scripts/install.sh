@@ -19,6 +19,9 @@ install_process() {
 }
 
 preconditions(){
+    sudo apt install nginx
+    sudo rm /etc/nginx/sites-enabled/default
+    sudo systemctl restart nginx.service
     echo "compilation"
     cd $SCRIPTS_DIR
     cd ../
