@@ -86,7 +86,7 @@
                     "output":[
                             { "type":"midi" ,"b0":145,"b1":2,"b2":0},
                             { "type":"keyboard" , "data":"{spot}" , "delay":0 , "keyType":"text" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"{enter}" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
+                            { "type":"keyboard" , "data":"enter" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
                             ]
                     },
                     {
@@ -99,7 +99,7 @@
                     "output":[
                             { "type":"midi" ,"b0":145,"b1":2,"b2":0},
                             { "type":"keyboard" , "data":"{spot}" , "delay":0 , "keyType":"text" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"{enter}" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
+                            { "type":"keyboard" , "data":"enter" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
                             ]
                     },
                     {
@@ -205,12 +205,12 @@
                 "mode_header":
                     {"actions":
                         [
-                        {"type":"midi","b0":145,"b1":10,"b2":255,"delay":50},
-                        {"type":"midi","b0":145,"b1":11,"b2":255,"delay":50},
-                        {"type":"midi","b0":145,"b1":12,"b2":255,"delay":50},
-                        {"type":"midi","b0":145,"b1":13,"b2":255,"delay":50},
-                        {"type":"midi","b0":145,"b1":14,"b2":255,"delay":50},
-                        {"type":"midi","b0":145,"b1":15,"b2":255,"delay":50}
+                        {"type":"midi","b0":145,"b1":2,"b2":127},
+                        {"type":"midi","b0":145,"b1":3,"b2":127},
+                        {"type":"midi","b0":145,"b1":4,"b2":127},
+                        {"type":"midi","b0":145,"b1":5,"b2":127},
+                        {"type":"midi","b0":145,"b1":6,"b2":127},
+                        {"type":"midi","b0":145,"b1":7,"b2":127}
                         ]
                     },
 
