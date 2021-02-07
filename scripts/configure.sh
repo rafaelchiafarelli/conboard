@@ -49,31 +49,16 @@ install_alsa(){
 
 install_zeromq(){
 sudo apt-get install libtool pkg-config build-essential autoconf automake
-
-# Install libsodium
-git clone git://github.com/jedisct1/libsodium.git
-cd libsodium
-./autogen.sh
-./configure && make check
-sudo make install
+sudo apt -y install git libssl-dev libzmq3-dev
+cd $SCRIPTS_DIR
+git clone https://github.com/zeromq/cppzmq.git
+cd cppzmq
+mkdir build
+cd build
+cmake -DCPPZMQ_BUILD_TESTS=False ..
+sudo make -j4 install
+sudo cp ${SCRIPTS_DIR}/cppzmq/zmq.hpp /usr/include/
 sudo ldconfig
-
-cd ~
-git clone https://github.com/zeromq/libzmq.git
-cd libzmq
-./autogen.sh
-./configure
-make -j$(nproc)
-sudo make install
-sudo ldconfig
-# Install zeromq
-# latest version as of this post is 4.1.4
-sudo wget http://download.zeromq.org/zeromq-4.1.4.tar.gz
-sudo tar -xvf zeromq-4.1.4.tar.gz
-cd zeromq-4.1.4
-sudo ./configure
-sudo make
-sudo make install
 
 }
 install_python3(){
@@ -96,19 +81,19 @@ install_python3(){
 
 compile_all(){
 
-    cd $SCRIPT
-    compiler.sh
+    cd $SCRIPTS_DIR
+    sudo ./install.sh
 
 }
 
 compile(){
 	RECIPE=(
-            preconditions
-            install_gcc
-            install_alsa
-            install_zeromq
-            install_python3
-            install_db
+#            preconditions
+#            install_gcc
+#            install_alsa
+#            install_zeromq
+#            install_python3
+#            install_db
             compile_all
 			)   
 	build
