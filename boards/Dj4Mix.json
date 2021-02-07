@@ -112,7 +112,7 @@
                     "output":[
                             { "type":"midi" ,"b0":145,"b1":2,"b2":0},
                             { "type":"keyboard" , "data":"{spot}" , "delay":0 , "keyType":"text" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"{enter}" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
+                            { "type":"keyboard" , "data":"enter" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
                             ]
                     },
                     {
@@ -121,7 +121,7 @@
                             "b0":176,
                             "b1":4,
                             "b2":85,
-                            "mode":"trigger_higher"
+                            "mode":"trigger_lower"
                             },
                     "output":[
                             { "type":"midi" ,"b0":145,"b1":3,"b2":0}
@@ -133,7 +133,7 @@
                             "b0":176,
                             "b1":4,
                             "b2":23,
-                            "mode":"trigger_lower"
+                            "mode":"trigger_higher"
                             },
                     "output":[
                             { "type":"midi" ,"b0":145,"b1":3,"b2":127}
