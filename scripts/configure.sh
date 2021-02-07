@@ -48,11 +48,12 @@ install_alsa(){
 }
 
 install_zeromq(){
-sudo apt-get install libtool pkg-config build-essential autoconf automake
+sudo apt-get install libtool pkg-config build-essential autoconf automake cacth
 
 # Install libsodium
 git clone git://github.com/jedisct1/libsodium.git
 cd libsodium
+git checkout origin/stable
 ./autogen.sh
 ./configure && make check
 sudo make install

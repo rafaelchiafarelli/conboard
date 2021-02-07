@@ -203,6 +203,8 @@ class devActions{
 class Actions{
 
 public:
+    bool change_mode = false;
+    unsigned int mode = 0;
     devActions in;
     std::vector<devActions> out;
     void clear(){
