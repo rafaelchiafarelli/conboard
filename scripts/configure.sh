@@ -20,13 +20,17 @@ build() {
 }
 
 preconditions(){
-    sudo apt update
-    sudo apt install udev udevil gitk libusb-dev python-dev 
+    sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    sudo apt -y update
+    sudo apt -y install udev udevil gitk libusb-dev python-dev 
+    sudo apt -y install nginx
 }
 
 install_db(){
-    sudo apt install postgresql
-    sudo apt install postgresql-server-dev-all postgresql-all
+    sudo apt -y install postgresql
+    sudo apt -y install postgresql-server-dev-all postgresql-all
     sudo pip3.8 install psycopg2
 
 }
@@ -48,7 +52,7 @@ install_alsa(){
 }
 
 install_zeromq(){
-sudo apt-get install libtool pkg-config build-essential autoconf automake
+sudo apt -y install libtool pkg-config build-essential autoconf automake
 sudo apt -y install git libssl-dev libzmq3-dev
 cd $SCRIPTS_DIR
 git clone https://github.com/zeromq/cppzmq.git
@@ -63,9 +67,9 @@ sudo ldconfig
 }
 install_python3(){
     wget https://www.python.org/ftp/python/3.8.0/Python-3.8.0.tgz
-    sudo apt-get update
-    sudo apt-get install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev tar wget vim
-    sudo apt-get install -y python-setuptools
+    sudo apt -y update
+    sudo apt -y install -y build-essential tk-dev libncurses5-dev libncursesw5-dev libreadline6-dev libdb5.3-dev libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev libexpat1-dev liblzma-dev zlib1g-dev libffi-dev tar wget vim
+    sudo apt -  install -y python-setuptools
     sudo tar zxf Python-3.8.0.tgz
     cd Python-3.8.0
     sudo ./configure --enable-optimizations
@@ -73,27 +77,25 @@ install_python3(){
     sudo make altinstall
     echo "alias python=/usr/local/bin/python3.8" >> ~/.bashrc
     source ~/.bashrc
-    sudo apt install python3-venv python3-pip
+    sudo apt -y install python3-venv python3-pip
     sudo python3.8 -m easy_install pip
     sudo pip3.8 install --upgrade pip
     sudo pip3.8 install update pip
 }
 
 compile_all(){
-
     cd $SCRIPTS_DIR
     sudo ./install.sh
-
 }
 
 compile(){
 	RECIPE=(
-#            preconditions
-#            install_gcc
-#            install_alsa
-#            install_zeromq
-#            install_python3
-#            install_db
+            preconditions
+            install_gcc
+            install_alsa
+            install_zeromq
+            install_python3
+            install_db
             compile_all
 			)   
 	build
