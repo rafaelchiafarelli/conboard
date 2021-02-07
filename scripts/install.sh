@@ -5,7 +5,7 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-set -e
+#set -e
 
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -39,7 +39,7 @@ preconditions(){
 
         rm -rf /conboard
     fi
-    echo "create files"
+    echo "Copy program files"
     mkdir -p /conboard
     cp -r $LOCAL_REPO /
 }
