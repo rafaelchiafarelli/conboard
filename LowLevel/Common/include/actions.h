@@ -47,9 +47,17 @@ typedef union {
     uint32_t asInt;
 }midiSignal;
 
+typedef enum
+{
+    midi_normal = 0,
+    midi_trigger = 1,
+    midi_spot = 2,
+    midi_nomode = 3
 
+}midi_action_mode;
 class midiActions{
     public:
+    midi_action_mode midi_mode = midi_normal;
     midiSignal midi;
     unsigned long int delay = 0;
     midiActions(){};
@@ -92,6 +100,7 @@ class keyboardActions{
         keyType type = oneKey;
         std::string data = "";
         holdType hold = not_hold;
+        int spot = -1;
         unsigned int delay = 0;
         keyboardActions(){};
         ~keyboardActions(){};
@@ -130,6 +139,7 @@ class devActions{
     private: 
         unsigned int index;
     public:
+        int spot=-1;
 
         devType tp; /* type of the output, either keyboard or mouse ou a midi response*/
 
@@ -204,7 +214,7 @@ class Actions{
 
 public:
     bool change_mode = false;
-    unsigned int mode = 0;
+    unsigned int mode_idx = -1;
     devActions in;
     std::vector<devActions> out;
     void clear(){
