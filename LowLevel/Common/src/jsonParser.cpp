@@ -380,7 +380,7 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 						ret.mAct.midi_mode = midi_trigger_higher;
 					}else if(!mode_str.compare("trigger_lower"))
 					{
-						ret.mAct.midi_mode = midi_trigger_higher;
+						ret.mAct.midi_mode = midi_trigger_lower;
 					}else if(!mode_str.compare("spot"))
 					{
 						ret.mAct.midi_mode = midi_spot;
