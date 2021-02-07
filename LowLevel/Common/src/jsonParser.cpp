@@ -152,6 +152,30 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 									}
 								}
 							}
+							//std::cout<<"has change_mode:"<<Act.HasMember("change_mode")<<std::endl;
+							if(Act.HasMember("change_mode"))
+							{
+								rapidjson::Value& ch_mode = Act["change_mode"];
+								if(ch_mode.HasMember("enable"))
+								{
+									rapidjson::Value& ch_enable = ch_mode["enable"];
+									if(ch_enable.IsBool())
+									{
+										if(ch_enable.GetBool() == true)
+										{
+											if(ch_mode.HasMember("change_to"))
+											{
+												rapidjson::Value& ch_to = ch_mode["change_to"];
+												if(ch_to.IsInt())
+												{
+													mActions.change_mode = true;
+													mActions.mode = ch_to.GetInt();
+												}
+											}
+										}
+									}
+								}
+							}							
 							mode.body_actions.push_back(mActions);
 						}
 					}

@@ -214,8 +214,9 @@ void MIDI::processInput(midiSignal midiS)
     snd_data.append("\": \"");
     snd_data.append(std::string(tmp));
     snd_data.append("\"}");
-
+    std::cout<<snd_data.c_str()<<std::endl;
     zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
+    
     
     if(outToFile)
     {
