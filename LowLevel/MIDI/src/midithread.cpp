@@ -78,6 +78,7 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
             if(m_it->is_active)
             {
                 CurrentMode = *m_it;
+                processMode(CurrentMode);
                 break;
             }
             SelectedMode++;
@@ -192,7 +193,24 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
         std::cout<<"cannot send data: "<<snd_strerror(err)<<std::endl;
     }
 }
-
+void MIDI::processMode(ModeType m)
+{
+    for(std::vector<Actions>::iterator h_it =  m.header.begin();
+        h_it != m.header.end();
+        h_it++)
+    {
+        for(std::vector<devActions>::iterator out_it = h_it->out.begin();
+            out_it != h_it->out.end();
+            out_it++)
+        {
+            send_midi(out_it->mAct.midi.byte,sizeof(midiSignal));
+            if(out_it->mAct.delay > 0)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(out_it->mAct.delay));
+            }
+        }
+    }
+}
 void MIDI::processInput(midiSignal midiS)
 {
     lock_guard<mutex> locker(locking_mechanism);
@@ -280,6 +298,7 @@ void MIDI::processInput(midiSignal midiS)
                     //changed the mode to the newly selected one
                     CurrentMode = *m_it;
                     //Activete this new one
+                    processMode(CurrentMode);
                     CurrentMode.is_active=true;
                 }
             }                

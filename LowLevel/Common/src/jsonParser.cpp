@@ -14,13 +14,10 @@ using namespace rapidjson;
 
 
 jsonParser::jsonParser(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
-	
-
 	loaded = false;
 	//std::cout<<"helo"<<std::endl;
 	if(!_FileName.empty())
 		Reload(	_FileName, Mode, h);	
-	
 }
 
 void jsonParser::Reload(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h){
@@ -28,29 +25,21 @@ void jsonParser::Reload(std::string _FileName, std::vector<ModeType> *Mode,std::
 	op_modes = Mode;
 	loaded = false;
 	FileName = _FileName;
-
 	data = "";
-	
 	type = devType::notype;
 	timeout = 0;
 	hasExec=false;
-
 	Ex.exec = "";
-
-	
 	DevName = "";
 	DevInput = "";
-
 	header_actions->clear();
 	op_modes->clear();
 	if(loaded == false)
 	{
 		if (loadFile()) 
 		{
-			
 			if (Doc.HasMember("DEVICE"))
 			{
-				
 				loaded = Initializer();
 			}
 		}
@@ -82,16 +71,12 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 					if(jMode["id"].IsString())
 						mode.index = jMode["id"].GetInt();
 				}
-				//std::cout<<"id done"<<std::endl;
-
 				mode.is_active = false;
 				if(jMode.HasMember("active"))
 				{
 					if(jMode["active"].IsBool())
 						mode.is_active = jMode["active"].GetBool();
 				}
-				//std::cout<<"active done"<<std::endl;
-
 				if(jMode.HasMember("mode_header"))
 				{
 					rapidjson::Value& mode_header = jMode["mode_header"];
@@ -113,27 +98,21 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 						}
 					}
 				}
-				//std::cout<<"mode_header done"<<std::endl;
 				if(jMode.HasMember("actions"))
 				{
 					rapidjson::Value& bActions = jMode["actions"];
-					//std::cout<<"actions IsArray:"<<bActions.IsArray()<<std::endl;
 					if(bActions.IsArray())
 					{
-						//std::cout<<"actions.size"<<bActions.Size()<<std::endl;
 						for(SizeType t = 0;
 							t<bActions.Size();
 							t++)
 						{
 							Actions mActions;
 							rapidjson::Value& Act = bActions[t];
-							//std::cout<<"has input:"<<Act.HasMember("input")<<std::endl;
 							if(Act.HasMember("input"))
 							{
 								mActions.in = parseIO(Act["input"]);
-								//std::cout<<"input:"<<mActions.in.mAct<<std::endl;
 							}
-							//std::cout<<"has output:"<<Act.HasMember("output")<<std::endl;
 							if(Act.HasMember("output"))
 							{
 								devActions dAct;
@@ -414,7 +393,6 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 				kv.value = iter->value.GetString();
 				Generics.push_back(kv);
 			}
-
 		}
 		//std::cout<<"generics done"<<std::endl;
 		if(identifier.HasMember("tags"))
@@ -428,31 +406,25 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 				kv.value = iter->value.GetString();
 				Tags.push_back(kv);
 			}
-
 		}
-		
 		if(identifier.HasMember("executable"))
 		{
 			rapidjson::Value& executable = identifier["executable"];
 			if(executable.HasMember("exec"))
 			{
-			
 				Ex.exec = "";
 				if(executable["exec"].IsString())
 					Ex.exec = executable["exec"].GetString();
 						if(!Ex.exec.empty())
 							hasExec = true;
 			}
-			
 			if(executable.HasMember("port"))
 			{
 				Ex.port = "";
 				if(executable["port"].IsString())
 					Ex.port = executable["port"].GetString();
 			}
-			//std::cout<<"params done"<<std::endl;
 		}
-		//std::cout<<"executables done"<<std::endl;
 	}
 	if(header.HasMember("actions"))
 	{
@@ -467,7 +439,6 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 		}
 		header_actions->push_back(action);
 	}
-	//std::cout<<"actions done"<<std::endl;
 }
 
 devType jsonParser::GetDevType(std::string dType)
@@ -527,7 +498,6 @@ bool jsonParser::Initializer()
 		{
 			timeout = 0;
 		}
-
 		if (Device.HasMember("name"))
 		{
 			if(Device["name"].IsString())
@@ -539,7 +509,6 @@ bool jsonParser::Initializer()
 		{
 			jsonParser::DevName = "";
 		}
-		
 		if (Device.HasMember("input"))
 		{
 			if(Device["input"].IsString())
@@ -551,7 +520,6 @@ bool jsonParser::Initializer()
 		{
 			jsonParser::DevInput = "";
 		}   
-		
 		if (Device.HasMember("output"))
 		{
 			if(Device["output"].IsString())
@@ -563,22 +531,17 @@ bool jsonParser::Initializer()
 		{
 			jsonParser::DevOutput = "";
 		}
-	
 	}
 	std::cout<<"device done"<<std::endl;
 	if(Doc.HasMember("header"))
 	{
 		rapidjson::Value& header = Doc["header"];
-		
 		ProcessHeader(header);
-		//std::cout<<"header done"<<std::endl;
 	}
-	//std::cout<<"Doc has a body:"<<Doc.HasMember("body")<<std::endl;
 	if(Doc.HasMember("body"))
 	{
 		rapidjson::Value& body = Doc["body"];
 		ProcessMainBody(body);
-		
 	}
 	return true;
 }
