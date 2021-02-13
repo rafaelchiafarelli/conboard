@@ -195,18 +195,25 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
 }
 void MIDI::processMode(ModeType m)
 {
+    cout<<"mode header size:"<<m.header.size()<<endl;
     for(std::vector<Actions>::iterator h_it =  m.header.begin();
         h_it != m.header.end();
         h_it++)
     {
+        cout<<"actions size:"<<h_it->out.size()<<endl;
         for(std::vector<devActions>::iterator out_it = h_it->out.begin();
             out_it != h_it->out.end();
             out_it++)
         {
-            send_midi(out_it->mAct.midi.byte,sizeof(midiSignal));
-            if(out_it->mAct.delay > 0)
+            cout<<"out type:"<<out_it->tp<<endl;
+            if(out_it->tp == devType::midi)
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(out_it->mAct.delay));
+
+                send_midi(out_it->mAct.midi.byte,sizeof(midiSignal));
+                if(out_it->mAct.delay > 0)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(out_it->mAct.delay));
+                }
             }
         }
     }
