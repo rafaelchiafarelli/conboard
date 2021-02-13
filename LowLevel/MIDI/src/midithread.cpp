@@ -75,6 +75,7 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
             m_it != modes.end();
             m_it++)
         {
+            cout<<"mode: "<<m_it->index<<" is active:"<<m_it->is_active<<endl;
             if(m_it->is_active)
             {
                 CurrentMode = *m_it;
@@ -218,6 +219,8 @@ void MIDI::processMode(ModeType m)
         }
     }
 }
+
+
 void MIDI::processInput(midiSignal midiS)
 {
     lock_guard<mutex> locker(locking_mechanism);
