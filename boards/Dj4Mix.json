@@ -62,13 +62,12 @@
                     {
                     "input":{
                             "type":"midi", 
-                            "b0":145,
-                            "b1":2,
+                            "b0":144,
+                            "b1":58,
                             "b2":127,
                             "mode":"normal"
                             },
                     "output":[
-                            { "type":"midi" ,"b0":145,"b1":2,"b2":127}
                             ],
                     "change_mode":
                         {
@@ -219,17 +218,12 @@
                     {
                     "input":{
                             "type":"midi", 
-                            "b0":145,
-                            "b1":10,
-                            "b2":0,
-                            "delay":50
+                            "b0":144,
+                            "b1":59,
+                            "b2":127
                             },
                     "output":[
-                            { "type":"midi", "b0":145, "b1":2, "b2":127 },
-                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"}
+
                             ]
                     },
                     {
