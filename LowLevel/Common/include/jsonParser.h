@@ -28,7 +28,7 @@ class ModeType{
 public:
 	std::vector<Actions> header;
 	std::vector<Actions> body_actions;
-	unsigned int index;
+	int index;
 	bool is_active;
 	ModeType(std::vector<Actions> b, std::vector<Actions> h, unsigned int idx){
 		body_actions = b;

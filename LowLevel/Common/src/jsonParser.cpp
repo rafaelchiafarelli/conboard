@@ -68,7 +68,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 				mode.index = -1;
 				if(jMode.HasMember("id"))
 				{
-					if(jMode["id"].IsString())
+					if(jMode["id"].IsInt())
 						mode.index = jMode["id"].GetInt();
 				}
 				mode.is_active = false;
