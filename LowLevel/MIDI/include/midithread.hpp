@@ -84,7 +84,7 @@ class MIDI : private oActions{
         snd_rawmidi_t *input;
         snd_rawmidi_t *output;
         char port_name[PORT_NAME_SIZE];
-        
+        void changeMode(std::vector<Actions>::iterator it_act);
         void execHeader();
         void parse();
         void processInput(midiSignal midiS);
