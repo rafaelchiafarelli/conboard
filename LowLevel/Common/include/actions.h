@@ -215,7 +215,7 @@ class Actions{
 
 public:
     bool change_mode = false;
-    unsigned int mode_idx = -1;
+    unsigned int change_to = -1;
     devActions in;
     std::vector<devActions> out;
     void clear(){

@@ -296,22 +296,31 @@ void MIDI::processInput(midiSignal midiS)
                 }
                 break;
             }
-        if(it_act->change_mode)
-        for(vector<ModeType>::iterator m_it = modes.begin();
-            m_it!=modes.end();
-            m_it++)
+            //figure out a nice 
+            if(it_act->change_mode && it_act->change_to != -1)
             {
-                if(m_it->index == it_act->mode_idx)
+            int id_dest = it_act->change_to;
+            cout<<"change to:"<<it_act->change_to<<" "<<endl;
+            for(vector<ModeType>::iterator m_it = modes.begin();
+                m_it!=modes.end();
+                m_it++)
                 {
-                    //Current mode must be turned off, in memory, not in file 
-                    CurrentMode.is_active=false;
-                    //changed the mode to the newly selected one
-                    CurrentMode = *m_it;
-                    //Activete this new one
-                    processMode(CurrentMode);
-                    CurrentMode.is_active=true;
-                }
-            }                
+                    cout<<"index:"<<m_it->index<<" c_index:"<<CurrentMode.index<<endl;
+                    if(m_it->index == CurrentMode.index)
+                    {
+                        //Current mode must be turned off, in memory, not in file 
+                        m_it->is_active=false;
+                    }
+                    if(m_it->index == id_dest)
+                    {
+                        //changed the mode to the newly selected one
+                        CurrentMode = *m_it;
+                        //Activete this new one
+                        processMode(CurrentMode);
+                        CurrentMode.is_active=true;
+                    }
+                }                
+            }
         }
     }
 }

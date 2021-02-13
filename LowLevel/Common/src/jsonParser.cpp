@@ -148,7 +148,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 												if(ch_to.IsInt())
 												{
 													mActions.change_mode = true;
-													mActions.mode_idx = ch_to.GetInt();
+													mActions.change_to = ch_to.GetInt();
 												}
 											}
 										}
