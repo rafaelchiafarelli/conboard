@@ -253,6 +253,10 @@ void MIDI::processInput(midiSignal midiS)
                     {
                         oQueue.push(it_act->out);
                         send = true;
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
                     }
                 }
                 break;
@@ -264,7 +268,10 @@ void MIDI::processInput(midiSignal midiS)
                     {
                         oQueue.push(it_act->out);
                         send = true;
-
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
                     }
                 }
                 break;                
@@ -276,6 +283,10 @@ void MIDI::processInput(midiSignal midiS)
                     {
                         oQueue.push(it_act->out);
                         send = true;
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
                     }
                 }
                 break;
@@ -292,37 +303,47 @@ void MIDI::processInput(midiSignal midiS)
                             }
                         oQueue.push(it_act->out);
                         send = true;
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
                     }
                 }
                 break;
             }
-            //figure out a nice 
-            if(it_act->change_mode && it_act->change_to != -1)
-            {
-            int id_dest = it_act->change_to;
-            cout<<"change to:"<<it_act->change_to<<" "<<endl;
-            for(vector<ModeType>::iterator m_it = modes.begin();
-                m_it!=modes.end();
-                m_it++)
-                {
-                    cout<<"index:"<<m_it->index<<" c_index:"<<CurrentMode.index<<endl;
-                    if(m_it->index == CurrentMode.index)
-                    {
-                        //Current mode must be turned off, in memory, not in file 
-                        m_it->is_active=false;
-                    }
-                    if(m_it->index == id_dest)
-                    {
-                        //changed the mode to the newly selected one
-                        CurrentMode = *m_it;
-                        //Activete this new one
-                        processMode(CurrentMode);
-                        CurrentMode.is_active=true;
-                    }
-                }                
-            }
         }
     }
+}
+
+void MIDI::changeMode(std::vector<Actions>::iterator it_act)
+{
+int id_dest = it_act->change_to;
+cout<<"change to:"<<it_act->change_to<<" "<<endl;
+vector<ModeType>::iterator l_it;
+for(vector<ModeType>::iterator m_it = modes.begin();
+    m_it!=modes.end();
+    m_it++)
+    {
+        cout<<"index:"<<m_it->index<<" c_index:"<<CurrentMode.index<<endl;
+        if(m_it->index == CurrentMode.index)
+        {
+            //Current mode must be turned off, in memory, not in file 
+            l_it = m_it;
+        }
+        if(m_it->index == id_dest)
+        {
+            //Current mode must be turned off, in memory, not in file 
+            l_it->is_active = false;
+
+            //changed the mode to the newly selected one
+            CurrentMode = *m_it;
+
+            //Activete this new one
+            processMode(CurrentMode);
+            
+            CurrentMode.is_active=true;
+        }
+    }    
 }
 
 void MIDI::out_func()
