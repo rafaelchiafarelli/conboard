@@ -224,7 +224,12 @@
                             },
                     "output":[
 
-                            ]
+                            ],
+                            "change_mode":
+                        {
+                        "enable":true,
+                        "change_to":1
+                        }
                     },
                     {
                     "input":{
