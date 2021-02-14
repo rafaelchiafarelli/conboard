@@ -62,6 +62,11 @@ class midiActions{
     midi_action_mode midi_mode = midi_normal;
     midiSignal midi;
     unsigned long int delay = 0;
+    std::string str(){
+        char c_str[14];
+        std::sprintf(c_str,"%d %d %d",midi.byte[0],midi.byte[1],midi.byte[2]);
+        return std::string(c_str);
+    };
     midiActions(){};
     ~midiActions(){};
     friend std::ostream& operator<<(std::ostream &os, const midiActions &dt){
