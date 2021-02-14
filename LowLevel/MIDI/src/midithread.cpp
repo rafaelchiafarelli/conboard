@@ -102,8 +102,11 @@ void MIDI::execHeader()
             devIt != it->out.end();
             devIt++)
         {
+            cout<<"devIt:"<<devIt->tp<<endl;
+
             if(devIt->tp == midi)
             {
+                cout<<"devIt:"<<devIt->mAct<<endl;
                 send_midi(devIt->mAct.midi.byte,sizeof(midiSignal));
                 if(devIt->mAct.delay > 0)
                 {
@@ -212,7 +215,6 @@ void MIDI::processMode(ModeType m)
             cout<<"out type:"<<out_it->tp<<endl;
             if(out_it->tp == devType::midi)
             {
-
                 send_midi(out_it->mAct.midi.byte,sizeof(midiSignal));
                 if(out_it->mAct.delay > 0)
                 {
