@@ -234,10 +234,7 @@ void MIDI::processInput(midiSignal midiS)
     std::string snd_data = "{\"";
     snd_data.append(json.DevName);
     snd_data.append("\": \"");
-    std::stringstream s;
-    s.unsetf ( std::ios::skipws );
-    s<<tmp;
-    snd_data.append(s.str());
+    snd_data.append(tmp.str());
     snd_data.append("\"}");
     std::cout<<snd_data.c_str()<<std::endl;
     zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
