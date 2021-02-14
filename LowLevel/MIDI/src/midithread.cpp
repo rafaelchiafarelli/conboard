@@ -70,6 +70,7 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
 	}
     else
     {
+        execHeader(); //execute the commands in the header
         SelectedMode = 0;
         for(std::vector<ModeType>::iterator m_it = modes.begin();
             m_it != modes.end();
@@ -413,7 +414,7 @@ void MIDI::in_func()
 		npfds = snd_rawmidi_poll_descriptors_count(input);
 		pfds = (pollfd *)alloca(npfds * sizeof(struct pollfd));
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
-		execHeader(); //execute the commands in the header
+		
 		while(!stop){
             unsigned char buf[256];
 			int i, length;
