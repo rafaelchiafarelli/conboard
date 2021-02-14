@@ -53,7 +53,8 @@ typedef enum
     midi_trigger_higher = 1,
     midi_trigger_lower = 2,
     midi_spot = 3,
-    midi_nomode = 4
+    midi_blink = 4,
+    midi_nomode = 5
 
 }midi_action_mode;
 class midiActions{
@@ -67,13 +68,10 @@ class midiActions{
         os<<std::hex<<(unsigned int)dt.midi.byte[0]<<" "<<std::hex<<(unsigned int)dt.midi.byte[1]<<" "<<std::hex<<(unsigned int)dt.midi.byte[2]<<std::endl;
         return os;
     };
-    operator std::string (){
-           std::stringstream s;
-            s << midi.byte[0] << " "<< midi.byte[1] << " "<< midi.byte[2];
-            // assign to std::string
-            std::string str = s.str();
-        return str;
-        }
+    friend std::stringstream& operator<<(std::stringstream &os, const midiActions &dt){
+        os<<std::hex<<(unsigned int)dt.midi.byte[0]<<" "<<std::hex<<(unsigned int)dt.midi.byte[1]<<" "<<std::hex<<(unsigned int)dt.midi.byte[2]<<std::endl;
+        return os;
+    };
 
 };
 
