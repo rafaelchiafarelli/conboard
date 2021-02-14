@@ -92,10 +92,12 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
 
 void MIDI::execHeader()
 {
+    cout<<"header size:"<<header.size()<<" "<<endl;
     for(std::vector<Actions>::iterator it = header.begin();
         it != header.end();
         it++)
     {
+        cout<<"devIt size:"<<it->out.size()<<" "<<endl;
         for(std::vector<devActions>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
