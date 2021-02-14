@@ -526,17 +526,17 @@ bool jsonParser::Initializer()
 		rapidjson::Value& header = Doc["header"];
 		ProcessHeader(header);
 	}
-	cout<<"header actions"<<endl;
+	std::cout<<"header actions"<<std::endl;
 	if(Doc.HasMember("actions"))
 	{
 		Actions action;
-		cout<<"header actions exist"<<endl;
+		std::cout<<"header actions exist"<<std::endl;
 		rapidjson::Value& actions = Doc["actions"];
 		if(actions.IsArray())
 		{
 			for(SizeType t; t<actions.Size();t++)
 			{
-				cout<<"parse action"<<endl;
+				std::cout<<"parse action"<<std::endl;
 				action.out.push_back(parseIO(actions[t]));
 			}
 		}
