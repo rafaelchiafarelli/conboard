@@ -426,7 +426,22 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 			}
 		}
 	}
-
+	std::cout<<"actions"<<std::endl;
+	if(header.HasMember("actions"))
+	{
+		Actions action;
+		rapidjson::Value& actions = header["actions"];
+		std::cout<<"actions exists"<<std::endl;
+		if(actions.IsArray())
+		{
+			for(SizeType t; t<actions.Size();t++)
+			{
+				std::cout<<"act"<<std::endl;
+				action.out.push_back(parseIO(actions[t]));
+			}
+		}
+		header_actions->push_back(action);
+	}
 }
 
 devType jsonParser::GetDevType(std::string dType)
@@ -525,22 +540,6 @@ bool jsonParser::Initializer()
 	{
 		rapidjson::Value& header = Doc["header"];
 		ProcessHeader(header);
-	}
-	std::cout<<"header actions"<<std::endl;
-	if(Doc.HasMember("actions"))
-	{
-		Actions action;
-		std::cout<<"header actions exist"<<std::endl;
-		rapidjson::Value& actions = Doc["actions"];
-		if(actions.IsArray())
-		{
-			for(SizeType t; t<actions.Size();t++)
-			{
-				std::cout<<"parse action"<<std::endl;
-				action.out.push_back(parseIO(actions[t]));
-			}
-		}
-		header_actions->push_back(action);
 	}
 	if(Doc.HasMember("body"))
 	{
