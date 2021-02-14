@@ -366,6 +366,14 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 					}	
 				}
 			}
+			if(act.HasMember("delay"))
+			{
+				ret.mAct.delay = 0;
+				if(act["delay"].IsInt())
+				{
+					ret.mAct.delay = (unsigned int) act["delay"].GetInt();
+				}
+			}
 		}
 		break;
 		case devType::joystick:
