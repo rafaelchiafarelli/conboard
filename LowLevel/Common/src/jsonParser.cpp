@@ -435,7 +435,7 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 		if(actions.IsArray())
 		{
 			std::cout<<"actions array:"<<actions.Size()<<std::endl;
-			for(SizeType t; t<actions.Size();t++)
+			for(SizeType t=0; t<actions.Size();t++)
 			{
 				std::cout<<"act"<<std::endl;
 				action.out.push_back(parseIO(actions[t]));
