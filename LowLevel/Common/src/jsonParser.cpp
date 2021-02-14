@@ -131,7 +131,7 @@ void jsonParser::ProcessMainBody(rapidjson::Value &body)
 									}
 								}
 							}
-							std::cout<<"has change_mode:"<<Act.HasMember("change_mode")<<std::endl;
+							
 							if(Act.HasMember("change_mode"))
 							{
 								rapidjson::Value& ch_mode = Act["change_mode"];
