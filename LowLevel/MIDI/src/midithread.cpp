@@ -106,7 +106,7 @@ void MIDI::execHeader()
 
             if(devIt->tp == midi)
             {
-                cout<<"devIt:"<<devIt->mAct<<endl;
+                cout<<"devIt:"<<devIt->mAct<<devIt->mAct.delay<<endl;
                 send_midi(devIt->mAct.midi.byte,sizeof(midiSignal));
                 if(devIt->mAct.delay > 0)
                 {
