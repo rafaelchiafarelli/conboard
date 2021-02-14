@@ -235,6 +235,7 @@ void MIDI::processInput(midiSignal midiS)
     snd_data.append(json.DevName);
     snd_data.append("\": \"");
     std::stringstream s;
+    s.unsetf ( std::ios::skipws );
     s<<tmp;
     snd_data.append(s.str());
     snd_data.append("\"}");
