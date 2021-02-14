@@ -234,7 +234,9 @@ void MIDI::processInput(midiSignal midiS)
     std::string snd_data = "{\"";
     snd_data.append(json.DevName);
     snd_data.append("\": \"");
-    snd_data.append(std::string(tmp));
+    std::stringstream s;
+    s<<tmp;
+    snd_data.append(s.str());
     snd_data.append("\"}");
     std::cout<<snd_data.c_str()<<std::endl;
     zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
@@ -314,6 +316,26 @@ void MIDI::processInput(midiSignal midiS)
                         }
                     }
                 }
+                case midi_blink:
+                {
+                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
+                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
+                    (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
+                    {
+                        for(vector<devActions>::iterator out_it=it_act->out.begin();
+                            out_it!=it_act->out.end();
+                            out_it++)
+                            {
+                                out_it->spot = (int) midiS.byte[2];
+                            }
+                        oQueue.push(it_act->out);
+                        send = true;
+                        if(it_act->change_mode && it_act->change_to != -1)
+                        {
+                            changeMode(it_act);
+                        }
+                    }
+                }                
                 break;
             }
         }

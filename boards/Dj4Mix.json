@@ -83,7 +83,7 @@
                             "mode":"spot"
                             },
                     "output":[
-                            { "type":"midi" ,"b0":145,"b1":2,"b2":0},
+                            { "type":"midi" ,"b0":145,"b1":2,"b2":0, "mode":"blink"},
                             { "type":"keyboard" , "data":"{spot}" , "delay":0 , "keyType":"text" , "hold":"not_hold"},
                             { "type":"keyboard" , "data":"enter" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"}
                             ]
