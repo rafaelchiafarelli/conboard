@@ -236,7 +236,7 @@ void MIDI::processInput(midiSignal midiS)
     snd_data.append("\": \"");
     snd_data.append(tmp.str());
     snd_data.append("\"}");
-    std::cout<<snd_data.c_str()<<std::endl;
+    //std::cout<<snd_data.c_str()<<std::endl;
     zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
 
     if(outToFile)
@@ -485,7 +485,7 @@ void MIDI::in_func()
 				
 				break;
 			}
-            std::cout<<std::hex<<(unsigned int)buf[0]<<" "<<std::hex<<(unsigned int)buf[1]<<" "<<std::hex<<(unsigned int)buf[2]<<std::endl;
+            //std::cout<<std::hex<<(unsigned int)buf[0]<<" "<<std::hex<<(unsigned int)buf[1]<<" "<<std::hex<<(unsigned int)buf[2]<<std::endl;
 			time = 0;
             if(err > sizeof(midiSignal))
             {

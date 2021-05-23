@@ -70,7 +70,9 @@ install_frontend(){
 
     echo "python install"
     USER_NAME=$(whoami)
-    cd /conboard/frontend
+    cd /conboard
+    chown -R $USER_NAME:$USER_NAME ./frontend/*
+    cd frontend
     if [ ! -d venv ]; then
         sudo -u $USER_NAME python3 -m venv venv
         sudo -u $USER_NAME source ./venv/bin/activate

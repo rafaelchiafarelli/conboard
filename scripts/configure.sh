@@ -20,7 +20,7 @@ build() {
 }
 
 preconditions(){
-    sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
+    sudo dd if=/dev/zero of=/swapfile bs=1M count=1024 status=progress
     sudo mkswap /swapfile
     sudo swapon /swapfile
     sudo apt -y update
