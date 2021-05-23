@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, flash, url_for
-import landpage.settings as settings
-from landpage.sidebar import sidebar
+from .sidebar import sidebar
 #render template: passando o nome do modelo e a variáveis ele vai renderizar o template
 #request: faz as requisições da nossa aplicação
 #redirect: redireciona pra outras páginas
