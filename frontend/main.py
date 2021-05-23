@@ -2,7 +2,7 @@ from flask import Flask
 from flask_socketio import SocketIO, send
 
 from DevComs import DevComs
-import landpage.settings as settings
+from landpage import settings 
 from landpage.landpage import landPage, midiPage, keyboardPage, joystickPage, mousePage, dmxPage, nonamePage
 
 STATIC_URL_PATH = '/home/rafa/conboard/frontend/static' # Where the css is stored
@@ -13,7 +13,7 @@ app = Flask(__name__, static_folder=STATIC_FOLDER,
 app.config['SECRET_KEY'] = 'some_cool_secret'
 socketio = SocketIO(app)
 
-coms = DevComs(send=send)
+coms = DevComs(send=socketio.send)
 
 @socketio.on('message')
 def handle_message(data):

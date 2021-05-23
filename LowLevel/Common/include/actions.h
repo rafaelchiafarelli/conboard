@@ -67,6 +67,11 @@ class midiActions{
         std::sprintf(c_str,"%d %d %d",midi.byte[0],midi.byte[1],midi.byte[2]);
         return std::string(c_str);
     };
+    std::string ar_str(){
+        char c_str[14];
+        std::sprintf(c_str,"[%d,%d,%d]",midi.byte[0],midi.byte[1],midi.byte[2]);
+        return std::string(c_str);
+    };
     midiActions(){};
     ~midiActions(){};
     friend std::ostream& operator<<(std::ostream &os, const midiActions &dt){
