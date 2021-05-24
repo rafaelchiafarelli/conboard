@@ -71,14 +71,14 @@ install_frontend(){
     echo "python install"
     USER_NAME=$(whoami)
     cd /conboard
-    chown -R $USER_NAME:$USER_NAME ./frontend/*
+    chown -R 1001:1001 ./frontend
     cd frontend
     if [ ! -d venv ]; then
         sudo -u $USER_NAME python3 -m venv venv
         sudo -u $USER_NAME source ./venv/bin/activate
         sudo -u $USER_NAME pip3 install --upgrade pip
         sudo -u $USER_NAME pip3 install update pip
-        sudo -u $USER_NAME pip3 install wheel numpy scipy matplotlib scikit-image scikit-learn ipython
+        sudo -u $USER_NAME pip3 install wheel numpy gunicorn gevent pyzmq flask_socketio matplotlib scikit-image scikit-learn ipython
         sudo -u $USER_NAME pip3 install -r /conboard/frontend/assets/requirements.txt
         sudo -u $USER_NAME deactivate
     fi

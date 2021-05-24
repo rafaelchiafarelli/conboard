@@ -166,7 +166,7 @@ void read_all(char *path)
 	std::vector<ModeType> Mode;
 	std::vector<Actions> h;
 	jsonParser header(complete_file_name,&Mode,&h);
-	std::cout<<"here"<<std::endl;
+	
 	bool has_service = false;
 	for(vector<dirent>::iterator files_it = jsonFiles.begin();
 		files_it!=jsonFiles.end();
