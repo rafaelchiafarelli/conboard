@@ -12,7 +12,6 @@
 
 using namespace rapidjson;
 
-
 jsonParser::jsonParser(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
 	loaded = false;
 	//std::cout<<"helo"<<std::endl;

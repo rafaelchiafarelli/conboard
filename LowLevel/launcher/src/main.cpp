@@ -244,7 +244,7 @@ void create_json(char *devInfo, char *folder)
 	vector<KeyValue> info_from_dev = info.GetParsed();
 	std::vector<ModeType> Mode;
 	std::vector<Actions> h;
-	jsonParser local_json("",&Mode,&h);
+	jsonParser *local_json;
 	char complete_file_name[1024];
 	memset(complete_file_name,0,1024);
 	for(vector<dirent>::iterator json_it = jsonFiles.begin();
@@ -255,11 +255,10 @@ void create_json(char *devInfo, char *folder)
 		
 		sprintf(complete_file_name, "%s/%s",folder,json_it->d_name);
 		hasHandler = false;
-		local_json.Reload(complete_file_name,&Mode,&h);
-
-		if(local_json.GetLoaded())
+		local_json = new jsonParser("",&Mode,&h);
+		if(local_json->GetLoaded())
 		{
-			std::vector<KeyValue> tags = local_json.GetTags();
+			std::vector<KeyValue> tags = local_json->GetTags();
 			
 			if(tags.size() == 0)
 			{
@@ -267,7 +266,6 @@ void create_json(char *devInfo, char *folder)
 			}
 			else
 			{
-			hasHandler = false;
 			for(vector<KeyValue>::iterator header_it = tags.begin();
 				header_it != tags.end();
 				header_it++)
@@ -297,10 +295,10 @@ void create_json(char *devInfo, char *folder)
 				}
 			}
 			bool has_service = false;
-			if(hasHandler && local_json.GetHasExec())
+			if(hasHandler && local_json->GetHasExec())
 			{
 
-				std::string serviceName = local_json.DevName;
+				std::string serviceName = local_json->DevName;
 				serviceName.append(".service");
 				serviceName.erase(remove_if(serviceName.begin(), serviceName.end(), ::isspace), serviceName.end());
 
@@ -323,17 +321,17 @@ void create_json(char *devInfo, char *folder)
 				}
 			}
 
-			if(!has_service && hasHandler && local_json.GetHasExec())
+			if(!has_service && hasHandler && local_json->GetHasExec())
 			{
 				std::string ExecLine;
 				ExecLine = "";
-				ExecLine.append(local_json.Ex.exec);
+				ExecLine.append(local_json->Ex.exec);
 				ExecLine.append(" -x ");
 				ExecLine.append(complete_file_name);
 
 				std::string filename = "";
 				filename.append("/etc/systemd/system/");
-				filename.append(local_json.DevName);
+				filename.append(local_json->DevName);
 				
 				filename.append(".service");
 
@@ -356,7 +354,7 @@ void create_json(char *devInfo, char *folder)
 				serviFileStream<<service_data;
 				serviFileStream.close();	
 				char cmd[512];
-				std::string servName = local_json.DevName;	
+				std::string servName = local_json->DevName;	
 				servName.append(".service");
 				servName.erase(remove_if(servName.begin(), servName.end(), ::isspace), servName.end());
 				sprintf(cmd,"systemctl restart %s",servName.c_str());
@@ -391,6 +389,7 @@ void create_json(char *devInfo, char *folder)
 					dummyJsonFile.close();
 			}
 		}
+		delete local_json;
 	}
 }
 
