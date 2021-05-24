@@ -34,6 +34,8 @@ void jsonParser::Reload(std::string _FileName, std::vector<ModeType> *Mode,std::
 	DevInput = "";
 	header_actions->clear();
 	op_modes->clear();
+	Tags.clear();
+	Generics.clear();
 	if(loaded == false)
 	{
 		if (loadFile()) 
@@ -565,7 +567,6 @@ bool jsonParser::loadFile()
 	buff<<file.rdbuf();
 	data = "";
 	data = buff.str();
-	std::cout<<data.c_str()<<std::endl;
 	ParseResult res = Doc.Parse(data);
 	std::cout<<"File Name"<<FileName<<" is error:"<<res.Code()<<" in:"<<res.Offset()<<"reading the file:"<<res.IsError()<<std::endl;
 	return (res.IsError())? false:true;

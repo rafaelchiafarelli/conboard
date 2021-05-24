@@ -267,6 +267,7 @@ void create_json(char *devInfo, char *folder)
 			}
 			else
 			{
+			hasHandler = false;
 			for(vector<KeyValue>::iterator header_it = tags.begin();
 				header_it != tags.end();
 				header_it++)
