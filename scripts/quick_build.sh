@@ -23,39 +23,39 @@ quick_install() {
 build_common(){
     cd $SCRIPTS_DIR/../LowLevel/Common/script
     sudo ./build_common.sh
-    sudo cp $SCRIPTS_DIR/../LowLevel/Common/build/libcommon.sq /conboard/LowLevel/Common/build/
+    sudo cp $SCRIPTS_DIR/../LowLevel/Common/build/libcommon.so /conboard/LowLevel/Common/build/
     
 }
 
 
 build_launcher(){
-    cd $SCRIPTS_DIR/../LowLevel/launcher/script
+    cd $SCRIPTS_DIR/../LowLevel/launcher/scripts
     sudo ./build_launcher.sh
     sudo cp $SCRIPTS_DIR/../LowLevel/launcher/build/launcher /conboard/LowLevel/launcher/build/
 }
 
 build_joystick(){
-    cd $SCRIPTS_DIR/../LowLevel/joystick/script
-    sudo ./build_joystick.sh
-    sudo cp $SCRIPTS_DIR/../LowLevel/joystick/build/conJoyS /conboard/LowLevel/joystick/build/
+    cd $SCRIPTS_DIR/../LowLevel/joystick/scripts
+    sudo ./build_JoyStick.sh
+    sudo cp $SCRIPTS_DIR/../LowLevel/Joystick/build/conJoyS /conboard/LowLevel/joystick/build/
 }
 
 build_KeyBoard(){
-    cd $SCRIPTS_DIR/../LowLevel/KeyBoard/script
+    cd $SCRIPTS_DIR/../LowLevel/KeyBoard/scripts
     sudo ./build_KeyBoard.sh
     sudo cp $SCRIPTS_DIR/../LowLevel/KeyBoard/build/conKeyB /conboard/LowLevel/KeyBoard/build/
 }
 
 build_MIDI(){
-    cd $SCRIPTS_DIR/../LowLevel/MIDI/script
+    cd $SCRIPTS_DIR/../LowLevel/MIDI/scripts
     sudo ./build_MIDI.sh
     sudo cp $SCRIPTS_DIR/../LowLevel/MIDI/build/conMIDI /conboard/LowLevel/MIDI/build/
 }
 
 build_mouse(){
-    cd $SCRIPTS_DIR/../LowLevel/Mouse/script
+    cd $SCRIPTS_DIR/../LowLevel/Mouse/scripts
     sudo ./build_mouse.sh
-    sudo cp $SCRIPTS_DIR/../LowLevel/Mouse/build/conMIDI /conboard/LowLevel/Mouse/build/
+    sudo cp $SCRIPTS_DIR/../LowLevel/Mouse/build/conMouse /conboard/LowLevel/Mouse/build/
 }
 
 install(){
