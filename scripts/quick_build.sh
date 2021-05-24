@@ -21,7 +21,7 @@ quick_install() {
 
 
 build_common(){
-    cd $SCRIPTS_DIR/../LowLevel/Common/script
+    cd $SCRIPTS_DIR/../LowLevel/Common/scripts
     sudo ./build_common.sh
     sudo cp $SCRIPTS_DIR/../LowLevel/Common/build/libcommon.so /conboard/LowLevel/Common/build/
     
@@ -37,7 +37,7 @@ build_launcher(){
 build_joystick(){
     cd $SCRIPTS_DIR/../LowLevel/joystick/scripts
     sudo ./build_JoyStick.sh
-    sudo cp $SCRIPTS_DIR/../LowLevel/Joystick/build/conJoyS /conboard/LowLevel/joystick/build/
+    sudo cp $SCRIPTS_DIR/../LowLevel/Joystick/build/conJoyS /conboard/LowLevel/Joystick/build/
 }
 
 build_KeyBoard(){
