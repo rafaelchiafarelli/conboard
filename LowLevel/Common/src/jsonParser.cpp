@@ -434,18 +434,18 @@ void jsonParser::ProcessHeader(rapidjson::Value& header)
 			}
 		}
 	}
-	std::cout<<"actions"<<std::endl;
+	
 	if(header.HasMember("actions"))
 	{
 		Actions action;
 		rapidjson::Value& actions = header["actions"];
-		std::cout<<"actions exists"<<std::endl;
+		
 		if(actions.IsArray())
 		{
-			std::cout<<"actions array:"<<actions.Size()<<std::endl;
+			
 			for(SizeType t=0; t<actions.Size();t++)
 			{
-				std::cout<<"act"<<std::endl;
+				
 				action.out.push_back(parseIO(actions[t]));
 			}
 		}
@@ -544,7 +544,7 @@ bool jsonParser::Initializer()
 			jsonParser::DevOutput = "";
 		}
 	}
-	std::cout<<"device done"<<std::endl;
+	
 	if(Doc.HasMember("header"))
 	{
 		rapidjson::Value& header = Doc["header"];
@@ -563,9 +563,10 @@ bool jsonParser::loadFile()
 	std::ifstream file(FileName);
 	std::stringstream buff;
 	buff<<file.rdbuf();
+	data = "";
 	data = buff.str();
-	//std::cout<<data.c_str()<<std::endl;
+	std::cout<<data.c_str()<<std::endl;
 	ParseResult res = Doc.Parse(data);
-	//std::cout<<"File Name"<<FileName<<" is error:"<<res.Code()<<" in:"<<res.Offset()<<"reading the file:"<<res.IsError()<<std::endl;
+	std::cout<<"File Name"<<FileName<<" is error:"<<res.Code()<<" in:"<<res.Offset()<<"reading the file:"<<res.IsError()<<std::endl;
 	return (res.IsError())? false:true;
 }
