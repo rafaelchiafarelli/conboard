@@ -43,8 +43,9 @@ MIDI::~MIDI(){
         delete out_thread;
 }
 
-MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), json(jsonFileName,&modes,&header),oActions()
+MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), json(_jsonFileName,&modes,&header),oActions()
 {
+    jsonFileName = _jsonFileName;
     /*ZMQ connection -- send user cmds*/
     io_socket.connect("tcp://localhost:5555");
     coms_socket.connect("tcp://localhost:5550");
@@ -76,7 +77,7 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
             m_it != modes.end();
             m_it++)
         {
-            cout<<"mode: "<<m_it->index<<" is active:"<<m_it->is_active<<endl;
+            
             if(m_it->is_active)
             {
                 CurrentMode = *m_it;
@@ -92,21 +93,16 @@ MIDI::MIDI(string jsonFileName,vector<raw_midi> hw_ports):modes(), header(), jso
 
 void MIDI::execHeader()
 {
-    cout<<"header size:"<<header.size()<<" "<<endl;
     for(std::vector<Actions>::iterator it = header.begin();
         it != header.end();
         it++)
     {
-        cout<<"devIt size:"<<it->out.size()<<" "<<endl;
         for(std::vector<devActions>::iterator devIt = it->out.begin();
             devIt != it->out.end();
             devIt++)
         {
-            cout<<"devIt:"<<devIt->tp<<endl;
-
             if(devIt->tp == midi)
             {
-                cout<<"devIt:"<<devIt->mAct<<devIt->mAct.delay<<endl;
                 send_midi(devIt->mAct.midi.byte,sizeof(midiSignal));
                 if(devIt->mAct.delay > 0)
                 {
@@ -124,8 +120,6 @@ void MIDI::handler()
     zmq::message_t reply{};
     zmq::recv_result_t recv_res = coms_socket.recv(reply, zmq::recv_flags::none);
 
-    std::cout << "Received " << reply.to_string()<< std::endl;; 
-    
     /*msg structure is
     * device cmd params
     * 
@@ -149,7 +143,6 @@ void MIDI::handler()
         std::string command = *msg_it;
         if(!command.compare("reload"))
         {
-            std::cout<<"Reload!"<<endl;
             Reload();
         }
         else if(!command.compare("outstop"))
@@ -161,10 +154,6 @@ void MIDI::handler()
             msg_it++;
             string param = *msg_it;
             bool isOpen = outFile(param);
-            if(isOpen)
-                cout<<"file openned"<<endl;
-            else
-                cout<<"NOT openned"<<endl;
         }
     }
 }
@@ -202,17 +191,14 @@ void MIDI::send_midi(char *send_data, size_t send_data_length)
 }
 void MIDI::processMode(ModeType m)
 {
-    cout<<"mode header size:"<<m.header.size()<<endl;
     for(std::vector<Actions>::iterator h_it =  m.header.begin();
         h_it != m.header.end();
         h_it++)
     {
-        cout<<"actions size:"<<h_it->out.size()<<endl;
         for(std::vector<devActions>::iterator out_it = h_it->out.begin();
             out_it != h_it->out.end();
             out_it++)
         {
-            cout<<"out type:"<<out_it->tp<<endl;
             if(out_it->tp == devType::midi)
             {
                 send_midi(out_it->mAct.midi.byte,sizeof(midiSignal));
@@ -236,7 +222,6 @@ void MIDI::processInput(midiSignal midiS)
     snd_data.append("\": \"");
     snd_data.append(tmp.ar_str());
     snd_data.append("\"}");
-    //std::cout<<snd_data.c_str()<<std::endl;
     zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
 
     if(outToFile)
@@ -343,13 +328,13 @@ void MIDI::processInput(midiSignal midiS)
 void MIDI::changeMode(std::vector<Actions>::iterator it_act)
 {
 int id_dest = it_act->change_to;
-cout<<"change to:"<<it_act->change_to<<" "<<endl;
+
 
 for(vector<ModeType>::iterator m_it = modes.begin();
     m_it!=modes.end();
     m_it++)
     {
-        cout<<"index:"<<m_it->index<<" c_index:"<<CurrentMode.index<<endl;
+
 
         if(m_it->index == id_dest)
         {
@@ -366,13 +351,18 @@ for(vector<ModeType>::iterator m_it = modes.begin();
             processMode(CurrentMode);
 
             CurrentMode.is_active=true;
+            saveJSON();
         }
     }    
 }
 
+void MIDI::saveJSON(){
+
+}
+
 void MIDI::out_func()
 {
-    std::cout<<"out_func start: "<<stop<<" input:"<<input<<std::endl;
+
     while(!stop)
     {
         if(send)
@@ -485,7 +475,7 @@ void MIDI::in_func()
 				
 				break;
 			}
-            //std::cout<<std::hex<<(unsigned int)buf[0]<<" "<<std::hex<<(unsigned int)buf[1]<<" "<<std::hex<<(unsigned int)buf[2]<<std::endl;
+            
 			time = 0;
             if(err > sizeof(midiSignal))
             {

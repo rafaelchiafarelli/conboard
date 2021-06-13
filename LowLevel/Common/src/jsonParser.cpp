@@ -478,7 +478,7 @@ bool jsonParser::Initializer()
 		
 	if(Doc.HasMember("DEVICE"))
 	{
-		//std::cout<<"here"<<std::endl;
+		
 		rapidjson::Value& Device = Doc["DEVICE"];
 
 		if (Device.HasMember("type"))
@@ -567,6 +567,6 @@ bool jsonParser::loadFile()
 	data = "";
 	data = buff.str();
 	ParseResult res = Doc.Parse(data);
-	std::cout<<"File Name"<<FileName<<" is error:"<<res.Code()<<" in:"<<res.Offset()<<"reading the file:"<<res.IsError()<<std::endl;
+	
 	return (res.IsError())? false:true;
 }

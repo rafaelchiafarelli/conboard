@@ -57,7 +57,7 @@ class MIDI : private oActions{
 
     private:
 
-
+        std::string xmlFileName;
         mutex locking_mechanism;
         std::thread *in_thread;
         std::thread *out_thread;
@@ -84,6 +84,7 @@ class MIDI : private oActions{
         snd_rawmidi_t *input;
         snd_rawmidi_t *output;
         char port_name[PORT_NAME_SIZE];
+        void saveJSON();
         void changeMode(std::vector<Actions>::iterator it_act);
         void execHeader();
         void parse();

@@ -20,9 +20,9 @@ build() {
 }
 
 preconditions(){
-    sudo dd if=/dev/zero of=/swapfile bs=1M count=1024 status=progress
-    sudo mkswap /swapfile
-    sudo swapon /swapfile
+    sudo dd if=/dev/zero of=/swapfile2 bs=1M count=1024 status=progress
+    sudo mkswap /swapfile2
+    sudo swapon /swapfile2
     sudo apt -y update
     sudo apt -y install udev udevil gitk libusb-dev python-dev 
     sudo apt -y install nginx
