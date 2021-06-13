@@ -50,7 +50,7 @@ def landPage():
     #parse the xml into variablest to be parsed into the template
     sb = sidebar()
     context = sb.get()
-    return {"value":"landpage value"}
+    return render_template("index.html", token = "hello something")
     #renderizando o template lista e as variáveis desejadas. 
 
 
