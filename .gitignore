@@ -33,6 +33,8 @@
 
 build/
 backend/venv/
+backend/static/
+backend/templates/
 frontend/venv/
 *.pyc
 *__pycache__
