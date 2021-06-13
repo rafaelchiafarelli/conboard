@@ -11,9 +11,11 @@ import os
 # Get the current working directory
 cwd = os.getcwd()
 url_path = os.path.dirname(cwd.__str__()+"/../frontend/static").__str__()
+template_path = os.path.dirname(cwd.__str__()+"/../frontend/static").__str__()
 
 STATIC_URL_PATH = url_path
 STATIC_FOLDER = url_path
+TEMPLATE_PATH = template_path
 print(url_path)
 
 app = Flask(__name__, static_folder=STATIC_FOLDER,

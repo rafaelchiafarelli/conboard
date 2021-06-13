@@ -57,7 +57,7 @@ class MIDI : private oActions{
 
     private:
 
-        std::string xmlFileName;
+        std::string jsonFileName;
         mutex locking_mechanism;
         std::thread *in_thread;
         std::thread *out_thread;
