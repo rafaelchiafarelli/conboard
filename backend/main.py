@@ -10,16 +10,20 @@ import os
 
 # Get the current working directory
 cwd = os.getcwd()
-url_path = os.path.dirname(cwd.__str__()+"/../frontend/static").__str__()
-template_path = os.path.dirname(cwd.__str__()+"/../frontend/static").__str__()
+url_path = os.path.dirname(cwd.__str__()+"/static/dash/").__str__()
+static = os.path.dirname(cwd.__str__()).__str__()
+template_dir = os.path.dirname(cwd.__str__()+"/static/dash/").__str__()
 
 STATIC_URL_PATH = url_path
-STATIC_FOLDER = url_path
-TEMPLATE_PATH = template_path
+STATIC_FOLDER = static
+TEMPLATE_PATH = template_dir
 print(url_path)
+print(static)
+print(template_dir)
 
 app = Flask(__name__, static_folder=STATIC_FOLDER,
-            static_url_path=STATIC_URL_PATH)
+            static_url_path=STATIC_URL_PATH,
+            template_folder=TEMPLATE_PATH)
 app.config['SECRET_KEY'] = 'some_cool_secret'
 socketio = SocketIO(app)
 
@@ -31,7 +35,29 @@ def handle_message(data):
 
 @app.route('/')
 def land():
-    return landPage()
+    return {
+            "id": 1,
+            "name": "Leanne Graham",
+            "username": "Bret",
+            "email": "Sincere@april.biz",
+            "address": {
+            "street": "Kulas Light",
+            "suite": "Apt. 556",
+            "city": "Gwenborough",
+            "zipcode": "92998-3874",
+            "geo": {
+            "lat": "-37.3159",
+            "lng": "81.1496"
+            }
+            },
+            "phone": "1-770-736-8031 x56442",
+            "website": "hildegard.org",
+            "company": {
+            "name": "Romaguera-Crona",
+            "catchPhrase": "Multi-layered client-server neural-net",
+            "bs": "harness real-time e-markets"
+            }
+            }
 
 @app.route("/midi/<string:name>/<string:file>")
 def midi(name, file):
@@ -57,5 +83,3 @@ def dmx(name,file):
 def noname(file):
     return nonamePage(filename = file)
 
-if __name__ == '__main__':
-    socketio.run(app)

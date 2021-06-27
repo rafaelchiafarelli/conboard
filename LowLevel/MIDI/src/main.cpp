@@ -29,36 +29,30 @@ using namespace std;
 
 
 /**
- * This is the main module of the system
- *  It is responsible for reading all the devices that are connected to the system - and keep reading it.
- *  launch all threads related to device inputs - one thread for device
- *  kill threads of devices that are no longer connected.
+ * This is the MIDI module of the system, and it is launched by the launcher application
+ *  It is responsible for reading all the MIDI devices that are connected to the system,
+ *  launch the correct handler and communitate with the backend to adapt to changes in the json.
  *  
  *  setup
- *  The system will read the config file and evaluate the existence of the folders json folders (/conboard/json)
- *  the config file also contains:
- *   - the timeout information
- *   - the connection with the external world (keyboard and mouse that will launch events to the PC)
- *   - the maximum number of thread's this code can generate
- *  then, this function can start by openning file descriptors and other tasks related to the output
+ *  The launcher selects a json and, inside the json, there is information pertinent to this device (macros and adresses), information
+ *  to comunicate with the backend and driver specific information
  *  
- *  start of a thread (dispatcher)
- *  when a device is connected, an event will be called. this event will read information from the device (
- *  such as type, file descriptors, name, input, output, etc) then, this event code, will enqueue a new dispatch
- *  order. The starter will read this information and capture the jsonfile assossiated with the device. 
- *  start a thread of the type of the device inserted with the 
+ *  start of a thread
+ *  The starter will read the information available in the json file passed thru command line and capture the 
+ *  events of this device. 
  *  information available.
  *      information required:
  *  - Human Readable name for input and output;
  *  - type (midi, keyboard, mouse or joystick)
  *  
- *  end of a thread (dispatcher)
- *  When a jsonfile changes, or a device is removed, this module mus handle the death of the thread.
- *  First it will send the kill command to the thread than it will "join" with the thread. 
+ *  end of a device
+ *  When a device is removed, there is no event detectable, so, the application has to handle this event by stoping it self.
  *  If the event if just a change in the json, a new thread will be launched, however, if it is a device disconnected
  *  then just kill the thread.
  *  
- *  
+ *  change the json
+ *  user can change macros and/or specifics of the device.
+ *  The j
  * 
  * 
  **/ 
@@ -236,6 +230,7 @@ int main(int argc, char *argv[])
 	while(!stop)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		//messenger must be here
 	}
 
 	devMIDI->Stop();
