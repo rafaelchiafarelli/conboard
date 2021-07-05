@@ -14,17 +14,15 @@
 
 #include "version.h"
 
-#include "main.hpp"
-
 #include <chrono>
 #include <string>
 #include <atomic>
 #include <vector>
 
+#include "main.hpp"
+#include "dispatcher.hpp"
 
 using namespace std;
-
-
 
 /**
  * This is the dispatcher for the system
@@ -52,7 +50,6 @@ using namespace std;
  *  - put the secret code to log in on the screen
  *  
  **/ 
-
 
 static void sig_handler(int dummy)
 {
@@ -88,7 +85,7 @@ int main(int argc, char *argv[])
 		default:
 			cout<<"Try more information."<<endl;
 			return 1;
-		}	
+		}
 	}
 
 	signal(SIGINT,  sig_handler);
@@ -96,16 +93,13 @@ int main(int argc, char *argv[])
 	signal(SIGKILL, sig_handler);
 	signal(SIGQUIT, sig_handler);
 
+	dispatcher dsp(jsonFileName, &stop);
+
 	while(!stop)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		//messenger must be here
 	}
-
-
-
     return 0;
-
 }
 
 
