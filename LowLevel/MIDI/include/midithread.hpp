@@ -15,8 +15,8 @@
  *  - blink: an outputn special type. It will send the midi on and than send the midi off
  */ 
 
-#ifndef KEYTHREAD_HPP
-#define KEYTHREAD_HPP
+#ifndef MIDITHREAD_HPP
+#define MIDITHREAD_HPP
 
 #include "stdio.h"
 #include "actions.h"
@@ -61,6 +61,7 @@ class MIDI : private oActions{
         mutex locking_mechanism;
         std::thread *in_thread;
         std::thread *out_thread;
+        std::thread *coms;
         std::queue<std::vector<devActions> > oQueue;
         void in_func(); //midi input handler
         void out_func(); //keyboard and mouse handler
@@ -71,8 +72,6 @@ class MIDI : private oActions{
         atomic_bool send;
         atomic_bool stop;
         int timeout;
-        
-        
 
         std::vector<Actions> header;
         std::vector<ModeType> modes;
@@ -102,13 +101,12 @@ class MIDI : private oActions{
         zmq::socket_t coms_socket{coms_context, zmq::socket_type::rep};
         std::vector<std::string> explode(std::string const & s, char delim);
     public:
-        void handler();
+        void coms_handler();
         void Stop();
         void Reload();
         void outStop();
         bool outFile(string name);
         void oMouse(mouseActions){};
-        
         void oJoystick(joystickActions){};
         void oKeyboard(keyboardActions){};
         MIDI( string xmlFileName, vector<raw_midi> hw_ports);

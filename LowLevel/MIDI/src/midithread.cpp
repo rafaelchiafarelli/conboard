@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 
+#include <algorithm>
 #include <unistd.h>
 #include <zmq.hpp>
 #include <chrono>
@@ -88,6 +89,7 @@ MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), js
         }
         in_thread = new thread(&MIDI::in_func,this);
         out_thread = new thread(&MIDI::out_func,this);
+        coms = new thread(&MIDI::coms_handler,this);
     }
 }
 
@@ -112,49 +114,58 @@ void MIDI::execHeader()
         }
     }
 }
-void MIDI::handler()
+void MIDI::coms_handler()
 {
 
-    // set up some static data to send
-    const std::string data{"Hello"};
-    zmq::message_t reply{};
-    zmq::recv_result_t recv_res = coms_socket.recv(reply, zmq::recv_flags::none);
-
-    /*msg structure is
-    * device cmd params
-    * 
-    * cmd: reload
-    * reload 
-    * 
-    * cmd file
-    * file <complete file_name with path>
-    * 
-    * cmd outstop
-    * outstop
-    * 
-    */
-    std::string raw = reply.to_string();
-    
-    std::vector<std::string> parsed_msg = explode(raw,' ');
-    std::vector<std::string>::iterator msg_it = parsed_msg.begin();
-    if(!msg_it->compare(json.DevName))
+    while(!stop)
     {
-        msg_it++;
-        std::string command = *msg_it;
-        if(!command.compare("reload"))
-        {
-            Reload();
-        }
-        else if(!command.compare("outstop"))
-        {
-            outStop();
-        }
-        else if(!command.compare("file"))
+        zmq::message_t reply{};
+        zmq::recv_result_t recv_res = coms_socket.recv(reply, zmq::recv_flags::none);
+
+        /*
+        * msg structure is
+        * device; cmd; params;
+        * 
+        * cmds:
+        * 
+        * reload 
+        * file <complete file_name with path>
+        * outstop
+        * change_mode <mode>
+        * 
+        * example:
+        * Arduino Micro; file; /conboard/boards/Arduino Micro.json;
+        * 
+        * Arduino Micro; reload;
+        */
+        std::string raw = reply.to_string();
+        
+        std::vector<std::string> parsed_msg = explode(raw,';');
+        std::vector<std::string>::iterator msg_it = parsed_msg.begin();
+        if(!msg_it->compare(json.DevName))
         {
             msg_it++;
-            string param = *msg_it;
-            bool isOpen = outFile(param);
+            std::string command = *msg_it;
+            if(!command.compare("reload"))
+            {
+                Reload();
+            }
+            else if(!command.compare("outstop"))
+            {
+                outStop();
+            }
+            else if(!command.compare("file"))
+            {
+                msg_it++;
+                string param = *msg_it;
+                bool isOpen = outFile(param);
+            }
         }
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+
     }
 }
 
@@ -166,6 +177,7 @@ std::vector<std::string> MIDI::explode(std::string const & s, char delim)
 
     for (std::string token; std::getline(iss, token, delim); )
     {
+        remove(token.begin(),token.end(),' ');
         result.push_back(std::move(token));
     }
 
