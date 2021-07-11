@@ -7,7 +7,7 @@ config::config(std::string fileName)
 	buff<<file.rdbuf();
 	data = "";
 	data = buff.str();
-	ParseResult isError = Doc.Parse(data);
+	ParseResult isError = Doc.Parse(data.c_str());
 
 
 }
