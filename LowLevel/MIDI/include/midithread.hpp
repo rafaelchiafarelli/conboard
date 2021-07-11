@@ -33,7 +33,10 @@
 #include <queue>
 #include <mutex>
 #include <oActions.hpp>
-#include <zmq.hpp>
+
+#include "zmq_io.hpp"
+#include "zmq_coms.hpp"
+
 using namespace std;
 #define PORT_NAME_SIZE 10
 #define MILLISECONDS_TIMEOUT 10
@@ -61,7 +64,10 @@ class MIDI : private oActions{
         mutex locking_mechanism;
         std::thread *in_thread;
         std::thread *out_thread;
-        std::thread *coms;
+        std::thread *thcoms;
+        zmq_coms *com;
+        
+        
         std::queue<std::vector<devActions> > oQueue;
         void in_func(); //midi input handler
         void out_func(); //keyboard and mouse handler
@@ -93,12 +99,7 @@ class MIDI : private oActions{
         void send_mouse(mouseActions mouse);
         void send_joystick(){};
 
-        /*zmq related functions and variables*/
-        zmq::context_t io_context{1};
-        zmq::socket_t io_socket{io_context, zmq::socket_type::push};
 
-        zmq::context_t coms_context{1};
-        zmq::socket_t coms_socket{coms_context, zmq::socket_type::rep};
         std::vector<std::string> explode(std::string const & s, char delim);
     public:
         void coms_handler();

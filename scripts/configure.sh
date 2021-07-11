@@ -82,7 +82,11 @@ install_python3(){
     sudo pip3.8 install --upgrade pip
     sudo pip3.8 install update pip
 }
-
+install_pistache(){
+    sudo add-apt-repository ppa:pistache+team/unstable
+    sudo apt update
+    sudo apt install libpistache-dev
+}
 compile_all(){
     cd $SCRIPTS_DIR
     sudo ./install.sh

@@ -22,6 +22,8 @@
 #include "main.hpp"
 #include "dispatcher.hpp"
 
+#include <pistache/endpoint.h>
+
 using namespace std;
 
 /**
@@ -92,8 +94,8 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_handler);
 	signal(SIGKILL, sig_handler);
 	signal(SIGQUIT, sig_handler);
-
-	dispatcher dsp(jsonFileName, &stop);
+	Pistache::Address adr("http://localhost/");
+	dispatcher dsp(jsonFileName,adr, &stop);
 
 	while(!stop)
 	{

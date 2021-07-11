@@ -48,8 +48,8 @@ MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), js
 {
     jsonFileName = _jsonFileName;
     /*ZMQ connection -- send user cmds*/
-    io_socket.connect("tcp://localhost:5555");
-    coms_socket.connect("tcp://localhost:5550");
+//    io_socket.connect("tcp://localhost:5555");
+//    coms_socket.connect("tcp://localhost:5550");
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
     for(vector<raw_midi>::iterator ports_it = hw_ports.begin();
@@ -89,9 +89,14 @@ MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), js
         }
         in_thread = new thread(&MIDI::in_func,this);
         out_thread = new thread(&MIDI::out_func,this);
-        coms = new thread(&MIDI::coms_handler,this);
+
+
+        com = new zmq_coms(json.DevName);
+
+        thcoms = new thread(&MIDI::coms_handler,this);
     }
 }
+
 
 void MIDI::execHeader()
 {
@@ -114,75 +119,38 @@ void MIDI::execHeader()
         }
     }
 }
+
 void MIDI::coms_handler()
 {
-
     while(!stop)
     {
-        zmq::message_t reply{};
-        zmq::recv_result_t recv_res = coms_socket.recv(reply, zmq::recv_flags::none);
-
-        /*
-        * msg structure is
-        * device; cmd; params;
-        * 
-        * cmds:
-        * 
-        * reload 
-        * file <complete file_name with path>
-        * outstop
-        * change_mode <mode>
-        * 
-        * example:
-        * Arduino Micro; file; /conboard/boards/Arduino Micro.json;
-        * 
-        * Arduino Micro; reload;
-        */
-        std::string raw = reply.to_string();
-        
-        std::vector<std::string> parsed_msg = explode(raw,';');
-        std::vector<std::string>::iterator msg_it = parsed_msg.begin();
-        if(!msg_it->compare(json.DevName))
+        std::vector<std::string> resp = com->heartbeat();
+        std::vector<std::string>::iterator command = resp.begin();
+        if(!command->empty())
         {
-            msg_it++;
-            std::string command = *msg_it;
-            if(!command.compare("reload"))
+            if(command->compare("OK")) //regular response is OK, not OK, does not mean BAD.
             {
-                Reload();
-            }
-            else if(!command.compare("outstop"))
-            {
-                outStop();
-            }
-            else if(!command.compare("file"))
-            {
-                msg_it++;
-                string param = *msg_it;
-                bool isOpen = outFile(param);
+                if(!command->compare("reload"))
+                {
+                    Reload();
+                }
+                else if(!command->compare("outstop"))
+                {
+                    outStop();
+                }
+                else if(!command->compare("file"))
+                {
+                    command++;
+                    string param = *command;
+                    bool isOpen = outFile(param);
+                }
             }
         }
-        else
-        {
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        }
-
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
 
-std::vector<std::string> MIDI::explode(std::string const & s, char delim)
-{
-    std::vector<std::string> result;
-    std::istringstream iss(s);
-
-    for (std::string token; std::getline(iss, token, delim); )
-    {
-        remove(token.begin(),token.end(),' ');
-        result.push_back(std::move(token));
-    }
-
-    return result;
-}
 
 void MIDI::send_mouse(mouseActions mouse)
 {
@@ -234,7 +202,7 @@ void MIDI::processInput(midiSignal midiS)
     snd_data.append("\": \"");
     snd_data.append(tmp.ar_str());
     snd_data.append("\"}");
-    zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
+    //zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
 
     if(outToFile)
     {
