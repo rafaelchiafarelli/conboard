@@ -13,6 +13,7 @@
 #include <mutex>
 #include <pistache/description.h>
 #include <pistache/endpoint.h>
+#include <pistache/serializer/rapidjson.h>
 #include <pistache/http.h>
 
 using namespace Pistache;

@@ -94,9 +94,6 @@ void dispatcher::th_heart_beat(){
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
     coms_socket.bind("tcp://localhost:5550");
-    int t = 10;
-    coms_socket.setsockopt(ZMQ_RCVTIMEO,&t,sizeof(t));
-    coms_socket.setsockopt(ZMQ_SNDTIMEO,&t,sizeof(t));
     
     while(!stop)
     {
@@ -104,8 +101,8 @@ void dispatcher::th_heart_beat(){
 
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-        int res = coms_socket.recv(&message);
-        if(res != EAGAIN)
+        bool res = coms_socket.recv(&message, ZMQ_DONTWAIT);
+        if(res)
         {
 
 
@@ -114,7 +111,7 @@ void dispatcher::th_heart_beat(){
             sprintf(resp, "OK");
             zmq::message_t reply(std::strlen(resp));
             memcpy(reply.data(), resp, std::strlen(resp));
-            coms_socket.send(reply);
+            coms_socket.send(reply,ZMQ_DONTWAIT);
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
@@ -136,17 +133,16 @@ void dispatcher::th_unique_number()
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
     st_socket.bind("tcp://localhost:5551");
-    int t = 10;
-    st_socket.setsockopt(ZMQ_RCVTIMEO,&t,sizeof(t));
-    st_socket.setsockopt(ZMQ_SNDTIMEO,&t,sizeof(t));
+    
     while(!stop)
     {
         zmq::message_t message;
 
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-        int res = st_socket.recv(&message);
-        if(res != EAGAIN)
+        bool res = st_socket.recv(&message, ZMQ_DONTWAIT);
+        //.recv(&message,zmq::recv_flags::dontwait);
+        if(res)
         {
             // do some work
             std::string l_devname((char *)message.data());
@@ -157,7 +153,7 @@ void dispatcher::th_unique_number()
             sprintf(resp, "%s %s",l_devname,l_unique_number);
             zmq::message_t reply(std::strlen(resp));
             memcpy(reply.data(), resp, std::strlen(resp));
-            st_socket.send(reply);
+            st_socket.send(reply,ZMQ_DONTWAIT);
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
@@ -230,7 +226,7 @@ void dispatcher::init(size_t thr = 2)
 void dispatcher::start()
 {
     router.initFromDescription(desc);
-/*
+
     Rest::Swagger swagger(desc);
     swagger
         .uiPath("/doc")
@@ -238,7 +234,7 @@ void dispatcher::start()
         .apiPath("/banker-api.json")
         .serializer(&Rest::Serializer::rapidJson)
         .install(router);
-*/
+
     httpEndpoint->setHandler(router.handler());
     httpEndpoint->serve();
 }
