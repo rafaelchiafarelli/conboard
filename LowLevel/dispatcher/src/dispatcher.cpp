@@ -137,7 +137,7 @@ void dispatcher::th_unique_number()
 
     char addr[100];
     memset(addr,0,100);
-    sprintf(addr,"%s:%d",uuid.address, uuid.port);
+    sprintf(addr,"%s:%d",uuid.address.c_str(), uuid.port);
     std::cout<<"unique number"<<addr<<std::endl;
     st_socket.bind(addr);
 
