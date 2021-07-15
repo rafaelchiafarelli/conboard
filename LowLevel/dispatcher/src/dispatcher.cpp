@@ -204,9 +204,10 @@ void dispatcher::http_start()
     http_config conf;
     if(disp.GetHTTP(&conf))
     {
+        std::cout<<"http_start - config ok"<<std::endl;
         auto opts = Http::Endpoint::options()
-                        .threads(conf.port)
-                        .maxRequestSize(conf.threads)
+                        .threads(conf.threads)
+                        .maxRequestSize(conf.maxsize)
                         .flags(Pistache::Tcp::Options::ReuseAddr | Pistache::Tcp::Options::FastOpen);
         httpEndpoint->init(opts);
 

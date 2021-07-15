@@ -39,7 +39,8 @@ class zmq_io{
 
 class http_config{
   public:
-    int threads;
+    int threads = -1;
+    int maxsize = -1;
     std::string ConfigAddr = "/config";
     std::string CommandAddr = "/command";
     int port = 9999;
