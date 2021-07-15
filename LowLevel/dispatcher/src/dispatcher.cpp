@@ -37,7 +37,6 @@ dispatcher::dispatcher()
 }
  
 dispatcher::dispatcher(std::string fileName, 
-                        Pistache::Address addr, 
                         std::atomic_bool *_stop)
                             : disp(fileName)
 {
@@ -92,7 +91,7 @@ void dispatcher::th_heart_beat(){
     char addr[100];
     memset(addr,0,100);
     sprintf(addr,"%s:%d",coms.address.c_str(), coms.port);
-    std::cout<<"th_heart_beat "<<addr<<std::endl;
+    std::cout<<"th_heart_beat "<<addr<<" " <<coms.address.c_str()<<std::endl;
     coms_socket.bind(addr);
     
     while(!stop)

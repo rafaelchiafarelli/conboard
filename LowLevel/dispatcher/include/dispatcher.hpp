@@ -65,7 +65,7 @@ class dispatcher{
     public:
         void die();
         dispatcher();
-        dispatcher(std::string fileName, Pistache::Address addr, std::atomic_bool *stop);
+        dispatcher(std::string fileName, std::atomic_bool *stop);
         ~dispatcher();
 };
 
