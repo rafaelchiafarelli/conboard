@@ -92,7 +92,7 @@ void dispatcher::th_heart_beat(){
     char addr[100];
     memset(addr,0,100);
     sprintf(addr,"%s:%d",coms.address, coms.port);
-
+    std::cout<<"th_heart_beat "<<addr<<std::endl;
     coms_socket.bind(addr);
     
     while(!stop)
@@ -138,6 +138,7 @@ void dispatcher::th_unique_number()
     char addr[100];
     memset(addr,0,100);
     sprintf(addr,"%s:%d",uuid.address, uuid.port);
+    std::cout<<"unique number"<<addr<<std::endl;
     st_socket.bind(addr);
 
     std::cout<<"th_unique_number binded"<<std::endl;
