@@ -54,7 +54,6 @@ class jsonParser
 		
 		std::vector<KeyValue> Tags;
 		std::vector<KeyValue> Generics;
-		
 
 		std::vector<Actions> *header_actions;
 		std::vector<ModeType> *op_modes;
@@ -74,6 +73,8 @@ class jsonParser
 		bool hasExec=false;
 		void ProcessMainBody(rapidjson::Value &body);
 		devType GetDevType(std::string dType);
+
+
 	public:
 		Executable Ex;
 		std::string FileName;
