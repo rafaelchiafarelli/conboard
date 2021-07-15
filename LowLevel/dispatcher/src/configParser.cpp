@@ -166,7 +166,22 @@ bool config::GetHTTP(http_config *h)
             else
             {
                 ret = false;
-            }       
+            }   
+            if(Doc["http"].HasMember("maxsize"))
+            {
+                if(Doc["http"]["maxsize"].IsInt())
+                {
+                    http.maxsize = Doc["http"]["maxsize"].GetInt();
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else
+            {
+                ret = false;
+            }     
         }
     }
     *h = http;
