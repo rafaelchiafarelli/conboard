@@ -1,21 +1,23 @@
 {
     "zmq_io":{
         "port":5555,
-        "address":"localhost"
+        "address":"tcp://127.0.0.1"
     },
     "zmq_coms":{
         "port":5550,
-        "address":"http://localhost"
+        "address":"tcp://127.0.0.1"
     },
 
    "http":{
        "port":9080,
        "ConfigAddr":"/config",
-       "CommandAddr":"/command"
+       "CommandAddr":"/command",
+       "maxsize":1024,
+       "threads":2
    },
    "UUID":{
         "port":5551,
-        "address":"http://localhost"
+        "address":"tcp://127.0.0.1"
    },
    "key":{
     "secret":"random",

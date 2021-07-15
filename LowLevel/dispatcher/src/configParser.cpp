@@ -36,9 +36,9 @@ bool config::GetZMQio(zmq_io *z)
             }            
             if(Doc["zmq_io"].HasMember("address"))
             {
-                if(Doc["zmq_io"]["port"].IsString())
+                if(Doc["zmq_io"]["address"].IsString())
                 {
-                    io.address = Doc["zmq_io"]["port"].GetString();
+                    io.address = Doc["zmq_io"]["address"].GetString();
                 }
                 else
                 {
@@ -80,9 +80,9 @@ bool config::GetZMQcoms(zmq_coms *z)
             }            
             if(Doc["zmq_coms"].HasMember("address"))
             {
-                if(Doc["zmq_coms"]["port"].IsString())
+                if(Doc["zmq_coms"]["address"].IsString())
                 {
-                    coms.address = Doc["zmq_coms"]["port"].GetString();
+                    coms.address = std::string(Doc["zmq_coms"]["address"].GetString());
                 }
                 else
                 {
