@@ -32,6 +32,9 @@
 *.app
 
 build/
+backend/venv/
+backend/static/
+backend/templates/
 frontend/venv/
 *.pyc
 *__pycache__
@@ -41,3 +44,4 @@ scripts/Python-3.8.0.tgz
 scripts/Python-3.8.0/
 scripts/cppzmq/
 scripts/install
+UDC

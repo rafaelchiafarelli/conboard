@@ -1,0 +1,45 @@
+{
+    "zmq_io":{
+        "port":5555,
+        "address":"localhost"
+    },
+    "zmq_coms":{
+        "port":5550,
+        "address":"localhost"
+    },
+   "http":{
+       "port":9080,
+       "address":"/dispatcher"
+   },
+   "UUID":{
+       "server":"localhost"
+   },
+   "key":{
+    "secret":"random",
+    "oauth":true
+   },
+   "screen":{
+       "type":"2x16x1",
+       "coms":"SPI",
+       "adr":144,
+       "configs":[123,123,123,123,123,123],
+       "format":{
+           "lines":2,
+           "columns":16,
+           "colors":1
+       }
+   },
+   "vault":{
+       "path":"/conboard/vault",
+       "encription":"custom",
+       "key_gen":"UUID",
+       "verify":"sha256"
+   },
+   "shared":{
+       "path":"/conboard/disk/usbdisk.img",
+       "mount":"/conboard/mnt",
+       "m_flags":""
+   }
+
+
+}

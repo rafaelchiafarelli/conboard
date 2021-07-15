@@ -44,6 +44,10 @@ build_JoyStick(){
 
 }
 
+build_dispatcher(){
+	$SCRIPTS_DIR/../dispatcher/scripts/build_dispatcher.sh
+
+}
 compile(){
 	RECIPE=(
             build_common
@@ -52,6 +56,7 @@ compile(){
             build_MIDI
             build_mouse
 			build_launcher
+			build_dispatcher
 			)   
 	build
 }

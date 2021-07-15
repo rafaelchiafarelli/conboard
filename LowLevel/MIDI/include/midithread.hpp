@@ -15,8 +15,8 @@
  *  - blink: an outputn special type. It will send the midi on and than send the midi off
  */ 
 
-#ifndef KEYTHREAD_HPP
-#define KEYTHREAD_HPP
+#ifndef MIDITHREAD_HPP
+#define MIDITHREAD_HPP
 
 #include "stdio.h"
 #include "actions.h"
@@ -33,7 +33,10 @@
 #include <queue>
 #include <mutex>
 #include <oActions.hpp>
-#include <zmq.hpp>
+
+#include "zmq_io.hpp"
+#include "zmq_coms.hpp"
+
 using namespace std;
 #define PORT_NAME_SIZE 10
 #define MILLISECONDS_TIMEOUT 10
@@ -57,10 +60,14 @@ class MIDI : private oActions{
 
     private:
 
-
+        std::string jsonFileName;
         mutex locking_mechanism;
         std::thread *in_thread;
         std::thread *out_thread;
+        std::thread *thcoms;
+        zmq_coms *com;
+        
+        
         std::queue<std::vector<devActions> > oQueue;
         void in_func(); //midi input handler
         void out_func(); //keyboard and mouse handler
@@ -71,8 +78,6 @@ class MIDI : private oActions{
         atomic_bool send;
         atomic_bool stop;
         int timeout;
-        
-        
 
         std::vector<Actions> header;
         std::vector<ModeType> modes;
@@ -84,6 +89,7 @@ class MIDI : private oActions{
         snd_rawmidi_t *input;
         snd_rawmidi_t *output;
         char port_name[PORT_NAME_SIZE];
+        void saveJSON();
         void changeMode(std::vector<Actions>::iterator it_act);
         void execHeader();
         void parse();
@@ -93,21 +99,15 @@ class MIDI : private oActions{
         void send_mouse(mouseActions mouse);
         void send_joystick(){};
 
-        /*zmq related functions and variables*/
-        zmq::context_t io_context{1};
-        zmq::socket_t io_socket{io_context, zmq::socket_type::push};
 
-        zmq::context_t coms_context{1};
-        zmq::socket_t coms_socket{coms_context, zmq::socket_type::rep};
         std::vector<std::string> explode(std::string const & s, char delim);
     public:
-        void handler();
+        void coms_handler();
         void Stop();
         void Reload();
         void outStop();
         bool outFile(string name);
         void oMouse(mouseActions){};
-        
         void oJoystick(joystickActions){};
         void oKeyboard(keyboardActions){};
         MIDI( string xmlFileName, vector<raw_midi> hw_ports);
