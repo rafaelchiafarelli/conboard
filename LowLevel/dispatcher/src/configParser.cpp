@@ -12,18 +12,18 @@ config::config(std::string fileName)
 
 }
 
-bool config::GetZMQ(zmq_config *z)
+bool config::GetZMQio(zmq_io *z)
 {
     bool ret = !res.IsError();
     if(res.IsError() == true)
     {
-        if(Doc.HasMember("zmq"))
+        if(Doc.HasMember("zmq_io"))
         {
-            if(Doc["zmq"].HasMember("port"))
+            if(Doc["zmq_io"].HasMember("port"))
             {
-                if(Doc["zmq"]["port"].IsInt())
+                if(Doc["zmq_io"]["port"].IsInt())
                 {
-                    zmq.port = Doc["zmq"]["port"].GetInt();
+                    io.port = Doc["zmq_io"]["port"].GetInt();
                 }
                 else
                 {
@@ -34,11 +34,11 @@ bool config::GetZMQ(zmq_config *z)
             {
                 ret = false;
             }            
-            if(Doc["zmq"].HasMember("address"))
+            if(Doc["zmq_io"].HasMember("address"))
             {
-                if(Doc["zmq"]["port"].IsString())
+                if(Doc["zmq_io"]["port"].IsString())
                 {
-                    zmq.address = Doc["zmq"]["port"].GetString();
+                    io.address = Doc["zmq_io"]["port"].GetString();
                 }
                 else
                 {
@@ -52,7 +52,51 @@ bool config::GetZMQ(zmq_config *z)
             
         }
     }
-    *z = zmq;
+    *z = io;
+    return ret;
+}
+
+bool config::GetZMQcoms(zmq_coms *z)
+{
+    bool ret = !res.IsError();
+    if(res.IsError() == true)
+    {
+        if(Doc.HasMember("zmq_coms"))
+        {
+            if(Doc["zmq_coms"].HasMember("port"))
+            {
+                if(Doc["zmq_coms"]["port"].IsInt())
+                {
+                    coms.port = Doc["zmq_coms"]["port"].GetInt();
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else
+            {
+                ret = false;
+            }            
+            if(Doc["zmq_coms"].HasMember("address"))
+            {
+                if(Doc["zmq_coms"]["port"].IsString())
+                {
+                    coms.address = Doc["zmq_coms"]["port"].GetString();
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else
+            {
+                ret = false;
+            }
+            
+        }
+    }
+    *z = coms;
     return ret;
 }
 
@@ -78,11 +122,11 @@ bool config::GetHTTP(http_config *h)
             {
                 ret = false;
             }            
-            if(Doc["http"].HasMember("address"))
+            if(Doc["http"].HasMember("ConfigAddr"))
             {
-                if(Doc["http"]["port"].IsString())
+                if(Doc["http"]["ConfigAddr"].IsString())
                 {
-                    http.address = Doc["http"]["port"].GetString();
+                    http.ConfigAddr = Doc["http"]["ConfigAddr"].GetString();
                 }
                 else
                 {
@@ -93,7 +137,36 @@ bool config::GetHTTP(http_config *h)
             {
                 ret = false;
             }
-            
+            if(Doc["http"].HasMember("CommandAddr"))
+            {
+                if(Doc["http"]["CommandAddr"].IsString())
+                {
+                    http.CommandAddr = Doc["http"]["CommandAddr"].GetString();
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else
+            {
+                ret = false;
+            }            
+            if(Doc["http"].HasMember("threads"))
+            {
+                if(Doc["http"]["threads"].IsInt())
+                {
+                    http.threads = Doc["http"]["threads"].GetInt();
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else
+            {
+                ret = false;
+            }       
         }
     }
     *h = http;
@@ -109,11 +182,11 @@ bool config::GetUUID_cfg(UUID_config *u)
         if(Doc.HasMember("UUID"))
         {
         
-            if(Doc["UUID"].HasMember("server"))
+            if(Doc["UUID"].HasMember("address"))
             {
-                if(Doc["UUID"]["server"].IsString())
+                if(Doc["UUID"]["address"].IsString())
                 {
-                    cfgUUID.server = Doc["UUID"]["server"].GetString();
+                    cfgUUID.address = Doc["UUID"]["address"].GetString();
                 }
                 else
                 {
@@ -124,7 +197,21 @@ bool config::GetUUID_cfg(UUID_config *u)
             {
                 ret = false;
             }
-            
+            if(Doc["UUID"].HasMember("port"))
+            {
+                if(Doc["UUID"]["port"].IsInt())
+                {
+                    cfgUUID.port = Doc["UUID"]["port"].GetInt();
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else
+            {
+                ret = false;
+            }
         }
     }
     *u = cfgUUID;

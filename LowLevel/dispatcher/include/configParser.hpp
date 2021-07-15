@@ -25,7 +25,13 @@
 
 using namespace rapidjson;
 
-class zmq_config{
+class zmq_coms{
+  public:
+    std::string address = "";
+    int port = -1;
+};
+
+class zmq_io{
   public:
     std::string address = "";
     int port = -1;
@@ -33,12 +39,15 @@ class zmq_config{
 
 class http_config{
   public:
-    std::string address = "";
-    int port = -1;
+    int threads;
+    std::string ConfigAddr = "/config";
+    std::string CommandAddr = "/command";
+    int port = 9999;
 };
 class UUID_config{
 public:
-    std::string server = "";
+    std::string address = "";
+    int port = -1;
 
 };
 class key_config{
@@ -78,8 +87,8 @@ class config{
       std::string data;
       ParseResult res;
       Document Doc;
-
-      zmq_config zmq;
+      zmq_io  io;
+      zmq_coms coms;
       http_config http;
       UUID_config cfgUUID;
       key_config cfgKey;
@@ -88,7 +97,8 @@ class config{
       shared_config shared;
 
     public:
-      bool GetZMQ(zmq_config *z);
+      bool GetZMQio(zmq_io *z);
+      bool GetZMQcoms(zmq_coms *z);
       bool GetHTTP(http_config *h);
       bool GetUUID_cfg(UUID_config *u);
       bool GetKey_cfg(key_config *k);
