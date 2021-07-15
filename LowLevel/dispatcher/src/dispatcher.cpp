@@ -31,24 +31,18 @@
 
 dispatcher::dispatcher()
                     : disp("/conboard/dispatcher/assets/config.json")
-                    , Addr("http://127.0.0.1:8081/")
-                    , desc("Conboard API", "0.1")
-                    , httpEndpoint(std::make_shared<Http::Endpoint>(Addr))
                     {
     FileName = "/conboard/dispatcher/assets/config.json";
     startup();
 }
-
+ 
 dispatcher::dispatcher(std::string fileName, 
                         Pistache::Address addr, 
                         std::atomic_bool *_stop)
                             : disp(fileName)
-                            , Addr(addr)
-                            , desc("Conboard API", "0.1")
-                            , httpEndpoint(std::make_shared<Http::Endpoint>(addr))
 {
     stop = _stop;
-    Addr = addr;
+    
     FileName = fileName;
     std::cout<<"dispatcher start"<<std::endl;
     startup();
@@ -79,14 +73,6 @@ void dispatcher::startup(){
     vth.push_back(std::move(http_com));
 }
 
-
-/**
- * zmq_coms
- * has the same protocol as the lower levels, however it has a buffer to send the data
- * to the lower levels.
- * 
- */ 
-
 /**
  * heart beat thread
  *  Will wait for a device send a keep alive/pooling command and response with either 
@@ -100,7 +86,14 @@ void dispatcher::th_heart_beat(){
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
     std::cout<<"th_heart_beat"<<std::endl;
-    coms_socket.bind("tcp://127.0.0.1:5550");
+    zmq_coms coms;
+    disp.GetZMQcoms(&coms);
+
+    char addr[100];
+    memset(addr,0,100);
+    sprintf(addr,"%s:%d",coms.address, coms.port);
+
+    coms_socket.bind(addr);
     
     while(!stop)
     {
@@ -111,8 +104,6 @@ void dispatcher::th_heart_beat(){
         bool res = coms_socket.recv(&message, ZMQ_DONTWAIT);
         if(res)
         {
-
-
             //  Send OK to the client information to the client[answer]
             char resp[100];
             sprintf(resp, "OK");
@@ -141,7 +132,14 @@ void dispatcher::th_unique_number()
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
     std::cout<<"th_unique_number"<<std::endl;
-    st_socket.bind("tcp://127.0.0.1:5551");
+    UUID_config uuid;
+    disp.GetUUID_cfg(&uuid);
+
+    char addr[100];
+    memset(addr,0,100);
+    sprintf(addr,"%s:%d",uuid.address, uuid.port);
+    st_socket.bind(addr);
+
     std::cout<<"th_unique_number binded"<<std::endl;
     while(!stop)
     {
@@ -197,15 +195,42 @@ std::string dispatcher::generate_unique_number(std::string l_devname)
 
 void dispatcher::http_start()
 {
+    Pistache::Address Addr;
+    std::shared_ptr<Http::Endpoint> httpEndpoint;
+    
+    Rest::Router router;
     std::cout<<"http_start"<<std::endl;
-    init(2,1024);
-    start();
-    while(!stop)
+
+    http_config conf;
+    if(disp.GetHTTP(&conf))
     {
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        auto opts = Http::Endpoint::options()
+                        .threads(conf.port)
+                        .maxRequestSize(conf.threads)
+                        .flags(Pistache::Tcp::Options::ReuseAddr | Pistache::Tcp::Options::FastOpen);
+        httpEndpoint->init(opts);
+
+        using namespace Rest;
+        Routes::Post(router, conf.CommandAddr, Routes::bind(&dispatcher::PostCommand, this));
+        Routes::Get(router, conf.ConfigAddr, Routes::bind(&dispatcher::GetConfigs, this));
+        
+        httpEndpoint->setHandler(router.handler());
+        httpEndpoint->serveThreaded();
+        while(!stop)
+        {
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+        std::cout<<"http_start close"<<std::endl;
+        httpEndpoint->shutdown();
     }
-    std::cout<<"http_start close"<<std::endl;
-    httpEndpoint->shutdown();
+    else
+    {
+        std::cout<<"http_start ERROR"<<std::endl;
+        while(!stop)
+        {
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+    }
 }
 
 void dispatcher::PostCommand(const Rest::Request &req, Http::ResponseWriter writer)
@@ -214,7 +239,6 @@ void dispatcher::PostCommand(const Rest::Request &req, Http::ResponseWriter writ
     if (req.method() == Http::Method::Get)
     {
         writer.send(Http::Code::Not_Found);    
-
     }
     else
     {
@@ -228,7 +252,6 @@ void dispatcher::GetConfigs(const Rest::Request &req, Http::ResponseWriter write
     if (req.method() == Http::Method::Get)
     {
         writer.send(Http::Code::Ok, "The list of all configurations");    
-
     }
     else
     {
@@ -236,26 +259,4 @@ void dispatcher::GetConfigs(const Rest::Request &req, Http::ResponseWriter write
     }
 }
 
-void dispatcher::setupRoutes()
-{
-   using namespace Rest;
-    Routes::Post(router, "/commands", Routes::bind(&dispatcher::PostCommand, this));
-    Routes::Get(router, "/lowlevel", Routes::bind(&dispatcher::GetConfigs, this));
-}
-
-void dispatcher::init(size_t _threads, int _maxRequestSize)
-{
-    auto opts = Http::Endpoint::options()
-                    .threads(_threads)
-                    .maxRequestSize(_maxRequestSize)
-                    .flags(Pistache::Tcp::Options::ReuseAddr | Pistache::Tcp::Options::FastOpen);
-    httpEndpoint->init(opts);
-    setupRoutes();
-}
-
-void dispatcher::start()
-{
-    httpEndpoint->setHandler(router.handler());
-    httpEndpoint->serveThreaded();
-}
 

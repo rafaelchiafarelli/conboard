@@ -41,14 +41,9 @@ class dispatcher{
         void th_heart_beat();
 
         void http_start();
-        Pistache::Address Addr;
-        std::shared_ptr<Http::Endpoint> httpEndpoint;
-        Rest::Description desc;
-        Rest::Router router;
+
         void PostCommand(const Rest::Request &req, Http::ResponseWriter writer);
         void GetConfigs(const Rest::Request &req, Http::ResponseWriter writer);
-        void init(size_t _threads, int _maxRequestSize);
-        void start();
         void setupRoutes();
 
 
