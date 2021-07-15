@@ -10,7 +10,8 @@
 
    "http":{
        "port":9080,
-       "address":"/dispatcher"
+       "ConfigAddr":"/config",
+       "CommandAddr":"/command"
    },
    "UUID":{
         "port":5551,
