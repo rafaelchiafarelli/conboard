@@ -15,7 +15,7 @@ config::config(std::string fileName)
 bool config::GetZMQio(zmq_io *z)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == true)
+    if(res.IsError() == false)
     {
         if(Doc.HasMember("zmq_io"))
         {
@@ -59,7 +59,7 @@ bool config::GetZMQio(zmq_io *z)
 bool config::GetZMQcoms(zmq_coms *z)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == true)
+    if(res.IsError() == false)
     {
         if(Doc.HasMember("zmq_coms"))
         {
@@ -103,7 +103,7 @@ bool config::GetZMQcoms(zmq_coms *z)
 bool config::GetHTTP(http_config *h)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == true)
+    if(res.IsError() == false)
     {
         if(Doc.HasMember("http"))
         {
@@ -192,7 +192,7 @@ bool config::GetHTTP(http_config *h)
 bool config::GetUUID_cfg(UUID_config *u)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == true)
+    if(res.IsError() == false)
     {
         if(Doc.HasMember("UUID"))
         {
@@ -236,7 +236,7 @@ bool config::GetUUID_cfg(UUID_config *u)
 bool config::GetKey_cfg(key_config *k)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == true)
+    if(res.IsError() == false)
     {
         if(Doc.HasMember("key"))
         {
@@ -282,7 +282,7 @@ bool config::GetKey_cfg(key_config *k)
 bool config::GetScreen(screen_config *s)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == true)
+    if(res.IsError() == false)
     {
         if(Doc.HasMember("screen"))
         {
@@ -432,7 +432,7 @@ bool config::GetScreen(screen_config *s)
 bool config::GetVault(vault_config *v)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == true)
+    if(res.IsError() == false)
     {
         if(Doc.HasMember("vault"))
         {
@@ -505,7 +505,7 @@ bool config::GetVault(vault_config *v)
 bool config::GetShared(shared_config *sh)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == true)
+    if(res.IsError() == false)
     {
         if(Doc.HasMember("shared"))
         {
