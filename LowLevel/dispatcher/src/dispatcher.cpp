@@ -86,12 +86,12 @@ void dispatcher::th_heart_beat(){
         //a solicitation is a device name that is going 
     std::cout<<"th_heart_beat"<<std::endl;
     zmq_coms coms;
-    disp.GetZMQcoms(&coms);
+    bool parser = disp.GetZMQcoms(&coms);
 
     char addr[100];
     memset(addr,0,100);
     sprintf(addr,"%s:%d",coms.address.c_str(), coms.port);
-    std::cout<<"th_heart_beat "<<addr<<" " <<coms.address.c_str()<<std::endl;
+    std::cout<<"th_heart_beat "<<addr<<"-"<<coms.address.c_str()<<"-"<<parser<<std::endl;
     coms_socket.bind(addr);
     
     while(!stop)
