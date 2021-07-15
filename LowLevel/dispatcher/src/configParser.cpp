@@ -8,7 +8,7 @@ config::config(std::string fileName)
 	data = "";
 	data = buff.str();
 	ParseResult isError = Doc.Parse(data.c_str());
-
+    std::cout<<"parse result:"<<isError<<std::endl;
 
 }
 

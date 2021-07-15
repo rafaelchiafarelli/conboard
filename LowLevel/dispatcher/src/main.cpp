@@ -95,9 +95,8 @@ int main(int argc, char *argv[])
 	signal(SIGKILL, sig_handler);
 	signal(SIGQUIT, sig_handler);
 	std::cout<<"define address"<<std::endl;
-	Pistache::Address adr(Pistache::IP(192,168,15,5), Pistache::Port(9999));
-	std::cout<<"dispatcher obj"<<std::endl;
-	dispatcher dsp(jsonFileName,adr, &stop);
+
+	dispatcher dsp(jsonFileName, &stop);
 
 	while(!stop)
 	{
