@@ -31,7 +31,7 @@
 
 dispatcher::dispatcher()
                     : disp("/conboard/dispatcher/assets/config.json")
-                    , Addr("http://localhost/")
+                    , Addr("http://127.0.0.1:8081/")
                     , desc("Conboard API", "0.1")
                     , httpEndpoint(std::make_shared<Http::Endpoint>(Addr))
                     {
@@ -41,30 +41,36 @@ dispatcher::dispatcher()
 
 dispatcher::dispatcher(std::string fileName, 
                         Pistache::Address addr, 
-                        std::atomic_bool *stop)
+                        std::atomic_bool *_stop)
                             : disp(fileName)
                             , Addr(addr)
                             , desc("Conboard API", "0.1")
                             , httpEndpoint(std::make_shared<Http::Endpoint>(addr))
 {
+    stop = _stop;
     Addr = addr;
     FileName = fileName;
+    std::cout<<"dispatcher start"<<std::endl;
     startup();
 }
 
 dispatcher::~dispatcher(){
+
+}
+
+void dispatcher::die(){
     stop = true;
     for (std::thread & th : vth)
     {
         // If thread Object is Joinable then Join that thread.
-        if (th.joinable())
-            th.join();
+        th.join();
     }
 }
 
 void dispatcher::startup(){
     //unique_number thread
     stop = false;
+    std::cout<<"start up sequence"<<std::endl;
     std::thread hb(&dispatcher::th_heart_beat, this);
     vth.push_back(std::move(hb));
     std::thread numb(&dispatcher::th_unique_number,this);
@@ -93,7 +99,8 @@ void dispatcher::th_heart_beat(){
 
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
-    coms_socket.bind("tcp://localhost:5550");
+    std::cout<<"th_heart_beat"<<std::endl;
+    coms_socket.bind("tcp://127.0.0.1:5550");
     
     while(!stop)
     {
@@ -115,6 +122,7 @@ void dispatcher::th_heart_beat(){
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
+    std::cout<<"th_heart_beat close"<<std::endl;
     coms_socket.close();
 
 }
@@ -132,8 +140,9 @@ void dispatcher::th_unique_number()
 {
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
-    st_socket.bind("tcp://localhost:5551");
-    
+    std::cout<<"th_unique_number"<<std::endl;
+    st_socket.bind("tcp://127.0.0.1:5551");
+    std::cout<<"th_unique_number binded"<<std::endl;
     while(!stop)
     {
         zmq::message_t message;
@@ -157,6 +166,7 @@ void dispatcher::th_unique_number()
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
+    std::cout<<"th_unique_number close"<<std::endl;
     st_socket.close();
 }
 
@@ -187,54 +197,65 @@ std::string dispatcher::generate_unique_number(std::string l_devname)
 
 void dispatcher::http_start()
 {
-    init(2);
+    std::cout<<"http_start"<<std::endl;
+    init(2,1024);
     start();
+    while(!stop)
+    {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+    std::cout<<"http_start close"<<std::endl;
+    httpEndpoint->shutdown();
 }
 
-void dispatcher::http(){
-
-}
-
-void dispatcher::createDescription()
+void dispatcher::PostCommand(const Rest::Request &req, Http::ResponseWriter writer)
 {
-    auto versionPath = desc.path("/lowlevel");
-    auto commandsPath = versionPath.path("/commands");
+    std::cout<<"PostCommand"<<std::endl;
+    if (req.method() == Http::Method::Get)
+    {
+        writer.send(Http::Code::Not_Found);    
 
-    commandsPath
-        .route(desc.get("/all"))
-        .bind(&dispatcher::retrieveAllAccounts, this)
-        .produces(MIME(Application, Json), MIME(Application, Xml))
-        .response(Http::Code::Ok, "The list of all account");
-
+    }
+    else
+    {
+        writer.send(Http::Code::Bad_Request);
+    }
 }
 
-
-void dispatcher::retrieveAllAccounts(const Rest::Request&, Http::ResponseWriter response)
+void dispatcher::GetConfigs(const Rest::Request &req, Http::ResponseWriter writer)
 {
-    /* do some work*/
-    response.send(Http::Code::Ok, "No Account");
+    std::cout<<"GetConfigs"<<std::endl;
+    if (req.method() == Http::Method::Get)
+    {
+        writer.send(Http::Code::Ok, "The list of all configurations");    
+
+    }
+    else
+    {
+        writer.send(Http::Code::Bad_Request);
+    }
 }
 
-void dispatcher::init(size_t thr = 2)
+void dispatcher::setupRoutes()
+{
+   using namespace Rest;
+    Routes::Post(router, "/commands", Routes::bind(&dispatcher::PostCommand, this));
+    Routes::Get(router, "/lowlevel", Routes::bind(&dispatcher::GetConfigs, this));
+}
+
+void dispatcher::init(size_t _threads, int _maxRequestSize)
 {
     auto opts = Http::Endpoint::options()
-                    .threads(static_cast<int>(thr));
+                    .threads(_threads)
+                    .maxRequestSize(_maxRequestSize)
+                    .flags(Pistache::Tcp::Options::ReuseAddr | Pistache::Tcp::Options::FastOpen);
     httpEndpoint->init(opts);
-    createDescription();
+    setupRoutes();
 }
 
 void dispatcher::start()
 {
-    router.initFromDescription(desc);
-
-    Rest::Swagger swagger(desc);
-    swagger
-        .uiPath("/doc")
-        .uiDirectory("/home/octal/code/web/swagger-ui-2.1.4/dist")
-        .apiPath("/banker-api.json")
-        .serializer(&Rest::Serializer::rapidJson)
-        .install(router);
-
     httpEndpoint->setHandler(router.handler());
-    httpEndpoint->serve();
+    httpEndpoint->serveThreaded();
 }
+

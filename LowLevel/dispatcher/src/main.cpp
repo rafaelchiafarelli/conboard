@@ -94,13 +94,17 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_handler);
 	signal(SIGKILL, sig_handler);
 	signal(SIGQUIT, sig_handler);
-	Pistache::Address adr("http://localhost/");
+	std::cout<<"define address"<<std::endl;
+	Pistache::Address adr(Pistache::IP(192,168,15,5), Pistache::Port(9999));
+	std::cout<<"dispatcher obj"<<std::endl;
 	dispatcher dsp(jsonFileName,adr, &stop);
 
 	while(!stop)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
+	std::cout<<"stop dispatcher obj"<<std::endl;
+	dsp.die();
     return 0;
 }
 

@@ -20,6 +20,7 @@ using namespace Pistache;
 
 
 
+
 class dispatcher{
     private:
         config disp;
@@ -30,31 +31,31 @@ class dispatcher{
         
 
         zmq::context_t io_context{1};
-        zmq::socket_t io_socket{io_context, zmq::socket_type::push};
+        zmq::socket_t io_socket{io_context, zmq::socket_type::pull};
         void th_io();
 
 
         zmq::context_t coms_context{1};
-        zmq::socket_t coms_socket{coms_context, zmq::socket_type::req};
+        zmq::socket_t coms_socket{coms_context, zmq::socket_type::rep};
         
         void th_heart_beat();
+
         void http_start();
-        void http();
-        void createDescription();
-        void retrieveAllAccounts(const Rest::Request&, Http::ResponseWriter response);
         Pistache::Address Addr;
         std::shared_ptr<Http::Endpoint> httpEndpoint;
         Rest::Description desc;
         Rest::Router router;
-
-        void init(size_t thr);
+        void PostCommand(const Rest::Request &req, Http::ResponseWriter writer);
+        void GetConfigs(const Rest::Request &req, Http::ResponseWriter writer);
+        void init(size_t _threads, int _maxRequestSize);
         void start();
+        void setupRoutes();
 
 
         std::map<std::string, std::string> devices;
         std::mutex lock_devices;
         zmq::context_t st_context{1};
-        zmq::socket_t st_socket{st_context, zmq::socket_type::req};
+        zmq::socket_t st_socket{st_context, zmq::socket_type::rep};
         void th_unique_number();
         std::string generate_unique_number(std::string l_devname);
         
@@ -67,6 +68,7 @@ class dispatcher{
 
         void startup();
     public:
+        void die();
         dispatcher();
         dispatcher(std::string fileName, Pistache::Address addr, std::atomic_bool *stop);
         ~dispatcher();
