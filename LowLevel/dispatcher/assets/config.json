@@ -5,14 +5,16 @@
     },
     "zmq_coms":{
         "port":5550,
-        "address":"localhost"
+        "address":"http://localhost"
     },
+
    "http":{
        "port":9080,
        "address":"/dispatcher"
    },
    "UUID":{
-       "server":"localhost"
+        "port":5551,
+        "address":"http://localhost"
    },
    "key":{
     "secret":"random",
