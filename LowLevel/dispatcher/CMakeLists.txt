@@ -1,5 +1,6 @@
 project(dispatcher)
 cmake_minimum_required(VERSION 3.13)
+
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/../Common/include)
 

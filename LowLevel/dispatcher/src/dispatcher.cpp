@@ -53,23 +53,21 @@ dispatcher::~dispatcher(){
 
 void dispatcher::die(){
     stop = true;
-    for (std::thread & th : vth)
-    {
-        // If thread Object is Joinable then Join that thread.
-        th.join();
-    }
+    hb->join();
+    numb->join();
+    http_com->join();
 }
 
 void dispatcher::startup(){
     //unique_number thread
     stop = false;
-    std::cout<<"start up sequence"<<std::endl;
-    std::thread hb(&dispatcher::th_heart_beat, this);
-    vth.push_back(std::move(hb));
-    std::thread numb(&dispatcher::th_unique_number,this);
-    vth.push_back(std::move(numb));
-    std::thread http_com(&dispatcher::http_start,this);
-    vth.push_back(std::move(http_com));
+    std::cout<<"start up sequence heart_beat"<<std::endl;
+    hb = new std::thread(&dispatcher::th_heart_beat, this);
+    std::cout<<"start up sequence unique number"<<std::endl;
+    numb = new std::thread(&dispatcher::th_unique_number,this);
+    std::cout<<"start up sequence http"<<std::endl;
+    http_com = new std::thread(&dispatcher::th_http,this);
+    
 }
 
 /**
@@ -84,37 +82,35 @@ void dispatcher::th_heart_beat(){
 
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
-    std::cout<<"th_heart_beat"<<std::endl;
+    
     zmq_coms coms;
     bool parser = disp.GetZMQcoms(&coms);
+    coms.address.append(":");
+    coms.address.append(std::to_string(coms.port));
 
-    char addr[100];
-    memset(addr,0,100);
-    sprintf(addr,"%s:%d",coms.address.c_str(), coms.port);
-    std::cout<<"th_heart_beat "<<addr<<"-"<<coms.address.c_str()<<"-"<<parser<<std::endl;
-    coms_socket.bind(addr);
-    
+    std::cout<<"th_heart_beat-"<<coms.address.c_str()<<"-"<<parser<<std::endl;
+    coms_socket.bind(coms.address);
+    char data[1024];
+    memset(data,1024,0);
+    zmq::message_t message((const void *)data,1024);    
     while(!stop)
     {
-        zmq::message_t message;
-
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-        bool res = coms_socket.recv(&message, ZMQ_DONTWAIT);
+        zmq::recv_result_t res = coms_socket.recv(message,zmq::recv_flags::dontwait);
         if(res)
         {
             //  Send OK to the client information to the client[answer]
             char resp[100];
+            memset(resp,0,100);
             sprintf(resp, "OK");
-            zmq::message_t reply(std::strlen(resp));
-            memcpy(reply.data(), resp, std::strlen(resp));
-            coms_socket.send(reply,ZMQ_DONTWAIT);
+            zmq::message_t reply(resp, std::strlen(resp));
+            zmq::send_result_t s_res = coms_socket.send(reply,zmq::send_flags::dontwait);
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     std::cout<<"th_heart_beat close"<<std::endl;
     coms_socket.close();
-
 }
 
 
@@ -130,38 +126,45 @@ void dispatcher::th_unique_number()
 {
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
-    std::cout<<"th_unique_number"<<std::endl;
+    
     UUID_config uuid;
     disp.GetUUID_cfg(&uuid);
 
-    char addr[100];
-    memset(addr,0,100);
-    sprintf(addr,"%s:%d",uuid.address.c_str(), uuid.port);
-    std::cout<<"unique number"<<addr<<std::endl;
-    st_socket.bind(addr);
+    //char addr[100];
+    //memset(addr,0,100);
+    //sprintf(addr,"%s:%d",uuid.address.c_str(), uuid.port);
+    uuid.address.append(":");
+    uuid.address.append(std::to_string(uuid.port));
+    std::cout<<"unique number"<<uuid.address.c_str()<<std::endl;
+    
+    st_socket.bind(uuid.address);
 
-    std::cout<<"th_unique_number binded"<<std::endl;
+    
+    char data[1024];
+    memset(data,1024,0);
+    zmq::message_t message((const void *)data,1024);
+
     while(!stop)
     {
-        zmq::message_t message;
-
+        
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-        bool res = st_socket.recv(&message, ZMQ_DONTWAIT);
+        zmq::recv_result_t res = st_socket.recv(message,zmq::recv_flags::dontwait);
+        
         //.recv(&message,zmq::recv_flags::dontwait);
         if(res)
         {
             // do some work
             std::string l_devname((char *)message.data());
             std::string l_unique_number = generate_unique_number(l_devname);
-
             //  Send information to the client[answer]
             char resp[100];
             sprintf(resp, "%s %s",l_devname,l_unique_number);
-            zmq::message_t reply(std::strlen(resp));
-            memcpy(reply.data(), resp, std::strlen(resp));
-            st_socket.send(reply,ZMQ_DONTWAIT);
+            std::cout<<"th_unique_number-"<<resp<<std::endl;
+            zmq::message_t reply(resp,std::strlen(resp));
+            zmq::send_result_t s_res = st_socket.send(reply,zmq::send_flags::dontwait);
         }
+    
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     std::cout<<"th_unique_number close"<<std::endl;
@@ -171,6 +174,7 @@ void dispatcher::th_unique_number()
 
 std::string dispatcher::generate_unique_number(std::string l_devname)
 {
+    std::cout<<"generate_unique_number"<<std::endl;
     std::string l_unique_number = "";    
     std::lock_guard<std::mutex> locker(lock_devices);
     uuid_t gen;
@@ -193,30 +197,33 @@ std::string dispatcher::generate_unique_number(std::string l_devname)
     return l_unique_number;
 }
 
-void dispatcher::http_start()
+void dispatcher::th_http()
 {
     Pistache::Address Addr;
-    std::shared_ptr<Http::Endpoint> httpEndpoint;
-    
+    Http::Endpoint *httpEndpoint;
+    httpEndpoint = new Http::Endpoint();
     Rest::Router router;
     std::cout<<"http_start"<<std::endl;
 
     http_config conf;
     if(disp.GetHTTP(&conf))
     {
-        std::cout<<"http_start - config ok"<<std::endl;
+        
         auto opts = Http::Endpoint::options()
                         .threads(conf.threads)
                         .maxRequestSize(conf.maxsize)
                         .flags(Pistache::Tcp::Options::ReuseAddr | Pistache::Tcp::Options::FastOpen);
+        
         httpEndpoint->init(opts);
 
         using namespace Rest;
+        
         Routes::Post(router, conf.CommandAddr, Routes::bind(&dispatcher::PostCommand, this));
         Routes::Get(router, conf.ConfigAddr, Routes::bind(&dispatcher::GetConfigs, this));
-        
+          
         httpEndpoint->setHandler(router.handler());
         httpEndpoint->serveThreaded();
+        
         while(!stop)
         {
             std::this_thread::sleep_for(std::chrono::microseconds(100));

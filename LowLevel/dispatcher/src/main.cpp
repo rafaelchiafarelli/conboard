@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_handler);
 	signal(SIGKILL, sig_handler);
 	signal(SIGQUIT, sig_handler);
-	std::cout<<"define address"<<std::endl;
+	std::cout<<"filename:"<<jsonFileName.c_str()<<std::endl;
 
 	dispatcher dsp(jsonFileName, &stop);
 
