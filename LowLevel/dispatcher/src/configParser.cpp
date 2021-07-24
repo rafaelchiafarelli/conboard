@@ -7,15 +7,16 @@ config::config(std::string fileName)
 	buff<<file.rdbuf();
 	data = "";
 	data = buff.str();
-	ParseResult isError = Doc.Parse(data.c_str());
-    std::cout<<"parse result:"<<isError<<std::endl;
+	res = Doc.Parse(data.c_str());
+    
+    std::cout<<"parse result:"<<res.IsError()<<std::endl;
 
 }
 
 bool config::GetZMQio(zmq_io *z)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == false)
+    if(ret)
     {
         if(Doc.HasMember("zmq_io"))
         {
@@ -59,12 +60,17 @@ bool config::GetZMQio(zmq_io *z)
 bool config::GetZMQcoms(zmq_coms *z)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == false)
+    std::cout<<"GetZMQcoms - ret"<<ret<<std::endl;
+    if(ret)
     {
+        std::cout<<"GetZMQcoms - ok"<<std::endl;
+
         if(Doc.HasMember("zmq_coms"))
         {
+            std::cout<<"GetZMQcoms - port"<<std::endl;
             if(Doc["zmq_coms"].HasMember("port"))
             {
+                std::cout<<"GetZMQcoms - getport"<<std::endl;
                 if(Doc["zmq_coms"]["port"].IsInt())
                 {
                     coms.port = Doc["zmq_coms"]["port"].GetInt();
@@ -78,8 +84,10 @@ bool config::GetZMQcoms(zmq_coms *z)
             {
                 ret = false;
             }            
+            std::cout<<"GetZMQcoms - address"<<std::endl;
             if(Doc["zmq_coms"].HasMember("address"))
             {
+                std::cout<<"GetZMQcoms - get address"<<std::endl;
                 if(Doc["zmq_coms"]["address"].IsString())
                 {
                     coms.address = std::string(Doc["zmq_coms"]["address"].GetString());
@@ -95,6 +103,10 @@ bool config::GetZMQcoms(zmq_coms *z)
             }
             
         }
+        else
+        {
+            ret = false;
+        }
     }
     *z = coms;
     return ret;
@@ -103,10 +115,13 @@ bool config::GetZMQcoms(zmq_coms *z)
 bool config::GetHTTP(http_config *h)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == false)
+    std::cout<<"GetHTTP - ok"<<std::endl;
+    if(ret)
     {
+        std::cout<<"GetHTTP - http"<<std::endl;
         if(Doc.HasMember("http"))
         {
+            std::cout<<"GetHTTP - port"<<std::endl;
             if(Doc["http"].HasMember("port"))
             {
                 if(Doc["http"]["port"].IsInt())
@@ -122,6 +137,7 @@ bool config::GetHTTP(http_config *h)
             {
                 ret = false;
             }            
+            std::cout<<"GetHTTP - config"<<std::endl;
             if(Doc["http"].HasMember("ConfigAddr"))
             {
                 if(Doc["http"]["ConfigAddr"].IsString())
@@ -137,6 +153,7 @@ bool config::GetHTTP(http_config *h)
             {
                 ret = false;
             }
+            std::cout<<"GetHTTP - command"<<std::endl;
             if(Doc["http"].HasMember("CommandAddr"))
             {
                 if(Doc["http"]["CommandAddr"].IsString())
@@ -152,6 +169,7 @@ bool config::GetHTTP(http_config *h)
             {
                 ret = false;
             }            
+            std::cout<<"GetHTTP - threads"<<std::endl;
             if(Doc["http"].HasMember("threads"))
             {
                 if(Doc["http"]["threads"].IsInt())
@@ -167,6 +185,7 @@ bool config::GetHTTP(http_config *h)
             {
                 ret = false;
             }   
+            std::cout<<"GetHTTP - maxsize"<<std::endl;
             if(Doc["http"].HasMember("maxsize"))
             {
                 if(Doc["http"]["maxsize"].IsInt())
@@ -192,11 +211,13 @@ bool config::GetHTTP(http_config *h)
 bool config::GetUUID_cfg(UUID_config *u)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == false)
+    std::cout<<"GetUUID_cfg - ok"<<std::endl;
+    if(ret)
     {
+        std::cout<<"GetUUID_cfg - UUID"<<std::endl;
         if(Doc.HasMember("UUID"))
         {
-        
+            std::cout<<"GetUUID_cfg - address"<<std::endl;
             if(Doc["UUID"].HasMember("address"))
             {
                 if(Doc["UUID"]["address"].IsString())
@@ -212,6 +233,7 @@ bool config::GetUUID_cfg(UUID_config *u)
             {
                 ret = false;
             }
+            std::cout<<"GetUUID_cfg - port"<<std::endl;
             if(Doc["UUID"].HasMember("port"))
             {
                 if(Doc["UUID"]["port"].IsInt())
@@ -236,7 +258,7 @@ bool config::GetUUID_cfg(UUID_config *u)
 bool config::GetKey_cfg(key_config *k)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == false)
+    if(ret)
     {
         if(Doc.HasMember("key"))
         {
@@ -282,7 +304,7 @@ bool config::GetKey_cfg(key_config *k)
 bool config::GetScreen(screen_config *s)
 {
     bool ret = !res.IsError();
-    if(res.IsError() == false)
+    if(ret)
     {
         if(Doc.HasMember("screen"))
         {
