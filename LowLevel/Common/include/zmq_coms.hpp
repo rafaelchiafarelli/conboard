@@ -9,8 +9,6 @@
 class zmq_coms{
     
     private:
-            /*zmq related functions and variables*/
-        
         std::string unique_number;
         std::string DevName;
         void local_connect();

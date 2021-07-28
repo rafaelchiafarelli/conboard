@@ -83,7 +83,7 @@ void dispatcher::th_heart_beat(){
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
     
-    zmq_coms coms;
+    coms_type coms;
     bool parser = disp.GetZMQcoms(&coms);
     coms.address.append(":");
     coms.address.append(std::to_string(coms.port));
@@ -101,10 +101,8 @@ void dispatcher::th_heart_beat(){
         if(res)
         {
             //  Send OK to the client information to the client[answer]
-            char resp[100];
-            memset(resp,0,100);
-            sprintf(resp, "OK");
-            zmq::message_t reply(resp, std::strlen(resp));
+            std::string resp = "OK";
+            zmq::message_t reply(resp);
             zmq::send_result_t s_res = coms_socket.send(reply,zmq::send_flags::dontwait);
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
@@ -158,10 +156,13 @@ void dispatcher::th_unique_number()
             std::string l_devname((char *)message.data());
             std::string l_unique_number = generate_unique_number(l_devname);
             //  Send information to the client[answer]
-            char resp[100];
-            sprintf(resp, "%s %s",l_devname,l_unique_number);
+            
+            std::string resp = "";
+            resp.append(l_devname);
+            resp.append(" ");
+            resp.append(l_unique_number);
             std::cout<<"th_unique_number-"<<resp<<std::endl;
-            zmq::message_t reply(resp,std::strlen(resp));
+            zmq::message_t reply(resp);
             zmq::send_result_t s_res = st_socket.send(reply,zmq::send_flags::dontwait);
         }
     

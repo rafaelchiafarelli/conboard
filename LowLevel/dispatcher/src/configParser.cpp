@@ -13,7 +13,7 @@ config::config(std::string fileName)
 
 }
 
-bool config::GetZMQio(zmq_io *z)
+bool config::GetZMQio(io_type *z)
 {
     bool ret = !res.IsError();
     if(ret)
@@ -57,7 +57,7 @@ bool config::GetZMQio(zmq_io *z)
     return ret;
 }
 
-bool config::GetZMQcoms(zmq_coms *z)
+bool config::GetZMQcoms(coms_type *z)
 {
     bool ret = !res.IsError();
     std::cout<<"GetZMQcoms - ret"<<ret<<std::endl;

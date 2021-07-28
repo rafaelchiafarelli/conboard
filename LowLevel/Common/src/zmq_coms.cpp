@@ -18,14 +18,12 @@ void zmq_coms::local_connect(){
     st_socket.connect("tcp://localhost:5551");
 
 
-    zmq::message_t request_msg(DevName.length());
-    sprintf((char *)request_msg.data(), "%s", DevName.c_str());
-    
-    st_socket.send(request_msg);
+    zmq::message_t request_msg(DevName);
+    zmq::send_result_t res_send = st_socket.send(request_msg, zmq::send_flags::none);
 
     // Get the reply
     zmq::message_t recv_msg;
-    st_socket.recv(&recv_msg);
+    zmq::recv_result_t res  = st_socket.recv(recv_msg,zmq::recv_flags::none);
     std::string tmp((char *)recv_msg.data());
     unique_number = tmp;
 
