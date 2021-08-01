@@ -91,7 +91,7 @@ MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), js
         out_thread = new thread(&MIDI::out_func,this);
 
 
-        com = new zmq_coms(json.DevName);
+        com = new zmq_coms(json.DevName,"tcp://localhost:5550","tcp://localhost:5551" );
 
         thcoms = new thread(&MIDI::coms_handler,this);
     }

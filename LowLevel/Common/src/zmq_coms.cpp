@@ -3,19 +3,19 @@
 
 zmq_coms::~zmq_coms(){}
 
-zmq_coms::zmq_coms(std::string devName)
+zmq_coms::zmq_coms(std::string devName, std::string unique_number_address, std::string coms_address)
 {
-    coms_socket.connect("tcp://localhost:5550");
-    local_connect();
+    coms_socket.connect(coms_address);
+    local_connect(unique_number_address);
 }
 
-void zmq_coms::local_connect(){
+void zmq_coms::local_connect(std::string unique_number_address){
     // connect to the server and get a unique ID
         //send the DevName to the dispatcher and receive a unique number in response
         //there is a catch if two devices with the same name are installed. See dispatcher for more information
         
 
-    st_socket.connect("tcp://localhost:5551");
+    st_socket.connect(unique_number_address);
 
 
     zmq::message_t request_msg(DevName);
