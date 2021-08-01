@@ -17,9 +17,6 @@ template_dir = os.path.dirname(cwd.__str__()+"/static/dash/").__str__()
 STATIC_URL_PATH = url_path
 STATIC_FOLDER = static
 TEMPLATE_PATH = template_dir
-print(url_path)
-print(static)
-print(template_dir)
 
 app = Flask(__name__, static_folder=STATIC_FOLDER,
             static_url_path=STATIC_URL_PATH,
@@ -46,17 +43,17 @@ def land():
             "city": "Gwenborough",
             "zipcode": "92998-3874",
             "geo": {
-            "lat": "-37.3159",
-            "lng": "81.1496"
-            }
+                "lat": "-37.3159",
+                "lng": "81.1496"
+                }
             },
             "phone": "1-770-736-8031 x56442",
             "website": "hildegard.org",
             "company": {
-            "name": "Romaguera-Crona",
-            "catchPhrase": "Multi-layered client-server neural-net",
-            "bs": "harness real-time e-markets"
-            }
+                "name": "Romaguera-Crona",
+                "catchPhrase": "Multi-layered client-server neural-net",
+                "bs": "harness real-time e-markets"
+                }
             }
 
 @app.route("/midi/<string:name>/<string:file>")

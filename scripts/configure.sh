@@ -27,6 +27,9 @@ preconditions(){
     sudo apt -y install udev udevil gitk libusb-dev python-dev 
     sudo apt -y install nginx
 }
+install_node(){
+    echo "installing node and reactjs"
+}
 
 install_db(){
     sudo apt -y install postgresql
@@ -100,6 +103,7 @@ compile(){
             install_zeromq
             install_python3
             install_db
+            install_node
             compile_all
 			)   
 	build

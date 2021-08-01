@@ -73,20 +73,20 @@ install_frontend(){
     echo "python install"
     USER_NAME=$(whoami)
     cd /conboard
-    chown -R 1001:1001 ./frontend
-    cd frontend
-    if [ ! -d venv ]; then
-        sudo -u $USER_NAME python3 -m venv venv
-        sudo -u $USER_NAME source ./venv/bin/activate
-        sudo -u $USER_NAME pip3 install --upgrade pip
-        sudo -u $USER_NAME pip3 install update pip
-        sudo -u $USER_NAME pip3 install wheel numpy gunicorn gevent pyzmq flask_socketio matplotlib scikit-image scikit-learn ipython
-        sudo -u $USER_NAME pip3 install -r /conboard/frontend/assets/requirements.txt
-        sudo -u $USER_NAME deactivate
-    fi
+    chown -R 1001:1001 ./backend
+    cd backend
+
+    python3 -m venv venv
+    source ./venv/bin/activate
+    pip3 install --upgrade pip
+    pip3 install update pip
+    pip3 install wheel numpy gunicorn gevent pyzmq flask_socketio matplotlib scikit-image scikit-learn ipython
+    pip3 install -r /conboard/backend/assets/requirements.txt
+    deactivate
+
 
     echo "services"
-    cp /conboard/frontend/assets/frontend.service /etc/systemd/system/
+    cp /conboard/backend/assets/frontend.service /etc/systemd/system/
     systemctl daemon-reload
     systemctl enable frontend.service
     systemctl restart frontend.service
