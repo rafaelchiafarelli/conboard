@@ -36,6 +36,8 @@ preconditions(){
         systemctl stop launcher.service
         #systemctl disable launcher.service
 
+        systemctl stop dispatcher.service
+
         systemctl stop frontend.service
 
         systemctl stop serial-getty@ttyGS0
@@ -44,7 +46,7 @@ preconditions(){
     fi
     echo "Copy program files"
     mkdir -p /conboard
-    cp -r $LOCAL_REPO /
+    rsync -ah --progress $LOCAL_REPO /
 }
 
 
@@ -103,12 +105,14 @@ install_frontend(){
 install_lowlevel(){
     echo "dispatcher"
     cp /conboard/LowLevel/dispatcher/assets/dispatcher.service /etc/systemd/system/
+    systemctl daemon-reload
     systemctl enable dispatcher.service
     systemctl start dispatcher.service
     
 
     echo "launcher"
     cp /conboard/LowLevel/assets/launcher.service /etc/systemd/system/
+    systemctl daemon-reload
     systemctl enable launcher.service
     systemctl start launcher.service
     
