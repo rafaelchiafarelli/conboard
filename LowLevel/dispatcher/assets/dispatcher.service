@@ -1,0 +1,12 @@
+[Unit]
+Description=dispatcher of unique number and IO events.
+Documentation=https://github.com/rafaelchiafarelli/conboard
+
+[Service]
+User=root
+Type=oneshot
+ExecStart=/conboard/LowLevel/dispatcher/build/dispatcher  -x /conboard/LowLevel/dispatcher/assets/config.json
+
+
+[Install]
+WantedBy=multi-user.target
