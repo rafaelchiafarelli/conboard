@@ -1,5 +1,5 @@
 [Unit]
-Description=FrontEnd for the conboard
+Description=backend for the conboard made with flask-python
 Documentation=https://github.com/rafaelchiafarelli/conboard
 
 [Service]
@@ -8,10 +8,10 @@ Type=simple
 Restart=always
 RestartSec=5
 TimeoutStopSec=20
-Environment=PYTHONPATH=/conboard/frontend/venv/bin
-Environment=PATH=/conboard/frontend/venv/bin
-WorkingDirectory=/conboard/frontend
-ExecStart=/conboard/frontend/venv/bin/gunicorn -w 1 -t 5 -b localhost:8080 main:app --access-logfile /conboard/frontend/access_video.log -k gevent
+Environment=PYTHONPATH=/conboard/backend/venv/bin
+Environment=PATH=/conboard/backend/venv/bin
+WorkingDirectory=/conboard/backend
+ExecStart=/conboard/backend/venv/bin/gunicorn -w 1 -t 5 -b localhost:8080 main:app --access-logfile /conboard/backend/access.log -k gevent
 
 
 [Install]
