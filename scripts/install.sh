@@ -107,14 +107,14 @@ install_lowlevel(){
     cp /conboard/LowLevel/dispatcher/assets/dispatcher.service /etc/systemd/system/
     systemctl daemon-reload
     systemctl enable dispatcher.service
-    systemctl start dispatcher.service
+
     
 
     echo "launcher"
     cp /conboard/LowLevel/assets/launcher.service /etc/systemd/system/
     systemctl daemon-reload
     systemctl enable launcher.service
-    systemctl start launcher.service
+
     
 
 
