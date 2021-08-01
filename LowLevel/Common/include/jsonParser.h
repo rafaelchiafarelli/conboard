@@ -19,6 +19,9 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "rapidjson/ostreamwrapper.h"
+#include "rapidjson/writer.h"
+
 
 #include "keyParser.hpp"
 
@@ -74,7 +77,12 @@ class jsonParser
 		void ProcessMainBody(rapidjson::Value &body);
 		devType GetDevType(std::string dType);
 
-
+		void Save(std::string _FileName){
+			std::ofstream ofs(_FileName);
+			rapidjson::OStreamWrapper osw(ofs);
+			rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
+			Doc.Accept(writer);
+		}
 	public:
 		Executable Ex;
 		std::string FileName;
@@ -85,7 +93,13 @@ class jsonParser
 			loaded = false;
 		}
 		void Reload(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h);
-		
+
+		void SaveToFile(std::string _FileName){
+				Save(_FileName);
+			};
+		void SaveFile(){
+				Save(FileName);
+			};
 		devType GetType(){return type;};
 		unsigned int GetTimeOut(){return timeout;};
 		bool GetLoaded(){return loaded;};
