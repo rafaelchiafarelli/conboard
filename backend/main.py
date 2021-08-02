@@ -5,7 +5,7 @@ from DevComs import DevComs
 from landpage import settings 
 from landpage.landpage import landPage, midiPage, keyboardPage, joystickPage, mousePage, dmxPage, nonamePage
 
-
+import json
 import os
 
 # Get the current working directory
@@ -32,29 +32,7 @@ def handle_message(data):
 
 @app.route('/')
 def land():
-    return {
-            "id": 1,
-            "name": "Leanne Graham",
-            "username": "Bret",
-            "email": "Sincere@april.biz",
-            "address": {
-            "street": "Kulas Light",
-            "suite": "Apt. 556",
-            "city": "Gwenborough",
-            "zipcode": "92998-3874",
-            "geo": {
-                "lat": "-37.3159",
-                "lng": "81.1496"
-                }
-            },
-            "phone": "1-770-736-8031 x56442",
-            "website": "hildegard.org",
-            "company": {
-                "name": "Romaguera-Crona",
-                "catchPhrase": "Multi-layered client-server neural-net",
-                "bs": "harness real-time e-markets"
-                }
-            }
+    return json.load("/conboard/boards/Dj4Mix.json")
 
 @app.route("/midi/<string:name>/<string:file>")
 def midi(name, file):

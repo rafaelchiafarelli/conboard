@@ -12,7 +12,7 @@ modprobe libcomposite
 FILE=/conboard/disk/usbdisk.img
 mkdir -p ${FILE/img/d}
 if [ ! -e $FILE ] ; then
-	dd if=/dev/zero of=$FILE bs=1M count=8
+	dd if=/dev/zero of=$FILE bs=1M count=8 status=progress
 	mkfs.vfat $FILE
 fi
 #mount -o loop,ro,offset=2048 -t vfat $FILE ${FILE/img/d}
