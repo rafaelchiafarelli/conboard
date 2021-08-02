@@ -80,7 +80,7 @@ install_frontend(){
     source ./venv/bin/activate
     pip3 install --upgrade pip
     pip3 install update pip
-    pip3 install wheel numpy gunicorn gevent pyzmq flask_socketio matplotlib scikit-image scikit-learn ipython
+    pip3 install cython wheel numpy gunicorn gevent pyzmq flask_socketio matplotlib scikit-image scikit-learn ipython
     pip3 install -r /conboard/backend/assets/requirements.txt
     deactivate
 
