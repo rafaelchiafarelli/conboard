@@ -95,7 +95,7 @@ install_frontend(){
     if [ -f /etc/nginx/sites-enabled/interface.conf ]; then
         sudo rm /etc/nginx/sites-enabled/interface.conf
     fi
-    cp /conboard/frontend/assets/interface.conf /etc/nginx/sites-available
+    cp /conboard/backend/assets/interface.conf /etc/nginx/sites-available
 
     ln -s /etc/nginx/sites-available/interface.conf /etc/nginx/sites-enabled/interface.conf
     systemctl restart nginx.service
