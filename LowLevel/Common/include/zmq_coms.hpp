@@ -20,7 +20,7 @@ class zmq_coms{
         zmq::socket_t coms_socket{coms_context, zmq::socket_type::req};
 
         zmq::context_t st_context{1};
-        zmq::socket_t st_socket{st_context, zmq::socket_type::req};
+        zmq::socket_t st_socket{st_context, zmq::socket_type::push};
 
         std::vector<std::string> explode(std::string const & s, char delim);
     public:

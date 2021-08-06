@@ -24,8 +24,7 @@ void zmq_coms::local_connect(){
     {
 
         zmq::message_t request_msg(DevName);
-        zmq::send_result_t res_send = st_socket.send(request_msg, zmq::send_flags::none);
-
+        zmq::send_result_t res_send = st_socket.send(request_msg, zmq::send_flags::dontwait);
         // Get the reply
         zmq::message_t recv_msg;
         zmq::recv_result_t res  = st_socket.recv(recv_msg,zmq::recv_flags::none);
