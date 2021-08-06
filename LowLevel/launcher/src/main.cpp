@@ -25,6 +25,7 @@ typedef enum{
 	read_devices,
 	verify_devices,
 	clear_something,
+	remove_devices,
 	none
 
 }modType;
@@ -54,13 +55,14 @@ int main(int argc, char *argv[])
             printf("\tID_PRODUCT = 0x%04x\n", dev->descriptor.idProduct);
         }
 	stop = true;
-	static const char short_options[] = "rvcx:d:";
+	static const char short_options[] = "rvcx:d:a:";
 	static const struct option long_options[] = {
 		{"read", 1, NULL, 'r'}, /* reads all json from a folder and check if there are devices available -r /conboard/boards*/
 		{"verify", 1, NULL, 'v'},/* verify if -v /tmp/temp.vars is a valid set of vars that*/
 		{"clear", 1, NULL, 'c'}, /* don't know what I will use it for... yet*/
 		{"json",1,NULL,'x'},
 		{"data",1,NULL,'d'},
+		{"action",1,NULL,'a'},
 		{ }
 	};
     
@@ -98,7 +100,9 @@ int main(int argc, char *argv[])
 		case 'v':
 			work = verify_devices;
 			break;
-		
+		case 'a':
+			work = remove_devices;
+			break;
 		default:
 			std::cout<<"Try more information."<<endl;
 			return 1;
