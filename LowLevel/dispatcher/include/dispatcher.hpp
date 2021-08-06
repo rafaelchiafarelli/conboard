@@ -31,11 +31,11 @@ class dispatcher{
         std::atomic_bool stop;
 
         zmq::context_t io_context{1};
-        zmq::socket_t io_socket{io_context, zmq::socket_type::pull};
+        zmq::socket_t io_socket{io_context, zmq::socket_type::push};
         void th_io();
 
         zmq::context_t coms_context{1};
-        zmq::socket_t coms_socket{coms_context, zmq::socket_type::rep};
+        zmq::socket_t coms_socket{coms_context, zmq::socket_type::pub};
         std::thread *hb;
         void th_heart_beat();
 
