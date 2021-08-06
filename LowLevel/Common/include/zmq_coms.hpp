@@ -9,9 +9,13 @@
 class zmq_coms{
     
     private:
+        bool hb_connected = false;
+        bool io_connected = false;
+        std::string un_address;
         std::string unique_number;
         std::string DevName;
-        void local_connect(std::string unique_number_address);
+        std::string io_address;
+        void local_connect();
         zmq::context_t coms_context{1};
         zmq::socket_t coms_socket{coms_context, zmq::socket_type::req};
 
