@@ -49,7 +49,7 @@ std::vector<std::string> zmq_coms::heartbeat()
     std::vector<std::string> ret; 
     zmq::message_t reply{};
     
-    //coms_socket.send();
+    
     zmq::recv_result_t recv_res = coms_socket.recv(reply, zmq::recv_flags::none);
 
     /*

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
+ASSETS="$SCRIPTS_DIR/assets"
 clean() {
 
 	echo "compiler done"
@@ -59,6 +59,7 @@ sudo apt -y install libtool pkg-config build-essential autoconf automake
 sudo apt -y install git libssl-dev libzmq3-dev
 cd $SCRIPTS_DIR
 git clone https://github.com/zeromq/cppzmq.git
+cp $ASSETS/zmq.hpp ./cppzmq/
 cd cppzmq
 mkdir build
 cd build
