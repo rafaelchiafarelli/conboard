@@ -17,10 +17,10 @@ class zmq_coms{
         std::string io_address;
         void local_connect();
         zmq::context_t coms_context{1};
-        zmq::socket_t coms_socket{coms_context, zmq::socket_type::req};
+        zmq::socket_t coms_socket{coms_context, zmq::socket_type::sub};
 
         zmq::context_t st_context{1};
-        zmq::socket_t st_socket{st_context, zmq::socket_type::push};
+        zmq::socket_t st_socket{st_context, zmq::socket_type::req};
 
         std::vector<std::string> explode(std::string const & s, char delim);
     public:
