@@ -31,8 +31,8 @@ typedef enum{
 }modType;
 
 typedef enum{
-	add,
-	remove
+	add_dev,
+	remove_dev
 
 }modAction;
 
@@ -115,11 +115,11 @@ int main(int argc, char *argv[])
 			work = modType::action_to_devices;
 			if(!strcmp(optarg,"add"))
 			{
-				action = modAction::add;
+				action = modAction::add_dev;
 			}
 			if(!strcmp(optarg,"remove"))
 			{
-				action = modAction::remove;
+				action = modAction::remove_dev;
 			}
 			break;
 		default:
@@ -141,10 +141,10 @@ int main(int argc, char *argv[])
 	case modType::action_to_devices:
 		switch(action)
 		{
-			case modAction::add:
+			case modAction::add_dev:
 				create_json(dt_name,json_name);
 				break;
-			case modAction::remove:
+			case modAction::remove_dev:
 				stop_device(dt_name,json_name);
 				break;
 			default:
