@@ -30,6 +30,9 @@ void MIDI::Stop()
          in_thread->join();
     if(out_thread)
         out_thread->join();
+    if(thcoms)
+        thcoms->join();
+        
 
 }
 void MIDI::parse()
@@ -42,14 +45,16 @@ MIDI::~MIDI(){
         delete in_thread;
     if(out_thread)
         delete out_thread;
+    if(thcoms)
+        delete thcoms;
+    if(com)
+        delete com;
 }
 
 MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), json(_jsonFileName,&modes,&header),oActions()
 {
     jsonFileName = _jsonFileName;
-    /*ZMQ connection -- send user cmds*/
-//    io_socket.connect("tcp://localhost:5555");
-//    coms_socket.connect("tcp://localhost:5550");
+
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
     for(vector<raw_midi>::iterator ports_it = hw_ports.begin();

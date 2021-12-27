@@ -2,5 +2,5 @@
 
 set -a
 env > /tmp/temp.vars
-exec /conboard/LowLevel/launcher/build/launcher -v -x /conboard/boards/ -d /tmp/temp.vars -a $1
+exec /conboard/LowLevel/launcher/build/launcher -x /conboard/boards/ -d /tmp/temp.vars -a $1
 

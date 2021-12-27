@@ -21,6 +21,7 @@
 using namespace std;
 
 void read_all(char *path);
+void stop_device(char *dt_name, char *json_name);
 void create_json(char *devInfo, char *folder);
 void clear(char *folder);
 
