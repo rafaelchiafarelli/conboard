@@ -25,10 +25,16 @@ typedef enum{
 	read_devices,
 	verify_devices,
 	clear_something,
-	remove_devices,
+	action_to_devices,
 	none
 
 }modType;
+
+typedef enum{
+	add,
+	remove
+
+}modAction;
 
 
 static void sig_handler(int dummy)
@@ -58,7 +64,7 @@ int main(int argc, char *argv[])
 	static const char short_options[] = "rvcx:d:a:";
 	static const struct option long_options[] = {
 		{"read", 1, NULL, 'r'}, /* reads all json from a folder and check if there are devices available -r /conboard/boards*/
-		{"verify", 1, NULL, 'v'},/* verify if -v /tmp/temp.vars is a valid set of vars that*/
+		{"verify", 1, NULL, 'v'},/* verify if -v /tmp/temp.vars is a valid set of vars */
 		{"clear", 1, NULL, 'c'}, /* don't know what I will use it for... yet*/
 		{"json",1,NULL,'x'},
 		{"data",1,NULL,'d'},
@@ -66,15 +72,20 @@ int main(int argc, char *argv[])
 		{ }
 	};
     
-	if(argc < 4)
+	if(argc < 5)
 	{
-		std::cout<<"error, must specifi port and json. Usage ./launcher -rcv -x \"/home/user/file.json\" -d \"/tmp/a\""<<endl;
+		std::cout<<"Usage ./launcher -rcv -x \"json-location\" -d \"data-temp.vars-location\" -a \"action required\" "<<std::endl;
+		std::cout<<"Example \r\n /launcher -r -x \"/conboard/boards/\" -d \"/tmp/temp.vars\" -a add \r\n Will read all files in /conboard/boards and launch the equivalent service that matches /tmp/temp.vars "<<endl;
+
 		return -1;
 	}
     char dt_name[256];
 	memset(dt_name,256,0);
 	char json_name[256];
 	memset(json_name,0,256);
+	char action_required[256];
+	memset(action_required,0,256);
+	modAction action;
 	int c;
 
 
@@ -95,13 +106,21 @@ int main(int argc, char *argv[])
 			work = modType::clear_something;
 			break;
 		case 'r':
-			work = read_devices;
+			work = modType::read_devices;
 			break;
 		case 'v':
-			work = verify_devices;
+			work = modType::verify_devices;
 			break;
 		case 'a':
-			work = remove_devices;
+			work = modType::action_to_devices;
+			if(!strcmp(optarg,"add"))
+			{
+				action = modAction::add;
+			}
+			if(!strcmp(optarg,"remove"))
+			{
+				action = modAction::remove;
+			}
 			break;
 		default:
 			std::cout<<"Try more information."<<endl;
@@ -116,18 +135,116 @@ int main(int argc, char *argv[])
 		read_all(json_name);
 		break;
 	case modType::verify_devices:
-		/* code */
 		create_json(dt_name,json_name);
 		break;	 
+	 
+	case modType::action_to_devices:
+		switch(action)
+		{
+			case modAction::add:
+				create_json(dt_name,json_name);
+				break;
+			case modAction::remove:
+				stop_device(dt_name,json_name);
+				break;
+			default:
+				break;				
+		}
+		break;
+
 	case modType::clear_something:
-		/* code */
-		break;		 
+		std::cout<<"clear_something not implemented yet"<<std::endl;
+		break;
 	default:
 		break;
 	}
 
 	std::cout<<"end of program"<<std::endl;
     return 0;
+}
+
+/**
+ * 
+ * This function will stop some removed device handler service.
+ * Verify existance of the service matching the removed device
+ * stop it and disables it
+ * 
+ */ 
+void stop_device(char *dt_name, char *json_name)
+{
+
+	/* Get all directories */
+	vector<dirent> jsonFiles;
+    struct dirent *json_entry;
+    DIR *json_dir = opendir(dt_name);
+	bool hasHandler = false;
+    if (json_dir == NULL) {
+		
+        return;
+    }
+
+    while ((json_entry = readdir(json_dir)) != NULL) {
+		if(string(json_entry->d_name).find(".json") != std::string::npos)
+        	jsonFiles.push_back(*json_entry);
+    }
+    closedir(json_dir);
+	/* Get all services */
+	vector<dirent> serviceFiles;
+	struct dirent *service_entry;
+	char service_folder[] = {"/etc/systemd/system/"};
+	DIR *service_dir = opendir(service_folder);
+	if (service_dir == NULL) {
+		return;
+	}
+	while ((service_entry = readdir(service_dir)) != NULL) {
+		if(string(service_entry->d_name).find(".service") != std::string::npos)
+			serviceFiles.push_back(*service_entry);
+	}
+	closedir(service_dir);
+
+	char complete_file_name[1024];
+	memset(complete_file_name,0,1024);
+	std::vector<ModeType> Mode;
+	std::vector<Actions> h;
+	jsonParser header(complete_file_name,&Mode,&h);
+	
+	bool has_service = false;
+	for(vector<dirent>::iterator files_it = jsonFiles.begin();
+		files_it!=jsonFiles.end();
+		files_it++
+		)
+	{
+		//for all the json files present
+		sprintf(complete_file_name, "%s/%s",dt_name,files_it->d_name);
+		header.Reload(complete_file_name,&Mode,&h);
+
+		if(header.GetLoaded())
+		{
+			std::string serviceName = header.DevName;
+			serviceName.append(".service");
+			serviceName.erase(remove_if(serviceName.begin(), serviceName.end(), ::isspace), serviceName.end());
+			for(vector<dirent>::iterator service_it = serviceFiles.begin();
+				service_it!=serviceFiles.end();
+				service_it++)
+			{
+				if(!serviceName.compare(service_it->d_name))
+				{
+					char cmd[512];
+					std::cout<<"found a service of a device: "<<serviceName.c_str()<<std::endl;
+					sprintf(cmd,"systemctl stop %s",service_it->d_name);
+					system(cmd);
+					sprintf(cmd,"systemctl disable %s",service_it->d_name);
+					system(cmd);
+					has_service = true;
+					break;
+				}
+				else
+				{
+					has_service = false;
+				}
+			}
+		}
+	}
 }
 /**
  * This function will read all json files from folder, identify witch of them have executables and services, 
@@ -193,7 +310,7 @@ void read_all(char *path)
 				if(!serviceName.compare(service_it->d_name))
 				{
 					char cmd[512];
-					std::cout<<"found a service"<<std::endl;
+					std::cout<<"found a service of a device: "<<serviceName.c_str()<<std::endl;
 					sprintf(cmd,"systemctl restart %s",service_it->d_name);
 					system(cmd);
 					has_service = true;
@@ -210,7 +327,7 @@ void read_all(char *path)
 
 /**
  * this function will tell if a given device has a handle (json file with an executable). If not, this function will create a dummy one.
- * The user WILL give the other information about this.
+ * The user WILL give the other information about this device.
  */ 
 void create_json(char *devInfo, char *folder)
 {
@@ -258,6 +375,7 @@ void create_json(char *devInfo, char *folder)
 	{//for all the json files present
 		
 		sprintf(complete_file_name, "%s/%s",folder,json_it->d_name);
+		std::cout<<"Checking: "<<complete_file_name<<std::endl;
 		hasHandler = false;
 		local_json = new jsonParser("",&Mode,&h);
 		if(local_json->GetLoaded())
