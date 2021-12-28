@@ -109,23 +109,27 @@ void dispatcher::th_io()
     io_coms.address.append(std::to_string(io_coms.port));
 
     std::cout<<"th_io adr:"<<io_coms.address.c_str()<<std::endl;
-    coms_socket.connect(io_coms.address);
-    coms_socket.setsockopt (ZMQ_SUBSCRIBE, "", 0);
-    char data[1024];
-    memset(data,1024,0);
-    zmq::message_t message((const void *)data,1024);    
+    io_socket.bind(io_coms.address);
+    
+    zmq::message_t message;    
     while(!stop)
     {
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-        zmq::recv_result_t res = coms_socket.recv(message,zmq::recv_flags::none);
+        
+        zmq::recv_result_t res = io_socket.recv(message, zmq::recv_flags::dontwait);
         if(res)
         {
+            
             std::string raw = message.to_string();
+            
             std::vector<std::string> parsed_msg = explode(raw,';');
-            zmq::message_t reply("OK");
-            coms_socket.send(reply,zmq::send_flags::dontwait);
-
+            zmq::message_t reply(std::string("OK"));
+            zmq::send_result_t res = io_socket.send(reply,zmq::send_flags::dontwait);
+            if(!res)
+            {
+                std::cout<<"Error receiving"<<std::endl;
+            }
             std::vector<std::string>::iterator msg_it = parsed_msg.begin();
             
             if(devices.count(*msg_it)>0)
@@ -146,10 +150,10 @@ void dispatcher::th_io()
             
             
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
-    std::cout<<"th_heart_beat close"<<std::endl;
-    coms_socket.close();
+    std::cout<<"th_io close"<<std::endl;
+    io_socket.close();
 }
 
 
@@ -171,7 +175,7 @@ void dispatcher::th_heart_beat(){
 
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
-    
+    std::string resp;
     coms_type coms;
     bool parser = disp.GetZMQcoms(&coms);
     coms.address.append(":");
@@ -179,9 +183,7 @@ void dispatcher::th_heart_beat(){
 
     std::cout<<"th_heart_beat adr:"<<coms.address.c_str()<<"-"<<parser<<std::endl;
     coms_socket.bind(coms.address);
-    char data[1024];
-    memset(data,1024,0);
-    zmq::message_t message((const void *)data,1024);    
+    zmq::message_t message;    
     while(!stop)
     {
         // Waiting for the next request from the client
@@ -219,42 +221,45 @@ void dispatcher::th_heart_beat(){
         * 4503:2342:2342:2342:2342; outstop;
         * 
         */
-        zmq::recv_result_t res = coms_socket.recv(message,zmq::recv_flags::none);
-        if(res)
+
+        zmq::recv_result_t res = coms_socket.recv(message, zmq::recv_flags::dontwait);
+
+        if (res)
         {
+            resp.clear();
             // get the client name and uuid.
             std::string raw = message.to_string();
             std::vector<std::string> parsed_msg = explode(raw,';');
 
             if(parsed_msg.size()>1)
             {
-                std::vector<std::string>::iterator msg_it = parsed_msg.begin()+1; //adjust to get the uuid
+                std::vector<std::string>::iterator msg_it = parsed_msg.begin(); //adjust to get the uuid
+                
                 if(devices.count(*msg_it)>0) //is the uuid present
                 {
-                    if(!devices[*msg_it].compare(*parsed_msg.begin())) //if the stored UUID is a representation of that particular device name
+
+                    last_ping[*msg_it] = std::chrono::system_clock::now();//update last ping
+                    resp = *msg_it;
+                    //mutex logic to check the commands queue
+                    if(commands.count(*msg_it)>0) //is there a command 
                     {
-                        last_ping[*msg_it] = std::chrono::system_clock::now();//update last ping
-                        std::string resp = *msg_it;
-                        //mutex logic to check the commands queue
-                        if(commands.count(*msg_it)>0) //is there a command 
-                        {
-                            std::string cmd = commands[*msg_it]; 
-                            commands.erase(*msg_it); //clear the command
-                            resp.append("; ");
-                            resp.append(commands[*msg_it]);
-                            resp.append(";");
-                        }
-                        else
-                        {
-                            resp.append("; OK;");
-                        }
-                        zmq::message_t reply(resp);
-                        zmq::send_result_t s_res = coms_socket.send(reply,zmq::send_flags::dontwait);
+                        std::string cmd = commands[*msg_it]; 
+                        commands.erase(*msg_it); //clear the command
+                        resp.append("; ");
+                        resp.append(commands[*msg_it]);
+                        resp.append(";");
+                    }
+                    else
+                    {
+                        resp.append("; OK;");
                     }
                 }                
             }
+            zmq::message_t reply(resp);
+            
+            zmq::send_result_t s_res = coms_socket.send(reply,zmq::send_flags::none);
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     std::cout<<"th_heart_beat close"<<std::endl;
     coms_socket.close();
@@ -290,7 +295,7 @@ void dispatcher::th_unique_number()
     {
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-        zmq::recv_result_t res = un_socket.recv(message,zmq::recv_flags::none);
+        zmq::recv_result_t res = un_socket.recv(message,zmq::recv_flags::dontwait);
         if(res)
         {
             // do some work
@@ -299,15 +304,17 @@ void dispatcher::th_unique_number()
             //  Send information to the client[answer]
             
             std::string resp = "";
+            resp.append(l_unique_number);            
+            resp.append("; ");
             resp.append(l_devname);
-            resp.append(" ");
-            resp.append(l_unique_number);
+            resp.append("; ");
             std::cout<<"th_unique_number-"<<resp<<std::endl;
             zmq::message_t reply(resp);
-            zmq::send_result_t s_res = un_socket.send(reply,zmq::send_flags::dontwait);
+            zmq::send_result_t s_res = un_socket.send(reply,zmq::send_flags::none);
+
         }
     
-        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     std::cout<<"th_unique_number close"<<std::endl;
     un_socket.close();
@@ -316,15 +323,17 @@ void dispatcher::th_unique_number()
 
 std::string dispatcher::generate_unique_number(std::string l_devname)
 {
-    std::cout<<"generate_unique_number"<<std::endl;
     std::string l_unique_number = "";    
     std::lock_guard<std::mutex> locker(lock_devices);
     uuid_t gen;
     uuid_generate(gen);
-    l_unique_number = std::string((char *)gen);
+    char uuid_unparsed[200];
+    uuid_unparse(gen,uuid_unparsed);
+    l_unique_number = std::string(uuid_unparsed);
     std::pair<std::string, std::string> n_dev(l_unique_number,l_devname);
     std::pair<std::string, std::chrono::time_point<std::chrono::system_clock>> n_ping(l_unique_number,std::chrono::system_clock::now());
     devices[n_dev.first]=n_dev.second;
+    std::cout<<"generate unique number: "<<devices[n_dev.first].c_str()<<std::endl;
     last_ping[n_ping.first] = n_ping.second;
     return l_unique_number;
 }

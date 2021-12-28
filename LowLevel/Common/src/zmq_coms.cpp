@@ -18,7 +18,10 @@
 
 #include <chrono>
 
-zmq_coms::~zmq_coms(){}
+zmq_coms::~zmq_coms(){
+    die();
+    delete io_thread;
+}
 
 zmq_coms::zmq_coms(std::string devName, 
                     std::string _un_address, 
@@ -35,6 +38,8 @@ zmq_coms::zmq_coms(std::string devName,
     unique_number_handler();
     heartbeat_handler();
     io_handler();
+    stop = false;
+    io_thread = new std::thread(&zmq_coms::th_io,this);
 }
 
 /**
@@ -46,6 +51,7 @@ void zmq_coms::th_io()
     bool send_io = false;
     std::string to_send = "";
     int tries = 0;
+    std::cout<<"th io start"<<std::endl;
     while (!stop)
     {
         send_io = false;
@@ -63,26 +69,27 @@ void zmq_coms::th_io()
         {
             // request
             /**
-             * DevName; UUID; action;
+             *  UUID; DevName; action;
              * 
              * 
             */
-
             std::string msg="";
             msg.append(unique_number);
             msg.append("; ");
             msg.append(DevName);
             msg.append("; ");
             msg.append(to_send);
-
+            msg.append("; ");
             zmq::message_t request_msg(msg);
+            
             zmq::send_result_t res_send = io_socket.send(request_msg, zmq::send_flags::dontwait);
             // Get the reply
-            zmq::message_t recv_msg;
-            zmq::recv_result_t res  = un_socket.recv(recv_msg,zmq::recv_flags::dontwait);
-            std::string tmp((char *)recv_msg.data());
-            std::cout<<"IO sent to user and from:"<<DevName<<" and respose was:"<<tmp<<std::endl;
-            
+            std::string resp = "";
+            if(res_send)
+            {
+                zmq::message_t recv_msg;
+                zmq::recv_result_t res  = io_socket.recv(recv_msg,zmq::recv_flags::none);
+            }
         }
         else if (!io_connected)
         {
@@ -92,8 +99,8 @@ void zmq_coms::th_io()
                 tries = 0;
             }
         }
-        
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if(!send_io)
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 bool zmq_coms::dispatch(std::string msg)
@@ -145,14 +152,24 @@ void zmq_coms::unique_number_handler(){
         zmq::message_t request_msg(DevName);
         zmq::send_result_t res_send = un_socket.send(request_msg, zmq::send_flags::dontwait);
         // Get the reply
-        zmq::message_t recv_msg;
-        zmq::recv_result_t res  = un_socket.recv(recv_msg,zmq::recv_flags::none);
-        std::string tmp((char *)recv_msg.data());
-        unique_number = tmp;
-        std::cout<<"DevName:"<<DevName<<"unique number:"<<unique_number<<std::endl;
-        un_socket.close();
+        if(res_send)
+        {
+            zmq::message_t recv_msg;
+            zmq::recv_result_t res  = un_socket.recv(recv_msg,zmq::recv_flags::none);
+            if(res)
+            {
+                
+                std::string raw = recv_msg.to_string();
+                
+                std::vector<std::string> parsed_msg = explode(raw,';');
+                if(parsed_msg.size() > 1)
+                {
+                    unique_number = *(parsed_msg.begin());
+                }
+            }
+            std::cout<<"DevName:"<<DevName<<" unique number:"<<unique_number<<std::endl;
+        }
     }
-
 }
 std::vector<std::string> zmq_coms::explode(std::string const & s, char delim)
 {
@@ -211,23 +228,34 @@ std::vector<std::string> zmq_coms::heartbeat()
         * 4503:2342:2342:2342:2342; outstop;
         * 
         */
-        char data[1024];
-        sprintf(data,"%s; %s",unique_number.c_str(),DevName.c_str());
-        zmq::message_t req_message((const void *)data,1024);  
-
-        zmq::recv_result_t recv_res = hb_socket.send(req_message, zmq::send_flags::none);
-        zmq::message_t reply;
-        hb_socket.recv ( &reply, 0);
         
-        std::string raw = reply.to_string();
-        std::vector<std::string> parsed_msg = explode(raw,';');
-
-        if(parsed_msg.size()>1) //check if the message is making sense
+        std::string msg=unique_number;
+        msg.append("; ");
+        msg.append(DevName);
+        msg.append("; ");
+        zmq::message_t req_message(msg);  
+        
+        zmq::send_result_t send_res = hb_socket.send(req_message, zmq::send_flags::dontwait);
+        if(send_res)
         {
-            std::vector<std::string>::iterator msg_it = parsed_msg.begin();
-            if(!unique_number.compare(*msg_it)) //filter messages to this device
+            
+            zmq::message_t reply;
+            zmq::recv_result_t res = hb_socket.recv( reply, zmq::recv_flags::none);
+            
+            if(res)
             {
-                ret = parsed_msg;
+                std::string raw = reply.to_string();
+                
+                std::vector<std::string> parsed_msg = explode(raw,';');
+
+                if(parsed_msg.size()>1) //check if the message is making sense
+                {
+                    std::vector<std::string>::iterator msg_it = parsed_msg.begin();
+                    if(!unique_number.compare(*msg_it)) //filter messages to this device
+                    {
+                        ret = parsed_msg;
+                    }
+                }
             }
         }
     } 
