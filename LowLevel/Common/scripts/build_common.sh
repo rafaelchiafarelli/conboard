@@ -19,24 +19,19 @@ ExecRecipe() {
 	done
 }
 
-cmake_run(){
+make_common(){
     cd $SCRIPTS_DIR/../
     mkdir -p build
     cd build
-
 	cmake ..
-}
-
-make_all(){
-	make -j$(nproc)
-	cd $SCRIPTS_DIR
+	make -j$(nproc)	
 }
 
 
 compile(){
 	RECIPE=(
-			cmake_run
-			make_all
+			make_common
+
 			)
 	ExecRecipe
 }
