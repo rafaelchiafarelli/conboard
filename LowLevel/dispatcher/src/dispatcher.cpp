@@ -33,9 +33,12 @@ dispatcher::dispatcher()
                     : disp("/conboard/dispatcher/assets/config.json")
                     {
     FileName = "/conboard/dispatcher/assets/config.json";
+
+    
     startup();
 }
- 
+
+
 dispatcher::dispatcher(std::string fileName, 
                         std::atomic_bool *_stop)
                             : disp(fileName)
@@ -63,15 +66,31 @@ void dispatcher::die(){
 }
 
 void dispatcher::startup(){
-    //unique_th_unuique_number thread
+    
     stop = false;
+
     std::cout<<"start up sequence heart_beat"<<std::endl;
     hb = new std::thread(&dispatcher::th_heart_beat, this);
+
     std::cout<<"start up sequence unique th_unuique_number"<<std::endl;
     th_unuique_numb = new std::thread(&dispatcher::th_unique_number,this);
+
+    std::cout<<"start up sequence io"<<std::endl;
+    io = new std::thread(&dispatcher::th_io, this);
+    
     std::cout<<"start up sequence http"<<std::endl;
     http_com = new std::thread(&dispatcher::th_http,this);
 }
+
+/**
+ * This function will receive data from user actions and send it to the upper layers
+ * 
+ **/ 
+void dispatcher::th_io()
+{
+
+}
+
 
 /**
  * heart beat thread
@@ -91,7 +110,7 @@ void dispatcher::th_heart_beat(){
     coms.address.append(":");
     coms.address.append(std::to_string(coms.port));
 
-    std::cout<<"th_heart_beat-"<<coms.address.c_str()<<"-"<<parser<<std::endl;
+    std::cout<<"th_heart_beat adr:"<<coms.address.c_str()<<"-"<<parser<<std::endl;
     coms_socket.bind(coms.address);
     char data[1024];
     memset(data,1024,0);
@@ -100,9 +119,21 @@ void dispatcher::th_heart_beat(){
     {
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-        zmq::recv_result_t res = coms_socket.recv(message,zmq::recv_flags::dontwait);
+        zmq::recv_result_t res = coms_socket.recv(message,zmq::recv_flags::none);
         if(res)
         {
+            // get the client name and uuid.
+
+            // veryfies that it is in record 
+
+            // if not in record discard the event
+
+            // else update its last_ping status 
+
+            // check if there is a command to it and send it back. 
+            
+            // Send OK otherwise
+
             //  Send OK to the client information to the client[answer]
             std::string resp = "OK";
             zmq::message_t reply(resp);
@@ -136,9 +167,9 @@ void dispatcher::th_unique_number()
     //sprintf(addr,"%s:%d",uuid.address.c_str(), uuid.port);
     uuid.address.append(":");
     uuid.address.append(std::to_string(uuid.port));
-    std::cout<<"unique number"<<uuid.address.c_str()<<std::endl;
+    std::cout<<"unique number adr:"<<uuid.address.c_str()<<std::endl;
     
-    st_socket.bind(uuid.address);
+    un_socket.bind(uuid.address);
 
     
     char data[1024];
@@ -150,7 +181,7 @@ void dispatcher::th_unique_number()
         
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-        zmq::recv_result_t res = st_socket.recv(message,zmq::recv_flags::dontwait);
+        zmq::recv_result_t res = un_socket.recv(message,zmq::recv_flags::none);
         
         //.recv(&message,zmq::recv_flags::dontwait);
         if(res)
@@ -166,13 +197,13 @@ void dispatcher::th_unique_number()
             resp.append(l_unique_number);
             std::cout<<"th_unique_number-"<<resp<<std::endl;
             zmq::message_t reply(resp);
-            zmq::send_result_t s_res = st_socket.send(reply,zmq::send_flags::dontwait);
+            zmq::send_result_t s_res = un_socket.send(reply,zmq::send_flags::dontwait);
         }
     
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
     std::cout<<"th_unique_number close"<<std::endl;
-    st_socket.close();
+    un_socket.close();
 }
 
 
@@ -184,20 +215,10 @@ std::string dispatcher::generate_unique_number(std::string l_devname)
     uuid_t gen;
     uuid_generate(gen);
     l_unique_number = std::string((char *)gen);
-    std::map<std::string, std::string>::iterator dev = devices.find(l_devname);
-    std::pair<std::string, std::string> n_dev(l_devname, l_unique_number);
-
-    if(dev->second.empty())
-    {
-        devices.insert(n_dev);
-    }
-    else
-    {
-        //if there is a devname already, generate a new one and send it back to the receiver
-        devices.erase(l_devname); //delete the one in here
-        //add to the map
-        devices.insert(n_dev);
-    }
+    std::pair<std::string, std::string> n_dev(l_unique_number,l_devname);
+    std::pair<std::string, std::chrono::time_point<std::chrono::system_clock>> n_ping(l_unique_number,std::chrono::system_clock::now());
+    devices[n_dev.first]=n_dev.second;
+    last_ping[n_ping.first] = n_ping.second;
     return l_unique_number;
 }
 

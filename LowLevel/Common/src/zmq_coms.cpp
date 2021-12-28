@@ -173,7 +173,7 @@ std::vector<std::string> zmq_coms::heartbeat()
     else
     {
 
-        zmq::recv_result_t recv_res = io_socket.recv(reply, zmq::recv_flags::none);
+        zmq::recv_result_t recv_res = hb_socket.recv(reply, zmq::recv_flags::none);
 
         /*
         * msg structure is
