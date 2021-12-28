@@ -183,7 +183,7 @@ void dispatcher::th_unique_number()
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
         zmq::recv_result_t res = un_socket.recv(message,zmq::recv_flags::none);
         
-        //.recv(&message,zmq::recv_flags::dontwait);
+  
         if(res)
         {
             // do some work
