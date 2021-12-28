@@ -93,7 +93,7 @@ install_pistache(){
     cd $SCRIPTS_DIR/../
     git submodule init
     git submodule update
-    cd $SCRIPTS_DIR/LowLevel/Common/pistache
+    cd $SCRIPTS_DIR/../LowLevel/Common/pistache
     mkdir -p build
     cd build
     cmake ..
@@ -105,10 +105,11 @@ install_crow(){
     cd $SCRIPTS_DIR/../
     git submodule init
     git submodule update
-    cd $SCRIPTS_DIR/LowLevel/Common/Crow
+    sudo apt install libboost-dev libboost-date-time-dev libboost-system-dev
+    cd $SCRIPTS_DIR/../LowLevel/Common/Crow
     mkdir -p build
     cd build
-    cmake ..
+    cmake .. -DCROW_BUILD_EXAMPLES=OFF -DCROW_BUILD_TESTS=OFF
     sudo make -j4 install
 
 }
