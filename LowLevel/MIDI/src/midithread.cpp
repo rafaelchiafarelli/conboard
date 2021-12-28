@@ -20,6 +20,7 @@
 void MIDI::Stop()
 {
     stop =true;
+    
     if(outToFile)
         {
             outFileStream.close();
@@ -33,6 +34,7 @@ void MIDI::Stop()
     if(thcoms)
         thcoms->join();
         
+    com->die();
 
 }
 void MIDI::parse()
@@ -149,7 +151,7 @@ void MIDI::coms_handler()
                 }
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 }
 
@@ -200,14 +202,9 @@ void MIDI::processInput(midiSignal midiS)
     lock_guard<mutex> locker(locking_mechanism);
     midiActions tmp;
     tmp.midi = midiS;
-    std::string snd_data = "{\"";
-    snd_data.append(json.DevName);
-    snd_data.append("\": \"");
-    snd_data.append(tmp.ar_str());
-    snd_data.append("\"}");
-    bool res = com->dispatch(snd_data);
+    bool res = com->dispatch(tmp.ar_str());
     if(!res)
-        std::cout<<"error"<<std::endl;
+        std::cout<<"dispatch overflow"<<std::endl;
     if(outToFile)
     {
         outFileStream<<tmp<<endl;
@@ -414,7 +411,7 @@ void MIDI::in_func()
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
 		
 		while(!stop){
-            lock_guard<mutex> locker(locking_mechanism);
+            
             unsigned char buf[256];
 			int i, length;
 			unsigned short revents;

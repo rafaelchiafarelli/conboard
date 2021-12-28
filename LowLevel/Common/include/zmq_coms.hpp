@@ -37,7 +37,7 @@ class zmq_coms{
         void io_handler();
 
         std::string un_address;        
-        std::string unique_number;
+        std::string unique_number = "";
         zmq::context_t un_context{1};
         zmq::socket_t un_socket{un_context, zmq::socket_type::req};
         void unique_number_handler();
