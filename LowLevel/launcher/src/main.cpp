@@ -32,7 +32,8 @@ typedef enum{
 
 typedef enum{
 	add_dev,
-	remove_dev
+	remove_dev,
+	no_action_dev
 
 }modAction;
 
@@ -85,7 +86,7 @@ int main(int argc, char *argv[])
 	memset(json_name,0,256);
 	char action_required[256];
 	memset(action_required,0,256);
-	modAction action;
+	modAction action = no_action_dev;
 	int c;
 
 
@@ -94,6 +95,7 @@ int main(int argc, char *argv[])
 							short_options,
 		     				long_options, 
 							NULL)) != -1) {
+		
 		switch (c) {
 
 		case 'd':
@@ -129,6 +131,7 @@ int main(int argc, char *argv[])
 	
 
 	}
+	
  	switch (work)
 	{
 	case modType::read_devices:
@@ -139,9 +142,11 @@ int main(int argc, char *argv[])
 		break;	 
 	 
 	case modType::action_to_devices:
+		std::cout<<"work:action_to_devices:"<<action<<std::endl;
 		switch(action)
 		{
 			case modAction::add_dev:
+
 				create_json(dt_name,json_name);
 				break;
 			case modAction::remove_dev:
@@ -377,7 +382,7 @@ void create_json(char *devInfo, char *folder)
 		sprintf(complete_file_name, "%s/%s",folder,json_it->d_name);
 		std::cout<<"Checking: "<<complete_file_name<<std::endl;
 		hasHandler = false;
-		local_json = new jsonParser("",&Mode,&h);
+		local_json = new jsonParser(complete_file_name,&Mode,&h);
 		if(local_json->GetLoaded())
 		{
 			std::vector<KeyValue> tags = local_json->GetTags();
@@ -396,7 +401,6 @@ void create_json(char *devInfo, char *folder)
 					info_it != info_from_dev.end();
 					info_it++)
 					{
-						std::cout<<"key:"<<header_it->key.c_str()<<" value:"<<header_it->value.c_str()<<std::endl;
 						if((info_it->key.compare(header_it->key)) || 
 							(info_it->value.compare(header_it->value)))
 						{
@@ -404,7 +408,6 @@ void create_json(char *devInfo, char *folder)
 						}
 						else
 						{
-							std::cout<<"found:"<<info_it->key.c_str()<<std::endl;
 							hasHandler = true;
 							break;
 						}
