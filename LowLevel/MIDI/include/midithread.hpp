@@ -60,6 +60,7 @@ class MIDI : private oActions{
     private:
 
         std::string jsonFileName;
+
         mutex locking_mechanism;
         std::thread *in_thread;
         std::thread *out_thread;
@@ -97,7 +98,7 @@ class MIDI : private oActions{
         void send_midi(char *send_data, size_t send_data_length);
         void send_mouse(mouseActions mouse);
         void send_joystick(){};
-
+        void startup();
 
         std::vector<std::string> explode(std::string const & s, char delim);
     public:

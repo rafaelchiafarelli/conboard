@@ -24,12 +24,12 @@ class zmq_coms{
         
         std::string hb_address;
         zmq::context_t hb_context{1};
-        zmq::socket_t hb_socket{hb_context, zmq::socket_type::sub};
+        zmq::socket_t hb_socket{hb_context, zmq::socket_type::req};
         void heartbeat_handler();
 
         std::string io_address;
         zmq::context_t io_context{1};
-        zmq::socket_t io_socket{io_context, zmq::socket_type::pub};
+        zmq::socket_t io_socket{io_context, zmq::socket_type::req};
         std::thread *io_thread; 
         std::mutex io_mu;
         std::queue<std::string> io_queue;

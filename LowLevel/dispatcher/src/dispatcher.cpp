@@ -55,6 +55,7 @@ dispatcher::~dispatcher(){
 
     delete hb;
     delete th_unuique_numb;
+    delete io;
     delete http_com;
 }
 
@@ -62,6 +63,7 @@ void dispatcher::die(){
     stop = true;
     hb->join();
     th_unuique_numb->join();
+    io->join();
     http_com->join();
 }
 
@@ -81,7 +83,19 @@ void dispatcher::startup(){
     std::cout<<"start up sequence http"<<std::endl;
     http_com = new std::thread(&dispatcher::th_http,this);
 }
+std::vector<std::string> dispatcher::explode(std::string const & s, char delim)
+{
+    std::vector<std::string> result;
+    std::istringstream iss(s);
 
+    for (std::string token; std::getline(iss, token, delim); )
+    {
+        remove(token.begin(),token.end(),' ');
+        result.push_back(std::move(token));
+    }
+
+    return result;
+}
 /**
  * This function will receive data from user actions and send it to the upper layers
  * 
@@ -89,6 +103,53 @@ void dispatcher::startup(){
 void dispatcher::th_io()
 {
 
+    io_type io_coms;
+    bool parser = disp.GetZMQio(&io_coms);
+    io_coms.address.append(":");
+    io_coms.address.append(std::to_string(io_coms.port));
+
+    std::cout<<"th_io adr:"<<io_coms.address.c_str()<<std::endl;
+    coms_socket.connect(io_coms.address);
+    coms_socket.setsockopt (ZMQ_SUBSCRIBE, "", 0);
+    char data[1024];
+    memset(data,1024,0);
+    zmq::message_t message((const void *)data,1024);    
+    while(!stop)
+    {
+        // Waiting for the next request from the client
+        //  Block to current statement,  Until the message from the client is received,  Then save it to the message
+        zmq::recv_result_t res = coms_socket.recv(message,zmq::recv_flags::none);
+        if(res)
+        {
+            std::string raw = message.to_string();
+            std::vector<std::string> parsed_msg = explode(raw,';');
+            zmq::message_t reply("OK");
+            coms_socket.send(reply,zmq::send_flags::dontwait);
+
+            std::vector<std::string>::iterator msg_it = parsed_msg.begin();
+            
+            if(devices.count(*msg_it)>0)
+            {
+                last_ping[*msg_it] = std::chrono::system_clock::now();//update last ping
+
+            }
+            // get the client name and uuid.
+
+            // veryfies that it is in record 
+
+            // if not in record discard the event
+
+            // else update its last_ping status 
+
+            // put the new action into the actions list.
+
+            
+            
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    std::cout<<"th_heart_beat close"<<std::endl;
+    coms_socket.close();
 }
 
 
@@ -98,7 +159,13 @@ void dispatcher::th_io()
  *  an "OK" response or a command.
  * 
  * 
- * 
+ *             
+ * // veryfies that it is in record 
+ * // if not in record discard the event
+ * // else update its last_ping status 
+ * // check if there is a command to it and send it back. 
+ * // Send OK otherwise
+ * //  Send OK to the client information to the client[answer]
  */ 
 void dispatcher::th_heart_beat(){
 
@@ -119,25 +186,73 @@ void dispatcher::th_heart_beat(){
     {
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
+
+        /*
+        * msg structure is
+        * USER SEND
+        * device; unique_number;
+        * 
+        * USER RECEIVES 
+        * unique_number; OK;
+        * or 
+        * unique_number; cmd; params;
+        * 
+        * where cmds are:
+        * unique_number; reload; 
+        * unique_number; file; <complete file_name with path>;
+        * unique_number; outstop;
+        * unique_number; change_mode; <mode>;
+        * 
+        * example:
+        * USER SEND
+        * Arduino Micro; 4503:2342:2342:2342:2342;
+        * 4503:2342:2342:2342:2342; file; /conboard/boards/Arduino Micro.json;
+        * 
+        * example2:
+        * USER SEND
+        * Arduino Micro; 4503:2342:2342:2342:2342;
+        * 4503:2342:2342:2342:2342; reload;
+        * 
+        * example3:
+        * USER SEND
+        * Arduino Micro; 4503:2342:2342:2342:2342;
+        * 4503:2342:2342:2342:2342; outstop;
+        * 
+        */
         zmq::recv_result_t res = coms_socket.recv(message,zmq::recv_flags::none);
         if(res)
         {
             // get the client name and uuid.
+            std::string raw = message.to_string();
+            std::vector<std::string> parsed_msg = explode(raw,';');
 
-            // veryfies that it is in record 
-
-            // if not in record discard the event
-
-            // else update its last_ping status 
-
-            // check if there is a command to it and send it back. 
-            
-            // Send OK otherwise
-
-            //  Send OK to the client information to the client[answer]
-            std::string resp = "OK";
-            zmq::message_t reply(resp);
-            zmq::send_result_t s_res = coms_socket.send(reply,zmq::send_flags::dontwait);
+            if(parsed_msg.size()>1)
+            {
+                std::vector<std::string>::iterator msg_it = parsed_msg.begin()+1; //adjust to get the uuid
+                if(devices.count(*msg_it)>0) //is the uuid present
+                {
+                    if(!devices[*msg_it].compare(*parsed_msg.begin())) //if the stored UUID is a representation of that particular device name
+                    {
+                        last_ping[*msg_it] = std::chrono::system_clock::now();//update last ping
+                        std::string resp = *msg_it;
+                        //mutex logic to check the commands queue
+                        if(commands.count(*msg_it)>0) //is there a command 
+                        {
+                            std::string cmd = commands[*msg_it]; 
+                            commands.erase(*msg_it); //clear the command
+                            resp.append("; ");
+                            resp.append(commands[*msg_it]);
+                            resp.append(";");
+                        }
+                        else
+                        {
+                            resp.append("; OK;");
+                        }
+                        zmq::message_t reply(resp);
+                        zmq::send_result_t s_res = coms_socket.send(reply,zmq::send_flags::dontwait);
+                    }
+                }                
+            }
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
@@ -150,8 +265,6 @@ void dispatcher::th_heart_beat(){
  * unique number thread
  *  Will wait for a device call and answer it with a unique number.
  *  Check the current device map and update if necessáry.
- *  
- * 
  * 
  */ 
 void dispatcher::th_unique_number()
@@ -170,20 +283,14 @@ void dispatcher::th_unique_number()
     std::cout<<"unique number adr:"<<uuid.address.c_str()<<std::endl;
     
     un_socket.bind(uuid.address);
-
-    
     char data[1024];
     memset(data,1024,0);
     zmq::message_t message((const void *)data,1024);
-
     while(!stop)
     {
-        
         // Waiting for the next request from the client
         //  Block to current statement,  Until the message from the client is received,  Then save it to the message
         zmq::recv_result_t res = un_socket.recv(message,zmq::recv_flags::none);
-        
-  
         if(res)
         {
             // do some work
