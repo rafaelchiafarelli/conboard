@@ -61,13 +61,20 @@ void zmq_coms::th_io()
         }
         if(send_io && io_connected)
         {
-            std::string msg="{\"DevName\":";
-            msg.append(DevName);
-            msg.append(",\"unique_number\":");
+            // request
+            /**
+             * DevName; UUID; action;
+             * 
+             * 
+            */
+
+            std::string msg="";
             msg.append(unique_number);
-            msg.append(",\"msg\":");
+            msg.append("; ");
+            msg.append(DevName);
+            msg.append("; ");
             msg.append(to_send);
-            msg.append("}");
+
             zmq::message_t request_msg(msg);
             zmq::send_result_t res_send = io_socket.send(request_msg, zmq::send_flags::dontwait);
             // Get the reply
@@ -119,7 +126,7 @@ void zmq_coms::heartbeat_handler(){
 
     hb_connected = hb_socket.connect(hb_address);
     if(!hb_connected)
-        std::cout<<"Heartbeat not connected"<<std::endl;
+        std::cout<<"Heartbeat not connected to:"<<hb_address.c_str()<<std::endl;
 }
 /**
  * connect to the unique number server
@@ -164,7 +171,7 @@ std::vector<std::string> zmq_coms::heartbeat()
 {
 
     std::vector<std::string> ret; 
-    zmq::message_t reply{};
+
     
     if(!hb_connected)
     {
@@ -172,43 +179,59 @@ std::vector<std::string> zmq_coms::heartbeat()
     }
     else
     {
-
-        zmq::recv_result_t recv_res = hb_socket.recv(reply, zmq::recv_flags::none);
-
         /*
         * msg structure is
-        * device; unique_number; cmd; params;
+        * USER SEND
+        * device; unique_number;
         * 
-        * cmds:
+        * USER RECEIVES 
+        * unique_number; OK;
+        * or 
+        * unique_number; cmd; params;
         * 
-        * reload 
-        * file <complete file_name with path>
-        * outstop
-        * change_mode <mode>
+        * where cmds are:
+        * unique_number; reload; 
+        * unique_number; file; <complete file_name with path>;
+        * unique_number; outstop;
+        * unique_number; change_mode; <mode>;
         * 
         * example:
-        * Arduino Micro; file; /conboard/boards/Arduino Micro.json;
+        * USER SEND
+        * Arduino Micro; 4503:2342:2342:2342:2342;
+        * 4503:2342:2342:2342:2342; file; /conboard/boards/Arduino Micro.json;
         * 
-        * Arduino Micro; reload;
+        * example2:
+        * USER SEND
+        * Arduino Micro; 4503:2342:2342:2342:2342;
+        * 4503:2342:2342:2342:2342; reload;
+        * 
+        * example3:
+        * USER SEND
+        * Arduino Micro; 4503:2342:2342:2342:2342;
+        * 4503:2342:2342:2342:2342; outstop;
+        * 
         */
-        std::string raw = reply.to_string();
-        
-        std::vector<std::string> parsed_msg = explode(raw,';');
-        std::vector<std::string>::iterator msg_it = parsed_msg.begin();
-        if(!msg_it->compare(DevName))
-        {
-            msg_it++;
-            if(!msg_it->compare(unique_number))
-                {
-                    msg_it++;
-                    std::vector<std::string> ret(msg_it,parsed_msg.end());
-                    return ret;
-                }
-        }
+        char data[1024];
+        sprintf(data,"%s; %s",unique_number.c_str(),DevName.c_str());
+        zmq::message_t req_message((const void *)data,1024);  
 
+        zmq::recv_result_t recv_res = hb_socket.send(req_message, zmq::send_flags::none);
+        zmq::message_t reply;
+        hb_socket.recv ( &reply, 0);
+        
+        std::string raw = reply.to_string();
+        std::vector<std::string> parsed_msg = explode(raw,';');
+
+        if(parsed_msg.size()>1) //check if the message is making sense
+        {
+            std::vector<std::string>::iterator msg_it = parsed_msg.begin();
+            if(!unique_number.compare(*msg_it)) //filter messages to this device
+            {
+                ret = parsed_msg;
+            }
+        }
     } 
     return ret;
-
 }
 
 

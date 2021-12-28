@@ -54,7 +54,6 @@ MIDI::~MIDI(){
 MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), json(_jsonFileName,&modes,&header),oActions()
 {
     jsonFileName = _jsonFileName;
-
     outToFile = false;
     memset(port_name,0,PORT_NAME_SIZE);
     for(vector<raw_midi>::iterator ports_it = hw_ports.begin();
@@ -74,6 +73,8 @@ MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), js
 		std::cout<<"device not found, no thread will be started. err: "<<err<<std::endl;
         in_thread = NULL;
         out_thread = NULL;
+        thcoms = NULL;
+        com = NULL;
 	}
     else
     {
@@ -83,7 +84,6 @@ MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), js
             m_it != modes.end();
             m_it++)
         {
-            
             if(m_it->is_active)
             {
                 CurrentMode = *m_it;
@@ -94,10 +94,7 @@ MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), js
         }
         in_thread = new thread(&MIDI::in_func,this);
         out_thread = new thread(&MIDI::out_func,this);
-
-
         com = new zmq_coms(json.DevName,"tcp://localhost:5551","tcp://localhost:5552", "tcp://localhost:5550");
-
         thcoms = new thread(&MIDI::coms_handler,this);
     }
 }
@@ -130,9 +127,10 @@ void MIDI::coms_handler()
     while(!stop)
     {
         std::vector<std::string> resp = com->heartbeat();
-        std::vector<std::string>::iterator command = resp.begin();
-        if(!command->empty())
+        std::vector<std::string>::iterator command = resp.begin(); //begin with the UUID
+        if(!resp.empty())
         {
+            command++; //get the msg contents
             if(command->compare("OK")) //regular response is OK, not OK, does not mean BAD.
             {
                 if(!command->compare("reload"))
@@ -416,6 +414,7 @@ void MIDI::in_func()
 		snd_rawmidi_poll_descriptors(input, pfds, npfds);
 		
 		while(!stop){
+            lock_guard<mutex> locker(locking_mechanism);
             unsigned char buf[256];
 			int i, length;
 			unsigned short revents;
@@ -484,12 +483,16 @@ void MIDI::in_func()
 }
 
 void MIDI::Reload(){
-lock_guard<mutex> locker(locking_mechanism);
-while(!oQueue.empty())
-    oQueue.pop();
-header.clear();
-modes.clear();
-json.Clear();
+    lock_guard<mutex> locker(locking_mechanism);
+    while(!oQueue.empty())
+    {
+        oQueue.pop();
+    }
+    header.clear();
+    modes.clear();
+    json.Clear();
+    json.Reload(jsonFileName,&modes,&header);
+    execHeader();
 }
 
 bool MIDI::outFile(string name)
