@@ -2,3 +2,6 @@
         path = LowLevel/Common/pistache
         url = https://github.com/pistacheio/pistache.git
         branch = b8c0c699879980ed4bf1d31eba490d54d0a7f0ad
+[submodule "LowLevel/Common/Crow"]
+	path = LowLevel/Common/Crow
+	url = https://github.com/CrowCpp/Crow.git
