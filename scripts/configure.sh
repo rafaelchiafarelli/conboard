@@ -55,18 +55,18 @@ install_alsa(){
 }
 
 install_zeromq(){
-sudo apt -y install libtool pkg-config build-essential autoconf automake
-sudo apt -y install git libssl-dev libzmq3-dev
-cd $SCRIPTS_DIR
-git clone https://github.com/zeromq/cppzmq.git
-cp $ASSETS/zmq.hpp ./cppzmq/
-cd cppzmq
-mkdir build
-cd build
-cmake -DCPPZMQ_BUILD_TESTS=False ..
-sudo make -j4 install
-sudo cp ${SCRIPTS_DIR}/cppzmq/zmq.hpp /usr/include/
-sudo ldconfig
+    sudo apt -y install libtool pkg-config build-essential autoconf automake
+    sudo apt -y install git libssl-dev libzmq3-dev
+    cd $SCRIPTS_DIR
+    git clone https://github.com/zeromq/cppzmq.git
+    cp $ASSETS/zmq.hpp ./cppzmq/
+    cd cppzmq
+    mkdir build
+    cd build
+    cmake -DCPPZMQ_BUILD_TESTS=False ..
+    sudo make -j4 install
+    sudo cp ${SCRIPTS_DIR}/cppzmq/zmq.hpp /usr/include/
+    sudo ldconfig
 
 }
 install_python3(){
@@ -100,6 +100,18 @@ install_pistache(){
     make -j4
 
 }
+install_crow(){
+
+    cd $SCRIPTS_DIR/../
+    git submodule init
+    git submodule update
+    cd $SCRIPTS_DIR/LowLevel/Common/Crow
+    mkdir -p build
+    cd build
+    cmake ..
+    sudo make -j4 install
+
+}
 compile_all(){
     cd $SCRIPTS_DIR
     sudo ./install.sh
@@ -114,6 +126,8 @@ compile(){
             install_python3
             install_db
             install_node
+            install_pistache
+            install_crow
             compile_all
 			)   
 	build
