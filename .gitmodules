@@ -1,0 +1,4 @@
+[submodule "LowLevel/Common/pistache"]
+        path = LowLevel/Common/pistache
+        url = https://github.com/pistacheio/pistache.git
+        branch = b8c0c699879980ed4bf1d31eba490d54d0a7f0ad

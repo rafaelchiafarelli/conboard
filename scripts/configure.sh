@@ -87,9 +87,18 @@ install_python3(){
     sudo pip3.8 install update pip
 }
 install_pistache(){
-    sudo add-apt-repository ppa:pistache+team/unstable
-    sudo apt update
-    sudo apt install libpistache-dev
+    #sudo add-apt-repository ppa:pistache+team/unstable
+    #sudo apt update
+    #sudo apt install libpistache-dev
+    cd $SCRIPTS_DIR/../
+    git submodule init
+    git submodule update
+    cd $SCRIPTS_DIR/LowLevel/Common/pistache
+    mkdir -p build
+    cd build
+    cmake ..
+    make -j4
+
 }
 compile_all(){
     cd $SCRIPTS_DIR
