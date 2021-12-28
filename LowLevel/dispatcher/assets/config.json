@@ -1,24 +1,23 @@
 {
     "zmq_io":{
-        "port":5555,
+        "port":5552,
         "address":"tcp://127.0.0.1"
     },
-    "zmq_coms":{
+    "zmq_hb":{
         "port":5550,
         "address":"tcp://127.0.0.1"
     },
-
-   "http":{
-       "port":9080,
-       "ConfigAddr":"/config",
-       "CommandAddr":"/command",
-       "maxsize":1024,
-       "threads":2
-   },
-   "UUID":{
+   "zmq_un":{
         "port":5551,
         "address":"tcp://127.0.0.1"
    },
+   "http":{
+    "port":9080,
+    "ConfigAddr":"/config",
+    "CommandAddr":"/command",
+    "maxsize":1024,
+    "threads":2
+    },
    "key":{
     "secret":"random",
     "oauth":true

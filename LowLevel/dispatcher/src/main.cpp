@@ -33,7 +33,7 @@ using namespace std;
  * and will receive commands:
  * - Update-json: {"update":<file name>}
  * - Restart device: {"restart":<level of restart>}
- * - change mode of operation: {"change_mode":<number of mode of operation>}
+ * - change mode of operation: {"change_mode":<number of mode of operation>} wtf???
  * - 
  * - 
  * Extra features:

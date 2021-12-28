@@ -30,32 +30,38 @@ class dispatcher{
         
         std::atomic_bool stop;
 
+    //unique number context
+        zmq::context_t st_context{1};
+        zmq::socket_t st_socket{st_context, zmq::socket_type::rep};
+        std::thread *th_unuique_numb;
+        void th_unique_number();
+        std::string generate_unique_number(std::string l_devname);
+
+    //io (user actions) context
         zmq::context_t io_context{1};
         zmq::socket_t io_socket{io_context, zmq::socket_type::push};
+        std::thread *io;
         void th_io();
-
+    
+    //heartbeat context
         zmq::context_t coms_context{1};
         zmq::socket_t coms_socket{coms_context, zmq::socket_type::pub};
         std::thread *hb;
         void th_heart_beat();
 
+    //http connection (get and post for config and command) and socket (outside world)
         void th_http();
         std::thread *http_com;
+
         void PostCommand(const Rest::Request &req, Http::ResponseWriter writer);
         void GetConfigs(const Rest::Request &req, Http::ResponseWriter writer);
         void setupRoutes();
 
         std::map<std::string, std::string> devices;
         std::mutex lock_devices;
-        zmq::context_t st_context{1};
-        zmq::socket_t st_socket{st_context, zmq::socket_type::rep};
-        std::thread *numb;
-        void th_unique_number();
-        std::string generate_unique_number(std::string l_devname);
-
-       //std::vector<std::thread> vth;
-
+    
         void startup();
+
     public:
         void die();
         dispatcher();

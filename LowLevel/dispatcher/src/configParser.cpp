@@ -65,15 +65,15 @@ bool config::GetZMQcoms(coms_type *z)
     {
         std::cout<<"GetZMQcoms - ok"<<std::endl;
 
-        if(Doc.HasMember("zmq_coms"))
+        if(Doc.HasMember("zmq_hb"))
         {
             std::cout<<"GetZMQcoms - port"<<std::endl;
-            if(Doc["zmq_coms"].HasMember("port"))
+            if(Doc["zmq_hb"].HasMember("port"))
             {
                 std::cout<<"GetZMQcoms - getport"<<std::endl;
-                if(Doc["zmq_coms"]["port"].IsInt())
+                if(Doc["zmq_hb"]["port"].IsInt())
                 {
-                    coms.port = Doc["zmq_coms"]["port"].GetInt();
+                    coms.port = Doc["zmq_hb"]["port"].GetInt();
                 }
                 else
                 {
@@ -85,12 +85,12 @@ bool config::GetZMQcoms(coms_type *z)
                 ret = false;
             }            
             std::cout<<"GetZMQcoms - address"<<std::endl;
-            if(Doc["zmq_coms"].HasMember("address"))
+            if(Doc["zmq_hb"].HasMember("address"))
             {
                 std::cout<<"GetZMQcoms - get address"<<std::endl;
-                if(Doc["zmq_coms"]["address"].IsString())
+                if(Doc["zmq_hb"]["address"].IsString())
                 {
-                    coms.address = std::string(Doc["zmq_coms"]["address"].GetString());
+                    coms.address = std::string(Doc["zmq_hb"]["address"].GetString());
                 }
                 else
                 {
@@ -215,14 +215,14 @@ bool config::GetUUID_cfg(UUID_config *u)
     if(ret)
     {
         std::cout<<"GetUUID_cfg - UUID"<<std::endl;
-        if(Doc.HasMember("UUID"))
+        if(Doc.HasMember("zmq_un"))
         {
             std::cout<<"GetUUID_cfg - address"<<std::endl;
-            if(Doc["UUID"].HasMember("address"))
+            if(Doc["zmq_un"].HasMember("address"))
             {
-                if(Doc["UUID"]["address"].IsString())
+                if(Doc["zmq_un"]["address"].IsString())
                 {
-                    cfgUUID.address = Doc["UUID"]["address"].GetString();
+                    cfgUUID.address = Doc["zmq_un"]["address"].GetString();
                 }
                 else
                 {
@@ -234,11 +234,11 @@ bool config::GetUUID_cfg(UUID_config *u)
                 ret = false;
             }
             std::cout<<"GetUUID_cfg - port"<<std::endl;
-            if(Doc["UUID"].HasMember("port"))
+            if(Doc["zmq_un"].HasMember("port"))
             {
-                if(Doc["UUID"]["port"].IsInt())
+                if(Doc["zmq_un"]["port"].IsInt())
                 {
-                    cfgUUID.port = Doc["UUID"]["port"].GetInt();
+                    cfgUUID.port = Doc["zmq_un"]["port"].GetInt();
                 }
                 else
                 {

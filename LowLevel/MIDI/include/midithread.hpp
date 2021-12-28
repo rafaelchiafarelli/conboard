@@ -34,7 +34,6 @@
 #include <mutex>
 #include <oActions.hpp>
 
-#include "zmq_io.hpp"
 #include "zmq_coms.hpp"
 
 using namespace std;

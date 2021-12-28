@@ -96,7 +96,7 @@ MIDI::MIDI(string _jsonFileName,vector<raw_midi> hw_ports):modes(), header(), js
         out_thread = new thread(&MIDI::out_func,this);
 
 
-        com = new zmq_coms(json.DevName,"tcp://localhost:5550","tcp://localhost:5551" );
+        com = new zmq_coms(json.DevName,"tcp://localhost:5551","tcp://localhost:5552", "tcp://localhost:5550");
 
         thcoms = new thread(&MIDI::coms_handler,this);
     }
@@ -207,8 +207,9 @@ void MIDI::processInput(midiSignal midiS)
     snd_data.append("\": \"");
     snd_data.append(tmp.ar_str());
     snd_data.append("\"}");
-    //zmq::send_result_t res = io_socket.send(zmq::buffer(snd_data), zmq::send_flags::dontwait);
-
+    bool res = com->dispatch(snd_data);
+    if(!res)
+        std::cout<<"error"<<std::endl;
     if(outToFile)
     {
         outFileStream<<tmp<<endl;

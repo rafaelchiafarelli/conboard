@@ -48,26 +48,29 @@ dispatcher::dispatcher(std::string fileName,
 }
 
 dispatcher::~dispatcher(){
+    die();/* kill every thread */
 
+    delete hb;
+    delete th_unuique_numb;
+    delete http_com;
 }
 
 void dispatcher::die(){
     stop = true;
     hb->join();
-    numb->join();
+    th_unuique_numb->join();
     http_com->join();
 }
 
 void dispatcher::startup(){
-    //unique_number thread
+    //unique_th_unuique_number thread
     stop = false;
     std::cout<<"start up sequence heart_beat"<<std::endl;
     hb = new std::thread(&dispatcher::th_heart_beat, this);
-    std::cout<<"start up sequence unique number"<<std::endl;
-    numb = new std::thread(&dispatcher::th_unique_number,this);
+    std::cout<<"start up sequence unique th_unuique_number"<<std::endl;
+    th_unuique_numb = new std::thread(&dispatcher::th_unique_number,this);
     std::cout<<"start up sequence http"<<std::endl;
     http_com = new std::thread(&dispatcher::th_http,this);
-    
 }
 
 /**
