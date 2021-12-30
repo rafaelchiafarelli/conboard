@@ -86,20 +86,20 @@ install_python3(){
     sudo pip3.8 install --upgrade pip
     sudo pip3.8 install update pip
 }
-install_pistache(){
+#install_pistache(){
     #sudo add-apt-repository ppa:pistache+team/unstable
     #sudo apt update
     #sudo apt install libpistache-dev
-    cd $SCRIPTS_DIR/../
-    git submodule init
-    git submodule update
-    cd $SCRIPTS_DIR/../LowLevel/Common/pistache
-    mkdir -p build
-    cd build
-    cmake ..
-    make -j4
+#    cd $SCRIPTS_DIR/../
+#    git submodule init
+#    git submodule update
+#    cd $SCRIPTS_DIR/../LowLevel/Common/pistache
+#    mkdir -p build
+#    cd build
+#    cmake ..
+#    make -j4
 
-}
+#}
 install_crow(){
 
     cd $SCRIPTS_DIR/../
@@ -128,7 +128,7 @@ compile(){
             install_python3
             install_db
             install_node
-            install_pistache
+#            install_pistache
             install_crow
             compile_all
 			)   
