@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
         char name[256];
         gethostname(name, 256);
         crow::mustache::context x;
-        x["192.168.15.32"] = name;
+        x["servername"] = "192.168.15.32";
         std::cout<<"read some template:"<<name<<std::endl;
         auto page = crow::mustache::load("ws.html");
         return page.render(x);

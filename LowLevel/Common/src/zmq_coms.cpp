@@ -86,8 +86,10 @@ void zmq_coms::th_io()
             std::string resp = "";
             if(res_send)
             {
+                std::cout<<"IOwill wait"<<std::endl;
                 zmq::message_t recv_msg;
                 zmq::recv_result_t res  = io_socket.recv(recv_msg,zmq::recv_flags::none);
+
             }
         }
         else if (!io_connected)
@@ -229,6 +231,7 @@ std::vector<std::string> zmq_coms::heartbeat()
         if(send_res)
         {
             zmq::message_t reply;
+            std::cout<<"heartbeat"<<std::endl;
             zmq::recv_result_t res = hb_socket.recv( reply, zmq::recv_flags::none);
             if(res)
             {
