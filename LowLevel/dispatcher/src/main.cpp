@@ -172,6 +172,7 @@ int main(int argc, char *argv[])
       .websocket()
       .onopen([&](crow::websocket::connection& conn) {
           CROW_LOG_INFO << "new websocket connection from " << conn.get_remote_ip();
+          {
           std::lock_guard<std::mutex> _(mtx);
 
           users.insert(&conn);
@@ -179,6 +180,7 @@ int main(int argc, char *argv[])
           CROW_LOG_INFO <<"from dsp:"<<var.c_str();
 
           conn.send_text(var);
+          }
       })
       .onclose([&](crow::websocket::connection& conn, const std::string& reason) {
           CROW_LOG_INFO << "websocket connection closed: " << reason;
@@ -200,7 +202,7 @@ int main(int argc, char *argv[])
         gethostname(name, 256);
         crow::mustache::context x;
         x["servername"] = name;
-
+        std::cout<<"read some template"<<std::endl;
         auto page = crow::mustache::load("ws.html");
         return page.render(x);
     });
