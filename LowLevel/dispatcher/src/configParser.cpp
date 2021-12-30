@@ -10,7 +10,14 @@ config::config(std::string fileName)
 	res = Doc.Parse(data.c_str());
     
     std::cout<<"parse result:"<<res.IsError()<<std::endl;
-
+    io_parse = GetZMQio(&io);
+    coms_parse = GetZMQcoms(&coms);
+    http_parse = GetHTTP(&http);
+    cfgUUID_parse = GetUUID_cfg(&cfgUUID);
+    cfgKey_parse = GetKey_cfg(&cfgKey);
+    screen_parse = GetScreen(&screen);
+    vault_parse = GetVault(&vault);
+    shared_parse = GetShared(&shared);
 }
 
 bool config::GetZMQio(io_type *z)
@@ -50,7 +57,21 @@ bool config::GetZMQio(io_type *z)
             {
                 ret = false;
             }
-            
+            if(Doc["zmq_io"].HasMember("history"))
+            {
+                if(Doc["zmq_io"]["history"].IsInt())
+                {
+                    io.History = (unsigned int)Doc["zmq_io"]["history"].GetInt();
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else
+            {
+                ret = false;
+            }            
         }
     }
     *z = io;
@@ -153,12 +174,12 @@ bool config::GetHTTP(http_config *h)
             {
                 ret = false;
             }
-            std::cout<<"GetHTTP - command"<<std::endl;
-            if(Doc["http"].HasMember("CommandAddr"))
+            std::cout<<"GetHTTP - iocommand"<<std::endl;
+            if(Doc["http"].HasMember("IOCommandAddr"))
             {
-                if(Doc["http"]["CommandAddr"].IsString())
+                if(Doc["http"]["IOCommandAddr"].IsString())
                 {
-                    http.CommandAddr = Doc["http"]["CommandAddr"].GetString();
+                    http.IOCommandAddr = Doc["http"]["IOCommandAddr"].GetString();
                 }
                 else
                 {
@@ -168,7 +189,39 @@ bool config::GetHTTP(http_config *h)
             else
             {
                 ret = false;
-            }            
+            }    
+            std::cout<<"GetHTTP - sharedcommand"<<std::endl;
+            if(Doc["http"].HasMember("SharedCommandAddr"))
+            {
+                if(Doc["http"]["SharedCommandAddr"].IsString())
+                {
+                    http.SharedCommandAddr = Doc["http"]["SharedCommandAddr"].GetString();
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else
+            {
+                ret = false;
+            }     
+            std::cout<<"GetHTTP - vaultcommand"<<std::endl;
+            if(Doc["http"].HasMember("VaultCommandAddr"))
+            {
+                if(Doc["http"]["VaultCommandAddr"].IsString())
+                {
+                    http.VaultCommandAddr = Doc["http"]["VaultCommandAddr"].GetString();
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else
+            {
+                ret = false;
+            }                      
             std::cout<<"GetHTTP - threads"<<std::endl;
             if(Doc["http"].HasMember("threads"))
             {

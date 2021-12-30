@@ -1,7 +1,8 @@
 {
     "zmq_io":{
         "port":5552,
-        "address":"tcp://127.0.0.1"
+        "address":"tcp://127.0.0.1",
+        "history":100
     },
     "zmq_hb":{
         "port":5550,
@@ -14,7 +15,9 @@
    "http":{
     "port":9080,
     "ConfigAddr":"/config",
-    "CommandAddr":"/command",
+    "IOCommandAddr":"/iocommand",
+    "SharedCommandAddr":"/sharedcommand",
+    "VaultCommandAddr":"/vaultcommand",
     "maxsize":1024,
     "threads":2
     },

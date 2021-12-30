@@ -56,7 +56,7 @@ dispatcher::~dispatcher(){
     delete hb;
     delete th_unuique_numb;
     delete io;
-    delete http_com;
+    
 }
 
 void dispatcher::die(){
@@ -64,7 +64,6 @@ void dispatcher::die(){
     hb->join();
     th_unuique_numb->join();
     io->join();
-    http_com->join();
 }
 
 void dispatcher::startup(){
@@ -80,64 +79,21 @@ void dispatcher::startup(){
     std::cout<<"start up sequence io"<<std::endl;
     io = new std::thread(&dispatcher::th_io, this);
     
-    std::cout<<"start up sequence http"<<std::endl;
-    http_com = new std::thread(&dispatcher::th_http,this);
 }
 std::vector<std::string> dispatcher::explode(std::string const & s, char delim)
 {
     std::vector<std::string> result;
     std::istringstream iss(s);
-
     for (std::string token; std::getline(iss, token, delim); )
     {
         remove(token.begin(),token.end(),' ');
         result.push_back(std::move(token));
     }
-
     return result;
 }
 /**
  * This function will receive data from user actions and send it to the upper layers
- * 
- **/ 
-void dispatcher::th_io()
-{
-
-    io_type io_coms;
-    bool parser = disp.GetZMQio(&io_coms);
-    io_coms.address.append(":");
-    io_coms.address.append(std::to_string(io_coms.port));
-
-    std::cout<<"th_io adr:"<<io_coms.address.c_str()<<std::endl;
-    io_socket.bind(io_coms.address);
-    
-    zmq::message_t message;    
-    while(!stop)
-    {
-        // Waiting for the next request from the client
-        //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-        
-        zmq::recv_result_t res = io_socket.recv(message, zmq::recv_flags::dontwait);
-        if(res)
-        {
-            
-            std::string raw = message.to_string();
-            
-            std::vector<std::string> parsed_msg = explode(raw,';');
-            zmq::message_t reply(std::string("OK"));
-            zmq::send_result_t res = io_socket.send(reply,zmq::send_flags::dontwait);
-            if(!res)
-            {
-                std::cout<<"Error receiving"<<std::endl;
-            }
-            std::vector<std::string>::iterator msg_it = parsed_msg.begin();
-            
-            if(devices.count(*msg_it)>0)
-            {
-                last_ping[*msg_it] = std::chrono::system_clock::now();//update last ping
-
-            }
-            // get the client name and uuid.
+ *             // get the client name and uuid.
 
             // veryfies that it is in record 
 
@@ -147,8 +103,47 @@ void dispatcher::th_io()
 
             // put the new action into the actions list.
 
-            
-            
+ **/ 
+void dispatcher::th_io()
+{
+    io_type io_coms = disp.io;
+    io_coms.address.append(":");
+    io_coms.address.append(std::to_string(io_coms.port));
+    std::cout<<"th_io adr:"<<io_coms.address.c_str()<<std::endl;
+    io_socket.bind(io_coms.address);
+    zmq::message_t message;    
+    while(!stop)
+    {
+        zmq::recv_result_t res = io_socket.recv(message, zmq::recv_flags::dontwait);
+        if(res)
+        {
+            std::string raw = message.to_string();
+            std::vector<std::string> parsed_msg = explode(raw,';');
+            zmq::message_t reply(std::string("OK"));
+            zmq::send_result_t res = io_socket.send(reply,zmq::send_flags::dontwait);
+            if(!res)
+            {
+                std::cout<<"Error receiving"<<std::endl;
+            }
+            std::vector<std::string>::iterator msg_it = parsed_msg.begin();
+            if(devices.count(*msg_it)>0)
+            {
+                last_ping[*msg_it] = std::chrono::system_clock::now();//update last ping
+            }
+            //add to the last action -
+            {
+                std::lock_guard<std::mutex> locker(action_lock);
+                std::string Key = *msg_it;
+                msg_it++;
+                msg_it++;
+                std::string Value = *msg_it;
+                LastAction = std::pair<std::string,std::string>(Key, Value);
+                LastActions.insert(LastAction);
+                if(LastActions.size()> disp.io.History)
+                {
+                    LastActions.erase(LastActions.end());
+                }
+            }
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
@@ -161,9 +156,6 @@ void dispatcher::th_io()
  * heart beat thread
  *  Will wait for a device send a keep alive/pooling command and response with either 
  *  an "OK" response or a command.
- * 
- * 
- *             
  * // veryfies that it is in record 
  * // if not in record discard the event
  * // else update its last_ping status 
@@ -176,19 +168,16 @@ void dispatcher::th_heart_beat(){
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
     std::string resp;
-    coms_type coms;
-    bool parser = disp.GetZMQcoms(&coms);
+    coms_type coms = disp.coms;
+    
     coms.address.append(":");
     coms.address.append(std::to_string(coms.port));
 
-    std::cout<<"th_heart_beat adr:"<<coms.address.c_str()<<"-"<<parser<<std::endl;
+    std::cout<<"th_heart_beat adr:"<<coms.address.c_str()<<std::endl;
     coms_socket.bind(coms.address);
     zmq::message_t message;    
     while(!stop)
     {
-        // Waiting for the next request from the client
-        //  Block to current statement,  Until the message from the client is received,  Then save it to the message
-
         /*
         * msg structure is
         * USER SEND
@@ -223,40 +212,37 @@ void dispatcher::th_heart_beat(){
         */
 
         zmq::recv_result_t res = coms_socket.recv(message, zmq::recv_flags::dontwait);
-
         if (res)
         {
             resp.clear();
             // get the client name and uuid.
             std::string raw = message.to_string();
             std::vector<std::string> parsed_msg = explode(raw,';');
-
             if(parsed_msg.size()>1)
             {
                 std::vector<std::string>::iterator msg_it = parsed_msg.begin(); //adjust to get the uuid
-                
                 if(devices.count(*msg_it)>0) //is the uuid present
                 {
-
                     last_ping[*msg_it] = std::chrono::system_clock::now();//update last ping
                     resp = *msg_it;
-                    //mutex logic to check the commands queue
-                    if(commands.count(*msg_it)>0) //is there a command 
                     {
-                        std::string cmd = commands[*msg_it]; 
-                        commands.erase(*msg_it); //clear the command
-                        resp.append("; ");
-                        resp.append(commands[*msg_it]);
-                        resp.append(";");
-                    }
-                    else
-                    {
-                        resp.append("; OK;");
+                        std::lock_guard<std::mutex> locker(command_lock);
+                        if(commands.count(*msg_it)>0) //is there a command 
+                        {
+                            std::string cmd = commands[*msg_it]; 
+                            commands.erase(*msg_it); //clear the command
+                            resp.append("; ");
+                            resp.append(commands[*msg_it]);
+                            resp.append(";");
+                        }
+                        else
+                        {
+                            resp.append("; OK;");
+                        }
                     }
                 }                
             }
             zmq::message_t reply(resp);
-            
             zmq::send_result_t s_res = coms_socket.send(reply,zmq::send_flags::none);
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -276,33 +262,22 @@ void dispatcher::th_unique_number()
 {
     // thread that is waiting for a connection and receives a solicitation. 
         //a solicitation is a device name that is going 
+    UUID_config uuid = disp.cfgUUID;
     
-    UUID_config uuid;
-    disp.GetUUID_cfg(&uuid);
-
-    //char addr[100];
-    //memset(addr,0,100);
-    //sprintf(addr,"%s:%d",uuid.address.c_str(), uuid.port);
     uuid.address.append(":");
     uuid.address.append(std::to_string(uuid.port));
     std::cout<<"unique number adr:"<<uuid.address.c_str()<<std::endl;
-    
     un_socket.bind(uuid.address);
     char data[1024];
     memset(data,1024,0);
     zmq::message_t message((const void *)data,1024);
     while(!stop)
     {
-        // Waiting for the next request from the client
-        //  Block to current statement,  Until the message from the client is received,  Then save it to the message
         zmq::recv_result_t res = un_socket.recv(message,zmq::recv_flags::dontwait);
         if(res)
         {
-            // do some work
             std::string l_devname((char *)message.data());
             std::string l_unique_number = generate_unique_number(l_devname);
-            //  Send information to the client[answer]
-            
             std::string resp = "";
             resp.append(l_unique_number);            
             resp.append("; ");
@@ -311,9 +286,7 @@ void dispatcher::th_unique_number()
             std::cout<<"th_unique_number-"<<resp<<std::endl;
             zmq::message_t reply(resp);
             zmq::send_result_t s_res = un_socket.send(reply,zmq::send_flags::none);
-
         }
-    
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     std::cout<<"th_unique_number close"<<std::endl;
@@ -338,74 +311,86 @@ std::string dispatcher::generate_unique_number(std::string l_devname)
     return l_unique_number;
 }
 
-void dispatcher::th_http()
-{
-    Pistache::Address Addr;
-    Http::Endpoint *httpEndpoint;
-    httpEndpoint = new Http::Endpoint();
-    Rest::Router router;
-    std::cout<<"http_start"<<std::endl;
 
-    http_config conf;
-    if(disp.GetHTTP(&conf))
-    {
-        
-        auto opts = Http::Endpoint::options()
-                        .threads(conf.threads)
-                        .maxRequestSize(conf.maxsize)
-                        .flags(Pistache::Tcp::Options::ReuseAddr | Pistache::Tcp::Options::FastOpen);
-        
-        httpEndpoint->init(opts);
-
-        using namespace Rest;
-        
-        Routes::Post(router, conf.CommandAddr, Routes::bind(&dispatcher::PostCommand, this));
-        Routes::Get(router, conf.ConfigAddr, Routes::bind(&dispatcher::GetConfigs, this));
-          
-        httpEndpoint->setHandler(router.handler());
-        httpEndpoint->serveThreaded();
-        
-        while(!stop)
-        {
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        }
-        std::cout<<"http_start close"<<std::endl;
-        httpEndpoint->shutdown();
-    }
-    else
-    {
-        std::cout<<"http_start ERROR"<<std::endl;
-        while(!stop)
-        {
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-        }
-    }
-}
-
-void dispatcher::PostCommand(const Rest::Request &req, Http::ResponseWriter writer)
-{
+bool dispatcher::PostSharedCommand(std::string UUID, std::vector<std::string> params)
+{ 
     std::cout<<"PostCommand"<<std::endl;
-    if (req.method() == Http::Method::Get)
-    {
-        writer.send(Http::Code::Not_Found);    
-    }
-    else
-    {
-        writer.send(Http::Code::Bad_Request);
-    }
+    return true;
 }
 
-void dispatcher::GetConfigs(const Rest::Request &req, Http::ResponseWriter writer)
+bool dispatcher::PostVaultCommand(std::string UUID, std::vector<std::string> params)
+{ 
+    std::cout<<"PostCommand"<<std::endl;
+    return true;
+}
+
+/**
+ * PostIOCommand will put the due command into the command list. 
+ * When the device "heartbeats", it will receive the command.
+ * 
+ **/ 
+bool dispatcher::PostIOCommand(std::string UUID, std::vector<std::string> params)
+{ 
+    bool ret = false;
+    {
+        std::lock_guard<std::mutex> locker(command_lock);
+        if(devices.count(UUID)>0)
+        {
+            std::string value="";
+            for(std::vector<std::string>::iterator it = params.begin();
+                it!=params.end();
+                it++)
+            {
+                value.append(*it);
+                std::cout<<"this it is:"<<(*it).c_str()<<std::endl;
+                value.append(";");
+            }
+            std::pair<std::string, std::string> p(UUID,value);
+            commands.insert(p);
+            ret = true;
+        }
+        else
+        {
+            ret = false;
+        }
+    }
+    return ret;
+}
+
+std::string dispatcher::GetConfigs()
 {
     std::cout<<"GetConfigs"<<std::endl;
-    if (req.method() == Http::Method::Get)
-    {
-        writer.send(Http::Code::Ok, "The list of all configurations");    
-    }
-    else
-    {
-        writer.send(Http::Code::Bad_Request);
-    }
+    return disp.GetConfig();
 }
 
+std::string dispatcher::GetLastActions()
+{
+    std::string ret = "UUID,UserAction\r\n";
+    {
+        std::lock_guard<std::mutex> locker(action_lock);
+        for(std::map<std::string,std::string>::iterator LAct = LastActions.begin();
+            LAct!=LastActions.end();
+            LAct++)
+        {
+            ret.append((*(LAct)).first);
+            ret.append(",");
+            ret.append((*(LAct)).second);
+            ret.append("\r\n");
+        }
+    }
+    return ret;
+}
+
+std::string dispatcher::GetLastAction()
+{
+    std::string ret = "";
+    {
+        std::lock_guard<std::mutex> locker(action_lock);
+        ret.append(LastAction.first);
+        ret.append(",");
+        ret.append(LastAction.second);
+        ret.append("\r\n");
+    }
+    return ret;
+}
 

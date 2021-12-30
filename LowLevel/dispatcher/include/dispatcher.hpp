@@ -1,5 +1,4 @@
-#ifndef DISPATCHER_H
-#define DISPATCHER_H
+#pragma once
 #include <iostream>
 #include <atomic>
 #include <thread>
@@ -11,15 +10,6 @@
 #include "configParser.hpp"
 #include "uuid/uuid.h"
 #include <mutex>
-#include <pistache/description.h>
-#include <pistache/endpoint.h>
-#include <pistache/serializer/rapidjson.h>
-#include <pistache/http.h>
-
-
-
-using namespace Pistache;
-
 
 
 
@@ -38,6 +28,9 @@ class dispatcher{
         std::string generate_unique_number(std::string l_devname);
 
     //io (user actions) context
+        std::map<std::string, std::string> LastActions;
+        std::pair<std::string, std::string> LastAction;
+        std::mutex action_lock;
         zmq::context_t io_context{1};
         zmq::socket_t io_socket{io_context, zmq::socket_type::rep};
         std::thread *io;
@@ -49,26 +42,26 @@ class dispatcher{
         std::thread *hb;
         void th_heart_beat();
 
-    //http connection (get and post for config and command) and socket (outside world)
-        void th_http();
-        std::thread *http_com;
-
-        void PostCommand(const Rest::Request &req, Http::ResponseWriter writer);
-        void GetConfigs(const Rest::Request &req, Http::ResponseWriter writer);
-        void setupRoutes();
         std::vector<std::string> explode(std::string const & s, char delim);
         std::map<std::string, std::string> devices; //<unique_number, devname>
         std::map<std::string, std::string> commands; //<unique_number, command>
         std::map<std::string, std::chrono::time_point<std::chrono::system_clock>>  last_ping;//<unique_number, last_ping_time_point>
-        std::mutex lock_devices;
-    
+        std::mutex lock_devices,command_lock;
         void startup();
 
     public:
+        std::string GetConfigs();
+        bool PostConfigs(std::string cfg, std::string value);        
+        std::string GetLastActions();
+        std::string GetLastAction();
+        bool PostSharedCommand(std::string UUID, std::vector<std::string> params);
+        bool PostVaultCommand(std::string UUID, std::vector<std::string> params);
+        bool PostIOCommand(std::string UUID, std::vector<std::string> params);
+        std::string GetConfigAddr(){return disp.http.ConfigAddr;};
+        std::string GetIOCommandAddr(){return disp.http.IOCommandAddr;};
+                
         void die();
         dispatcher();
         dispatcher(std::string fileName, std::atomic_bool *stop);
         ~dispatcher();
 };
-
-#endif 

@@ -1,6 +1,4 @@
-#ifndef CONFIGPARSER_H
-#define CONFIGPARSER_H
-
+#pragma once
 #include "stdio.h"
 #include <stdio.h>
 #include <string.h>
@@ -35,6 +33,7 @@ class io_type{
   public:
     std::string address = "";
     int port = -1;
+    unsigned int History;
 };
 
 class http_config{
@@ -42,7 +41,9 @@ class http_config{
     int threads = -1;
     int maxsize = -1;
     std::string ConfigAddr = "/config";
-    std::string CommandAddr = "/command";
+    std::string IOCommandAddr = "/iocommand";
+    std::string VaultCommandAddr = "/vaultcommand";
+    std::string SharedCommandAddr = "/sharedcommand";
     int port = 9999;
 };
 class UUID_config{
@@ -88,16 +89,7 @@ class config{
       std::string data;
       ParseResult res;
       Document Doc;
-      io_type  io;
-      coms_type coms;
-      http_config http;
-      UUID_config cfgUUID;
-      key_config cfgKey;
-      screen_config screen;
-      vault_config vault;
-      shared_config shared;
 
-    public:
       bool GetZMQio(io_type *z);
       bool GetZMQcoms(coms_type *z);
       bool GetHTTP(http_config *h);
@@ -106,10 +98,26 @@ class config{
       bool GetScreen(screen_config *s);
       bool GetVault(vault_config *v);
       bool GetShared(shared_config *sh);
+    public:
+      io_type  io;
+      bool io_parse;
+      coms_type coms;
+      bool coms_parse;
+      http_config http;
+      bool http_parse;
+      UUID_config cfgUUID;
+      bool cfgUUID_parse;
+      key_config cfgKey;
+      bool cfgKey_parse;
+      screen_config screen;
+      bool screen_parse;
+      vault_config vault;
+      bool vault_parse;
+      shared_config shared;
+      bool shared_parse;
 
+      std::string GetConfig(){return data;};
       config(std::string fileName);
       
       ~config(){};
 };
-
-#endif
