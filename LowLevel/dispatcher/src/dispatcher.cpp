@@ -138,6 +138,7 @@ void dispatcher::th_io()
                 msg_it++;
                 std::string Value = *msg_it;
                 LastAction = std::pair<std::string,std::string>(Key, Value);
+                uptodate = true;
                 LastActions.insert(LastAction);
                 if(LastActions.size()> disp.io.History)
                 {
@@ -386,10 +387,14 @@ std::string dispatcher::GetLastAction()
     std::string ret = "";
     {
         std::lock_guard<std::mutex> locker(action_lock);
-        ret.append(LastAction.first);
-        ret.append(",");
-        ret.append(LastAction.second);
-        ret.append("\r\n");
+        if(uptodate)
+        {
+            uptodate = false;
+            ret.append(LastAction.first);
+            ret.append(",");
+            ret.append(LastAction.second);
+            ret.append("\r\n");
+        }
     }
     return ret;
 }
