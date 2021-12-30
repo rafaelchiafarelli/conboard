@@ -29,6 +29,7 @@ class dispatcher{
 
     //io (user actions) context
         std::map<std::string, std::string> LastActions;
+        bool uptodate = false;
         std::pair<std::string, std::string> LastAction;
         std::mutex action_lock;
         zmq::context_t io_context{1};

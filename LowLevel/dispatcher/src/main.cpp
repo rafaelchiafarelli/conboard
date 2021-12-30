@@ -41,11 +41,17 @@ void user_handler(dispatcher *dsp,atomic_bool *lst){
     while(!(*lstop))
     {
         {
-        std::lock_guard<std::mutex> _(mtx);
-        for (auto u : users)
-            u->send_text(dsp->GetConfigs());
+            std::lock_guard<std::mutex> _(mtx);
+            std::string LastAction = dsp->GetLastAction();
+            if(!LastAction.empty())
+            {
+                for (auto u : users)
+                {
+                    u->send_text(LastAction);
+                }
+            }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     std::cout<<"user_handler thread close"<<std::endl;
@@ -202,7 +208,7 @@ int main(int argc, char *argv[])
         gethostname(name, 256);
         crow::mustache::context x;
         x["servername"] = "192.168.15.32";
-        std::cout<<"read some template:"<<name<<std::endl;
+        std::cout<<"MAKE THIS IP ADDRESS DYNAMIC read some template:"<<name<<std::endl;
         auto page = crow::mustache::load("ws.html");
         return page.render(x);
     });
