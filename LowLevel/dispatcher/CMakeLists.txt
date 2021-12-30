@@ -17,6 +17,7 @@ target_link_libraries(dispatcher cppzmq)
 target_link_libraries(dispatcher ${CMAKE_SOURCE_DIR}/../Common/build/libcommon.so)
 target_link_libraries(dispatcher uuid)
 
+target_link_libraries(dispatcher boost_system)
 target_link_libraries(dispatcher stdc++fs)
 target_link_libraries(dispatcher pthread)
 set_target_properties(dispatcher PROPERTIES
