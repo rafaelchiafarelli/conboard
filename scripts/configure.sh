@@ -105,7 +105,7 @@ install_crow(){
     cd $SCRIPTS_DIR/../
     git submodule init
     git submodule update
-    sudo apt install libboost-dev libboost-date-time-dev libboost-system-dev
+    sudo apt install -y libboost-dev libboost-date-time-dev libboost-system-dev
     cp $SCRIPTS_DIR/assets/CMakeLists.txt $SCRIPTS_DIR/../LowLevel/Common/Crow/
     cd $SCRIPTS_DIR/../LowLevel/Common/Crow
     mkdir -p build
