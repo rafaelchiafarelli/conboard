@@ -393,7 +393,7 @@ std::string dispatcher::GetLastAction()
             ret.append(LastAction.first);
             ret.append(",");
             ret.append(LastAction.second);
-            ret.append("\r\n");
+
         }
     }
     return ret;

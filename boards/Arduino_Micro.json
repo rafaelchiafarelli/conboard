@@ -92,10 +92,7 @@
                             "b2":64                            
                             },
                     "output":[
-                            { "type":"keyboard" , "data":"letter_r" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"}
+                            { "type":"keyboard" , "data":"sudo systemctl restart " , "delay":0 , "keyType":"text" , "hold":"not_hold"}
                             ]
                     },
                     {
@@ -119,11 +116,49 @@
                             "delay":50
                             },
                     "output":[
+                            { "type":"keyboard" , "data":"sudo journalctl -u  -f" , "delay":0 , "keyType":"text" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"lArrow" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"lArrow" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"lArrow" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"}
+                            ]
+                    },
+                    {
+                    "input":{
+                            "type":"midi", 
+                            "b0":144,
+                            "b1":4,
+                            "b2":64,
+                            "delay":50
+                            },
+                    "output":[
+                            { "type":"keyboard" , "data":"cd /conboard/assets" , "delay":0 , "keyType":"text" , "hold":"not_hold"}                            
+                            ]
+                    },
+                    {
+                    "input":{
+                            "type":"midi", 
+                            "b0":144,
+                            "b1":5,
+                            "b2":64,
+                            "delay":50
+                            },
+                    "output":[
+                        
                             
-                            { "type":"keyboard" , "data":"lShift letter_r" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"lShift letter_a" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_f" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"},
-                            { "type":"keyboard" , "data":"letter_a" , "delay":0 , "keyType":"oneKey" , "hold":"not_hold"}
+                            { "type":"keyboard" , "data":"{spor} lControl letter_u" , "delay":0 , "keyType":"hotKey" , "hold":"not_hold"},
+                            { "type":"keyboard" , "data":"sudo systemctl status " , "delay":0 , "keyType":"text" , "hold":"not_hold"}
+                            ]
+                    },
+                    {
+                    "input":{
+                            "type":"midi", 
+                            "b0":144,
+                            "b1":6,
+                            "b2":64,
+                            "delay":50
+                            },
+                    "output":[
+                            { "type":"keyboard" , "data":"This is a messagem to you! " , "delay":0 , "keyType":"text" , "hold":"not_hold"}
                             ]
                     }
                 ]
