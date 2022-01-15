@@ -313,18 +313,6 @@ std::string dispatcher::generate_unique_number(std::string l_devname)
 }
 
 
-bool dispatcher::PostSharedCommand(std::string UUID, std::vector<std::string> params)
-{ 
-    std::cout<<"PostCommand"<<std::endl;
-    return true;
-}
-
-bool dispatcher::PostVaultCommand(std::string UUID, std::vector<std::string> params)
-{ 
-    std::cout<<"PostCommand"<<std::endl;
-    return true;
-}
-
 /**
  * PostIOCommand will put the due command into the command list. 
  * When the device "heartbeats", it will receive the command.
@@ -357,10 +345,36 @@ bool dispatcher::PostIOCommand(std::string UUID, std::vector<std::string> params
     }
     return ret;
 }
-
+bool dispatcher::PostScreenCommand(std::string UUID, std::vector<std::string> params)
+{
+    bool ret = false;
+    {
+        std::lock_guard<std::mutex> locker(command_lock);
+        if(devices.count(UUID)>0)
+        {
+            std::string value="";
+            for(std::vector<std::string>::iterator it = params.begin();
+                it!=params.end();
+                it++)
+            {
+                value.append(*it);
+                std::cout<<"this it is:"<<(*it).c_str()<<std::endl;
+                value.append(";");
+            }
+            std::pair<std::string, std::string> p(UUID,value);
+            commands.insert(p);
+            ret = true;
+        }
+        else
+        {
+            ret = false;
+        }
+    }
+    return ret;
+}
 std::string dispatcher::GetConfigs()
 {
-    std::cout<<"GetConfigs"<<std::endl;
+    
     return disp.GetConfig();
 }
 

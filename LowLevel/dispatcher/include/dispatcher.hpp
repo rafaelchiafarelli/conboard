@@ -55,12 +55,10 @@ class dispatcher{
         bool PostConfigs(std::string cfg, std::string value);        
         std::string GetLastActions();
         std::string GetLastAction();
-        bool PostSharedCommand(std::string UUID, std::vector<std::string> params);
-        bool PostVaultCommand(std::string UUID, std::vector<std::string> params);
         bool PostIOCommand(std::string UUID, std::vector<std::string> params);
         std::string GetConfigAddr(){return disp.http.ConfigAddr;};
         std::string GetIOCommandAddr(){return disp.http.IOCommandAddr;};
-                
+        bool PostScreenCommand(std::string UUID, std::vector<std::string> params);                
         void die();
         dispatcher();
         dispatcher(std::string fileName, std::atomic_bool *stop);

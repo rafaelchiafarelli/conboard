@@ -42,8 +42,7 @@ class http_config{
     int maxsize = -1;
     std::string ConfigAddr = "/config";
     std::string IOCommandAddr = "/iocommand";
-    std::string VaultCommandAddr = "/vaultcommand";
-    std::string SharedCommandAddr = "/sharedcommand";
+
     int port = 9999;
 };
 class UUID_config{
@@ -69,19 +68,6 @@ class screen_config{
     int colors = -1;
 
 };
-class vault_config{
-  public:
-    std::string path = "";
-    std::string encription = "";
-    std::string key_gen = "";
-    std::string verify = "";
-};
-class shared_config{
-  public:
-    std::string path = "";
-    std::string mount = "";
-    std::string m_flags = "";
-};
 
 
 class config{
@@ -96,8 +82,7 @@ class config{
       bool GetUUID_cfg(UUID_config *u);
       bool GetKey_cfg(key_config *k);
       bool GetScreen(screen_config *s);
-      bool GetVault(vault_config *v);
-      bool GetShared(shared_config *sh);
+
     public:
       io_type  io;
       bool io_parse;
@@ -111,10 +96,8 @@ class config{
       bool cfgKey_parse;
       screen_config screen;
       bool screen_parse;
-      vault_config vault;
-      bool vault_parse;
-      shared_config shared;
-      bool shared_parse;
+
+
 
       std::string GetConfig(){return data;};
       config(std::string fileName);
