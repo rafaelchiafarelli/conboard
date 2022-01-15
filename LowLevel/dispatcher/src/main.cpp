@@ -130,7 +130,8 @@ int main(int argc, char *argv[])
         return crow::response(os.str());
     });
 
-    CROW_ROUTE(app, "/sharedcommand")
+
+    CROW_ROUTE(app, "/screencommand")
         .methods("POST"_method)
 
     ([&](const crow::request& req){
@@ -145,29 +146,7 @@ int main(int argc, char *argv[])
             std::vector<std::string> params(x["params"].begin(),x["params"].end());
             std::string uuid = std::string(x["UUID"]);
 
-            ret = dsp.PostSharedCommand(uuid,params);
-        }
-        std::ostringstream os;
-        os << "{\"result\":" <<ret<<"}";
-        return crow::response(os.str());
-    });
-
-    CROW_ROUTE(app, "/vaultcommand")
-        .methods("POST"_method)
-
-    ([&](const crow::request& req){
-        auto x = crow::json::load(req.body);
-        bool ret = false;
-        if (!x)
-        {
-            return crow::response(400);
-        }
-        if(x["UUID"] && x["params"])
-        {
-            std::vector<std::string> params(x["params"].begin(),x["params"].end());
-            std::string uuid = std::string(x["UUID"]);
-
-            ret = dsp.PostVaultCommand(uuid,params);
+            ret = dsp.PostScreenCommand(uuid,params);
         }
         std::ostringstream os;
         os << "{\"result\":" <<ret<<"}";
@@ -201,14 +180,13 @@ int main(int argc, char *argv[])
               else
                   u->send_text(data);
       });
-
+// this path will not be used in the future
     CROW_ROUTE(app, "/")
     ([] {
         char name[256];
         gethostname(name, 256);
         crow::mustache::context x;
         x["servername"] = "localhost";
-        std::cout<<"MAKE THIS IP ADDRESS DYNAMIC read some template:"<<name<<std::endl;
         auto page = crow::mustache::load("ws.html");
         return page.render(x);
     });
