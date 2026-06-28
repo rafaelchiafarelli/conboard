@@ -46,4 +46,7 @@ scripts/cppzmq/
 scripts/install
 UDC
 
+# cross-build output (docker/Dockerfile + build-cross.sh)
+dist/
+
 LowLevel/Common/Crow/CMakeLists.txt
