@@ -1,7 +1,56 @@
 # conboard
-Control Surface based on the Orange pi zero
+Control Surface based on the Orange Pi.
 Most of the usb-otg ware used from https://github.com/dpavlin/usb-otg
 It is a good project and you definetly should check it out.
+
+## Boards
+
+conboard runs on Linux SBCs with working USB-OTG / USB-gadget support. Current
+target is the **Orange Pi Zero 3** (Allwinner H618, arm64); the original Orange
+Pi Zero (H3, armhf) is also supported. Supported build targets are listed in
+[`docker/boards.conf`](docker/boards.conf) — adding a board is a one-line edit.
+
+## Build (cross-compile — no local toolchain needed)
+
+Requires only Docker with `buildx`. The build runs the C++ (`LowLevel`) for the
+target architecture inside an emulated container, so you don't install a cross
+toolchain.
+
+```bash
+./build-cross.sh list      # show supported boards
+./build-cross.sh zero3     # build one board  -> dist/zero3/
+./build-cross.sh           # build all boards
+```
+
+Each `dist/<board>/` holds the installable `conboard-<board>.tar.gz`, a
+`BOARD.txt` (which board it's for), a `HOW-TO-INSTALL.txt` (the on-device
+commands), and a `MANIFEST.txt`. Full walkthrough: [docker/README.md](docker/README.md).
+
+## Test
+
+Unit tests are pure-logic with synthetic inputs (no hardware):
+
+```bash
+./run-tests.sh                 # all, natively
+./run-tests.sh joystick        # one suite
+./run-tests.sh --qemu zero3    # same tests on the target arch, under emulation
+```
+
+See [tests/README.md](tests/README.md).
+
+## Install on the board
+
+Copy `dist/<board>/conboard-<board>.tar.gz` to the device, unpack, and run
+`sudo ./install-on-device.sh` (no compilation on the board). The exact commands
+are in that board's `HOW-TO-INSTALL.txt`.
+
+## Diagnosing attached devices
+
+`tools/devprobe` classifies attached USB/input devices from Linux kernel ABIs
+(not VID/PID) — handy when bringing up a new controller. See
+[tools/devprobe/README.md](tools/devprobe/README.md).
+
+> Direction & scope notes live in [NOTES.md](NOTES.md).
 
 # What is done?
 
