@@ -52,14 +52,6 @@ rsync -a --delete \
     --exclude install-on-device.sh --exclude MANIFEST.txt \
     "$HERE"/ /conboard/
 
-echo "== registering libcommon.so with the dynamic linker =="
-# The conboard binaries link libcommon.so (which lives next to them under
-# LowLevel/Common/build). The binaries also carry an $ORIGIN-relative RUNPATH,
-# but install it into a standard lib dir + ldconfig as well, so resolution never
-# depends on RUNPATH or on how/where the binary is launched.
-install -m 644 /conboard/LowLevel/Common/build/libcommon.so /usr/local/lib/
-ldconfig
-
 echo "== installing systemd units =="
 install -m 644 /conboard/LowLevel/assets/usb-otg.service            /etc/systemd/system/
 install -m 644 /conboard/LowLevel/assets/launcher.service           /etc/systemd/system/
