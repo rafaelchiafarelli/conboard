@@ -70,12 +70,21 @@ echo "== installing udev rule + event handler =="
 install -m 644 /conboard/LowLevel/assets/100-usb.rules /etc/udev/rules.d/
 udevadm control --reload-rules && udevadm trigger || true
 
-echo "== enabling + starting services =="
-systemctl enable --now usb-otg.service
-systemctl enable --now dispatcher.service
-systemctl enable --now launcher.service
+echo "== enabling services (start on boot) =="
+systemctl enable usb-otg.service dispatcher.service launcher.service
+
+# Start now — but NOT with `enable --now`. launcher.service is a Type=oneshot
+# that scans devices and can call `systemctl restart` for a matched device;
+# starting it inside the same systemd transaction that `--now` opens deadlocks
+# the two jobs (the installer hangs). Start as plain, separate jobs instead.
+echo "== starting services =="
+systemctl start usb-otg.service       # brings up the USB gadget now
+systemctl start dispatcher.service
+# launcher is a scan-and-exit oneshot; let boot / udev events run it so its
+# internal `systemctl restart` calls never nest inside its own start job.
 
 echo
-echo "Done. Quick checks:"
+echo "Done. The launcher runs at boot and on device hotplug (udev)."
+echo "Quick checks:"
 echo "  ls /sys/class/udc            # must be non-empty for USB gadget to bind"
 echo "  systemctl status usb-otg.service dispatcher.service launcher.service"
