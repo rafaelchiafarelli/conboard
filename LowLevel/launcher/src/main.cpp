@@ -7,6 +7,7 @@
 #include "keyParser.hpp"
 #include "actions.h"
 #include "deviceDetect.hpp"
+#include "launcherMatch.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -380,40 +381,10 @@ void create_json(char *devInfo, char *folder)
 		local_json = new jsonParser(complete_file_name,&Mode,&h);
 		if(local_json->GetLoaded())
 		{
+			// All identifier tags must be present in the device's udev vars.
+			// (Matching logic lives in the shared, unit-tested launchmatch module.)
 			std::vector<KeyValue> tags = local_json->GetTags();
-			
-			if(tags.size() == 0)
-			{
-				hasHandler = false;
-			}
-			else
-			{
-			for(vector<KeyValue>::iterator header_it = tags.begin();
-				header_it != tags.end();
-				header_it++)
-				{ //check if all the keys and values from json are present in devInfo and equal!
-				for(vector<KeyValue>::iterator info_it = info_from_dev.begin();
-					info_it != info_from_dev.end();
-					info_it++)
-					{
-						if((info_it->key.compare(header_it->key)) || 
-							(info_it->value.compare(header_it->value)))
-						{
-							hasHandler = false;
-						}
-						else
-						{
-							hasHandler = true;
-							break;
-						}
-					}	
-					if(!hasHandler)
-					{
-						std::cout<<"a key was not found:"<<header_it->key.c_str()<<std::endl;
-						break;
-					}
-				}
-			}
+			hasHandler = launchmatch::deviceMatchesTags(info_from_dev, tags);
 			bool has_service = false;
 			if(hasHandler && local_json->GetHasExec())
 			{
