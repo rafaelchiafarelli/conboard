@@ -68,6 +68,10 @@ systemctl daemon-reload
 
 echo "== installing udev rule + event handler =="
 install -m 644 /conboard/LowLevel/assets/100-usb.rules /etc/udev/rules.d/
+# 100-usb.rules runs /conboard/event_handler.sh on hotplug; it must live at that
+# exact path (the rsync only puts it under LowLevel/assets/). Without this, USB
+# add/remove events never reach the launcher and no device service is created.
+install -m 755 /conboard/LowLevel/assets/event_handler.sh /conboard/event_handler.sh
 udevadm control --reload-rules && udevadm trigger || true
 
 echo "== enabling services (start on boot) =="
