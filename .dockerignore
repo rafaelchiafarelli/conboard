@@ -1,0 +1,13 @@
+# Keep the build context small and the in-container build fresh.
+# NB: LowLevel/Common/Crow (the Crow submodule) is intentionally NOT ignored.
+.git
+dist/
+**/build/
+backend/venv/
+frontend/venv/
+frontend/dash/node_modules/
+**/__pycache__/
+*.pyc
+scripts/cppzmq/
+scripts/Python-3.8.0/
+scripts/Python-3.8.0.tgz
