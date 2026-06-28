@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-#
 # Cross-compile conboard's C++ (LowLevel) for arm64 (Orange Pi Zero 3 / H618)
 # AND armhf (Orange Pi Zero / H3) from this single Dockerfile.
 #
@@ -27,13 +25,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Toolchain + every conboard build/runtime dependency (cf. scripts/configure.sh):
 #   libzmq3-dev          -> libzmq, the ZeroMQ C lib that cppzmq wraps
 #   libasound2-dev       -> -lasound  (MIDI / launcher / keyboard / mouse / joystick)
-#   libusb-dev           -> -lusb     (launcher; old libusb-0.1 API via <usb.h>)
 #   uuid-dev             -> -luuid    (dispatcher)
 #   libboost-{system,date-time}-dev -> Crow (HTTP in dispatcher) needs Boost
 #   file                 -> manifest only (records ELF arch per binary)
+# (libusb dropped: device detection now uses kernel sysfs/evdev, not libusb.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake git pkg-config ca-certificates file \
-        libzmq3-dev libasound2-dev libusb-dev uuid-dev \
+        libzmq3-dev libasound2-dev uuid-dev \
         libboost-dev libboost-system-dev libboost-date-time-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -67,6 +65,7 @@ RUN if [ -f LowLevel/Common/Crow/include/crow.h ]; then \
 #   common -> joystick -> keyboard -> midi -> mouse -> launcher -> dispatcher
 RUN chmod +x LowLevel/scripts/compiler.sh \
              LowLevel/*/scripts/*.sh \
+             tools/*/scripts/*.sh \
              docker/package.sh \
     && LowLevel/scripts/compiler.sh
 

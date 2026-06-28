@@ -39,6 +39,9 @@ copy 755 LowLevel/Mouse/build/conMouse
 copy 755 LowLevel/KeyBoard/build/conKeyB
 copy 755 LowLevel/Joystick/build/conJoyS
 
+# diagnostic tool (run on the board to classify attached devices)
+copy 755 tools/devprobe/build/devprobe
+
 # --- systemd units -----------------------------------------------------------
 copy 644 LowLevel/assets/usb-otg.service
 copy 644 LowLevel/assets/launcher.service
@@ -84,6 +87,9 @@ conboard — install on: ${BOARD_DESC} (${ARCH})
      cat /sys/class/udc/*/state          # want: configured (when plugged into a host PC)
      systemctl status usb-otg.service dispatcher.service launcher.service
 
+4. Classify attached devices (diagnostic):
+     sudo /conboard/tools/devprobe/build/devprobe
+
 USB-OTG status for this board: ${BOARD_OTG}
 EOF
 
@@ -102,7 +108,8 @@ MANIFEST="$STAGE/MANIFEST.txt"
         LowLevel/MIDI/build/conMIDI \
         LowLevel/Mouse/build/conMouse \
         LowLevel/KeyBoard/build/conKeyB \
-        LowLevel/Joystick/build/conJoyS ; do
+        LowLevel/Joystick/build/conJoyS \
+        tools/devprobe/build/devprobe ; do
         file -b "$STAGE/$rel" | sed "s|^|$rel: |"
     done
     echo
