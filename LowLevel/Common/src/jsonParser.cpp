@@ -19,11 +19,10 @@ jsonParser::jsonParser(std::string _FileName, std::vector<ModeType> *Mode,std::v
 		Reload(	_FileName, Mode, h);	
 }
 
-void jsonParser::Reload(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h){
+void jsonParser::resetState(std::vector<ModeType> *Mode, std::vector<Actions> *h){
 	header_actions = h;
 	op_modes = Mode;
 	loaded = false;
-	FileName = _FileName;
 	data = "";
 	type = devType::notype;
 	timeout = 0;
@@ -35,16 +34,32 @@ void jsonParser::Reload(std::string _FileName, std::vector<ModeType> *Mode,std::
 	op_modes->clear();
 	Tags.clear();
 	Generics.clear();
-	if(loaded == false)
+}
+
+void jsonParser::Reload(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h){
+	resetState(Mode, h);
+	FileName = _FileName;
+	if (loadFile())
 	{
-		if (loadFile()) 
+		if (Doc.HasMember("DEVICE"))
 		{
-			if (Doc.HasMember("DEVICE"))
-			{
-				loaded = Initializer();
-			}
+			loaded = Initializer();
 		}
 	}
+}
+
+bool jsonParser::ReloadFromString(const std::string &json, std::vector<ModeType> *Mode,std::vector<Actions> *h){
+	resetState(Mode, h);
+	FileName = "";
+	data = json;
+	if (parseData())
+	{
+		if (Doc.HasMember("DEVICE"))
+		{
+			loaded = Initializer();
+		}
+	}
+	return loaded;
 }
 
 jsonParser::~jsonParser()
@@ -364,7 +379,10 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 					}else if(!mode_str.compare("spot"))
 					{
 						ret.mAct.midi_mode = midi_spot;
-					}	
+					}else if(!mode_str.compare("blink"))
+					{
+						ret.mAct.midi_mode = midi_blink;
+					}
 				}
 			}
 			if(act.HasMember("delay"))
@@ -564,9 +582,12 @@ bool jsonParser::loadFile()
 	std::ifstream file(FileName);
 	std::stringstream buff;
 	buff<<file.rdbuf();
-	data = "";
 	data = buff.str();
+	return parseData();
+}
+
+bool jsonParser::parseData()
+{
 	ParseResult res = Doc.Parse(data);
-	
 	return (res.IsError())? false:true;
 }
