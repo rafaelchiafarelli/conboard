@@ -90,6 +90,24 @@ std::string usbClassName(int cls, int sub, int proto) {
     }
 }
 
+bool isActionableInterfaces(const std::string &ifaces) {
+    // Walk colon-separated 6-hex-digit triplets (CCSSPP); the class is the
+    // first two hex digits. Actionable = HID (0x03) or Audio/MIDI (0x01).
+    size_t i = 0;
+    while (i < ifaces.size()) {
+        if (ifaces[i] == ':') { i++; continue; }
+        size_t end = ifaces.find(':', i);
+        std::string tok = ifaces.substr(i, (end == std::string::npos ? ifaces.size() : end) - i);
+        if (tok.size() >= 2) {
+            int cls = (int) strtol(tok.substr(0, 2).c_str(), nullptr, 16);
+            if (cls == 0x01 || cls == 0x03)
+                return true;
+        }
+        i = (end == std::string::npos) ? ifaces.size() : end;
+    }
+    return false;
+}
+
 std::vector<UsbInterface> scanUsbInterfaces() {
     std::vector<UsbInterface> out;
     const char *root = "/sys/bus/usb/devices";
