@@ -17,6 +17,11 @@ ARG DEBIAN_VERSION=bookworm
 FROM --platform=$TARGETPLATFORM debian:${DEBIAN_VERSION}-slim AS builder
 
 ARG CPPZMQ_REF=v4.10.0
+# Board metadata, passed by build-cross.sh from docker/boards.conf. Used only to
+# label the artifact (BOARD.txt / HOW-TO-INSTALL.txt); does not affect the build.
+ARG BOARD_ID=unknown
+ARG BOARD_DESC="unknown board"
+ARG BOARD_OTG=unknown
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Toolchain + every conboard build/runtime dependency (cf. scripts/configure.sh):
@@ -66,7 +71,8 @@ RUN chmod +x LowLevel/scripts/compiler.sh \
     && LowLevel/scripts/compiler.sh
 
 # Assemble the installable artifact tree + tarball under /out.
-RUN docker/package.sh /out
+RUN BOARD_ID="${BOARD_ID}" BOARD_DESC="${BOARD_DESC}" BOARD_OTG="${BOARD_OTG}" \
+        docker/package.sh /out
 
 # ---- artifact: a scratch image whose entire filesystem IS the output --------
 # `buildx --output type=local` writes this per platform, e.g.

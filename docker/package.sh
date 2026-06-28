@@ -19,6 +19,12 @@ SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARCH="$(dpkg --print-architecture)"          # arm64 | armhf
 STAGE="$OUT/conboard"
 
+# Board labelling (passed from build-cross.sh via docker/boards.conf).
+BOARD_ID="${BOARD_ID:-unknown}"
+BOARD_DESC="${BOARD_DESC:-unknown board}"
+BOARD_OTG="${BOARD_OTG:-unknown}"
+TARBALL="conboard-${BOARD_ID}.tar.gz"
+
 mkdir -p "$STAGE"
 
 # install -D creates parent dirs and sets mode in one shot.
@@ -54,10 +60,38 @@ cp "$SRC"/boards/*.json "$STAGE/boards/" 2>/dev/null || true
 # --- on-device installer (ships inside the artifact) -------------------------
 install -D -m 755 "$SRC/docker/install-on-device.sh" "$STAGE/install-on-device.sh"
 
+# --- BOARD.txt: the "surname" -- which board this artifact is for ------------
+cat > "$STAGE/BOARD.txt" <<EOF
+board-id : ${BOARD_ID}
+goes in  : ${BOARD_DESC}
+arch     : ${ARCH}
+usb-otg  : ${BOARD_OTG}
+EOF
+
+# --- HOW-TO-INSTALL.txt: the main commands -----------------------------------
+cat > "$STAGE/HOW-TO-INSTALL.txt" <<EOF
+conboard — install on: ${BOARD_DESC} (${ARCH})
+
+1. Copy the tarball to the board:
+     scp ${TARBALL} <user>@<board-ip>:~
+
+2. On the board, unpack and run the installer (no compilation on the board):
+     tar xzf ${TARBALL}
+     cd conboard
+     sudo ./install-on-device.sh
+
+3. Verify the USB gadget can bind:
+     cat /sys/class/udc/*/state          # want: configured (when plugged into a host PC)
+     systemctl status usb-otg.service dispatcher.service launcher.service
+
+USB-OTG status for this board: ${BOARD_OTG}
+EOF
+
 # --- manifest: the eyeballable summary of what got built ---------------------
 MANIFEST="$STAGE/MANIFEST.txt"
 {
     echo "conboard prebuilt artifact"
+    echo "board        : ${BOARD_ID} (${BOARD_DESC})"
     echo "architecture : $ARCH"
     echo
     echo "== binaries (ELF arch should match '$ARCH') =="
@@ -81,7 +115,11 @@ MANIFEST="$STAGE/MANIFEST.txt"
 } > "$MANIFEST"
 
 # --- tarball -----------------------------------------------------------------
-( cd "$OUT" && tar czf "conboard-${ARCH}.tar.gz" conboard )
+( cd "$OUT" && tar czf "$TARBALL" conboard )
 
-echo "packaged $ARCH -> $OUT/conboard-${ARCH}.tar.gz"
+# Surface BOARD.txt + HOW-TO-INSTALL.txt at the dist-folder root too, so they're
+# visible without unpacking the tarball (NOTES.md: "dist folder should have...").
+cp "$STAGE/BOARD.txt" "$STAGE/HOW-TO-INSTALL.txt" "$OUT/"
+
+echo "packaged ${BOARD_ID} (${ARCH}) -> $OUT/${TARBALL}"
 cat "$MANIFEST"
