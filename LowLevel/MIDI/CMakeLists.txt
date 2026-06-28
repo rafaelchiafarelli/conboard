@@ -12,6 +12,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC "/usr/include")
 find_package(cppzmq)
 target_link_libraries(conMIDI cppzmq)
 target_link_libraries(conMIDI ${CMAKE_SOURCE_DIR}/../Common/build/libcommon.so)
+# Find libcommon.so relative to this binary at runtime (see launcher CMakeLists).
+set_target_properties(conMIDI PROPERTIES BUILD_RPATH "$ORIGIN/../../Common/build")
 target_link_libraries(conMIDI stdc++fs)
 target_link_libraries(conMIDI asound)
 target_link_libraries(conMIDI pthread)

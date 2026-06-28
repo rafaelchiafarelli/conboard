@@ -10,6 +10,8 @@ add_executable(conMouse ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC "/usr/include")
 
 target_link_libraries(conMouse ${CMAKE_SOURCE_DIR}/../Common/build/libcommon.so)
+# Find libcommon.so relative to this binary at runtime (see launcher CMakeLists).
+set_target_properties(conMouse PROPERTIES BUILD_RPATH "$ORIGIN/../../Common/build")
 target_link_libraries(conMouse stdc++fs)
 target_link_libraries(conMouse asound)
 target_link_libraries(conMouse pthread)
