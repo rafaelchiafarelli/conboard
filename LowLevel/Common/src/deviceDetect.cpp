@@ -41,34 +41,33 @@ constexpr int nlongs(int bits) { return (bits + kLongBits - 1) / kLongBits; }
 inline int test_bit(int bit, const unsigned long *arr) {
     return (arr[bit / kLongBits] >> (bit % kLongBits)) & 1UL;
 }
-int count_bits(const unsigned long *arr, int max) {
-    int n = 0;
-    for (int i = 0; i < max; i++) n += test_bit(i, arr);
-    return n;
+
+bool has(const std::vector<int> &v, int code) {
+    return std::find(v.begin(), v.end(), code) != v.end();
 }
 
-// Mirrors the kernel/udev input_id classification heuristic.
-std::string classify(const unsigned long *ev, const unsigned long *key,
-                     const unsigned long *abs, const unsigned long *rel) {
-    bool is_mouse = test_bit(EV_REL, ev) && test_bit(REL_X, rel) &&
-                    test_bit(REL_Y, rel) && test_bit(BTN_LEFT, key);
+} // namespace
 
-    bool is_joystick = test_bit(BTN_JOYSTICK, key) || test_bit(BTN_GAMEPAD, key) ||
-                       (test_bit(EV_ABS, ev) && test_bit(ABS_X, abs) &&
-                        test_bit(ABS_Y, abs) &&
-                        (test_bit(BTN_TRIGGER, key) || test_bit(BTN_THUMB, key)));
+// Mirrors the kernel/udev input_id classification heuristic. Pure: depends only
+// on its argument, so it is unit-tested directly with synthetic EvdevBits.
+std::string classifyEvdev(const EvdevBits &c) {
+    bool is_mouse = has(c.types, EV_REL) && has(c.relAxes, REL_X) &&
+                    has(c.relAxes, REL_Y) && has(c.keys, BTN_LEFT);
 
-    bool is_keyboard = test_bit(KEY_A, key) && test_bit(KEY_Z, key) &&
-                       test_bit(KEY_SPACE, key);
+    bool is_joystick = has(c.keys, BTN_JOYSTICK) || has(c.keys, BTN_GAMEPAD) ||
+                       (has(c.types, EV_ABS) && has(c.absAxes, ABS_X) &&
+                        has(c.absAxes, ABS_Y) &&
+                        (has(c.keys, BTN_TRIGGER) || has(c.keys, BTN_THUMB)));
+
+    bool is_keyboard = has(c.keys, KEY_A) && has(c.keys, KEY_Z) &&
+                       has(c.keys, KEY_SPACE);
 
     if (is_keyboard) return "keyboard";
     if (is_mouse)    return "mouse";
     if (is_joystick) return "joystick / gamepad";
-    if (test_bit(EV_KEY, ev)) return "buttons / HID (other)";
+    if (has(c.types, EV_KEY)) return "buttons / HID (other)";
     return "unknown";
 }
-
-} // namespace
 
 std::string usbClassName(int cls, int sub, int proto) {
     char buf[48];
@@ -150,10 +149,20 @@ InputDevice probeInput(const std::string &node) {
     ioctl(fd, EVIOCGBIT(EV_REL, sizeof(rel)), rel);
     close(fd);
 
-    dev.type    = classify(ev, key, abs, rel);
-    dev.keys    = count_bits(key, KEY_MAX);
-    dev.absAxes = count_bits(abs, ABS_MAX);
-    dev.relAxes = count_bits(rel, REL_MAX);
+    // Turn the raw ioctl bitmaps into plain code sets, then classify (the same
+    // pure function the tests exercise).
+    EvdevBits caps;
+    if (test_bit(EV_KEY, ev)) caps.types.push_back(EV_KEY);
+    if (test_bit(EV_REL, ev)) caps.types.push_back(EV_REL);
+    if (test_bit(EV_ABS, ev)) caps.types.push_back(EV_ABS);
+    for (int i = 0; i < KEY_MAX; i++) if (test_bit(i, key)) caps.keys.push_back(i);
+    for (int i = 0; i < ABS_MAX; i++) if (test_bit(i, abs)) caps.absAxes.push_back(i);
+    for (int i = 0; i < REL_MAX; i++) if (test_bit(i, rel)) caps.relAxes.push_back(i);
+
+    dev.type    = classifyEvdev(caps);
+    dev.keys    = (int)caps.keys.size();
+    dev.absAxes = (int)caps.absAxes.size();
+    dev.relAxes = (int)caps.relAxes.size();
     return dev;
 }
 

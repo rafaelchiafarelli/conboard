@@ -33,6 +33,20 @@ struct InputDevice {
     int keys = 0, absAxes = 0, relAxes = 0;
 };
 
+// Evdev capabilities as plain sets of present codes (EV_*, KEY_*/BTN_*, ABS_*,
+// REL_*). This is the pure input to classification, so classifyEvdev() can be
+// unit-tested with synthetic data — no real /dev/input node required.
+struct EvdevBits {
+    std::vector<int> types;    // event types present: EV_KEY, EV_REL, EV_ABS
+    std::vector<int> keys;     // key/button codes present
+    std::vector<int> absAxes;  // absolute axes present
+    std::vector<int> relAxes;  // relative axes present
+};
+
+// Pure classifier: returns the device type from its capabilities. Same logic
+// the launcher and devprobe use at runtime; testable in isolation.
+std::string classifyEvdev(const EvdevBits &caps);
+
 // Map a USB class/subclass/protocol triplet to a human-readable name.
 std::string usbClassName(int cls, int sub, int proto);
 
