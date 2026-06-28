@@ -18,5 +18,15 @@ mkdir configs/c.1/strings/0x409
 echo Conf 1 > configs/c.1/strings/0x409/configuration
 echo 120 > configs/c.1/MaxPower
 ln -s functions/hid.usb0 configs/c.1
-usb_otg=musb-hdrc.1.auto 
-echo $usb_otg > UDC
+# Auto-detect the USB Device Controller instead of hardcoding it.
+# The original Orange Pi Zero (H3) exposes "musb-hdrc.1.auto", but the Zero 3
+# (H618) exposes a different name (e.g. "5100000.usb"). Picking the first entry
+# under /sys/class/udc matches how usb-composite-all.sh already binds (ls > UDC).
+usb_otg=$(ls /sys/class/udc | head -n1)
+if [ -z "$usb_otg" ]; then
+	echo "ERROR: no USB Device Controller found under /sys/class/udc." >&2
+	echo "The OTG controller is not enabled, or this board's USB port is host/power-only." >&2
+	exit 1
+fi
+echo "binding gadget to UDC: $usb_otg"
+echo "$usb_otg" > UDC
