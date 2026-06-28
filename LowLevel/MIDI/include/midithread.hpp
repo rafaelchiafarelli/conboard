@@ -33,6 +33,7 @@
 #include <queue>
 #include <mutex>
 #include <oActions.hpp>
+#include "midiMap.hpp"
 
 #include "zmq_coms.hpp"
 
