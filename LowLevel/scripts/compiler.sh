@@ -48,6 +48,10 @@ build_dispatcher(){
 	$SCRIPTS_DIR/../dispatcher/scripts/build_dispatcher.sh
 
 }
+build_devprobe(){
+	$SCRIPTS_DIR/../../tools/devprobe/scripts/build_devprobe.sh
+
+}
 compile(){
 	RECIPE=(
             build_common
@@ -57,7 +61,8 @@ compile(){
             build_mouse
 			build_launcher
 			build_dispatcher
-			)   
+			build_devprobe
+			)
 	build
 }
 

@@ -4,12 +4,17 @@ A standalone diagnostic that prints the **type** and **capabilities** of attache
 devices using only Linux kernel ABIs. It's the first step of conboard's
 environment-agnostic device detection (see [`../../NOTES.md`](../../NOTES.md)).
 
+The classification logic lives in the shared, board-agnostic detector
+[`LowLevel/Common/deviceDetect.{hpp,cpp}`](../../LowLevel/Common/include/deviceDetect.hpp)
+that the **launcher also uses** — so this tool and the launcher's runtime
+detection can never disagree. `devprobe` is just the human-readable front-end.
+
 ## Why it exists
 
 The launcher's old pain was trying to infer device type/capability from USB
 **VID/PID** — which is impossible, because VID/PID is an *identity* number, not a
-capability description. `devprobe` instead reads what the kernel already parsed
-from the device's descriptors:
+capability description. The detector instead reads what the kernel already
+parsed from the device's descriptors:
 
 - **USB interface class** from sysfs (`/sys/bus/usb/devices/*/bInterfaceClass`) —
   e.g. HID keyboard/mouse, Audio/MIDIStreaming (MIDI), mass storage, hub.
@@ -22,13 +27,16 @@ Pi Zero 3, a Raspberry Pi, or any Linux box. VID/PID is left for *identity* only
 
 ## Build
 
-No dependencies — compile directly, even on the board itself:
+No dependencies — compile directly (it pulls in the shared classifier source),
+even on the board itself:
 
 ```bash
-g++ -std=c++17 -O2 src/devprobe.cpp -o devprobe
+g++ -std=c++17 -O2 -I../../LowLevel/Common/include \
+    src/devprobe.cpp ../../LowLevel/Common/src/deviceDetect.cpp -o devprobe
 ```
 
-Or via CMake (`cmake -S . -B build && cmake --build build`).
+Or via CMake (`cmake -S . -B build && cmake --build build`). It's also built by
+the cross-build and shipped in the artifact under `tools/devprobe/`.
 
 ## Run
 

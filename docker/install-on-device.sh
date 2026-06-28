@@ -37,7 +37,7 @@ apt-get update
 # Runtime counterparts of the build-time -dev packages (see docker/Dockerfile).
 # Boost is installed via -dev to dodge version-suffixed runtime package names.
 apt-get install -y --no-install-recommends \
-    libzmq5 libasound2 libusb-0.1-4 libuuid1 \
+    libzmq5 libasound2 libuuid1 \
     libboost-system-dev libboost-date-time-dev
 
 echo "== stopping any running conboard services =="

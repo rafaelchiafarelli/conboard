@@ -6,9 +6,9 @@
 #include "jsonParser.h"
 #include "keyParser.hpp"
 #include "actions.h"
+#include "deviceDetect.hpp"
 #include <stdio.h>
-#include <stdlib.h> 
-#include <usb.h>
+#include <stdlib.h>
 #include <algorithm>
 #include <unistd.h>
 #include <spawn.h>
@@ -47,20 +47,15 @@ int main(int argc, char *argv[])
 {
 
 	modType work = none;
-	struct usb_bus *bus;
-    struct usb_device *dev;
 	srand(time(NULL));
-    usb_init();
-    usb_find_busses();
-    usb_find_devices();
-    for (bus = usb_busses; bus; bus = bus->next)
-        for (dev = bus->devices; dev; dev = dev->next)
-		{
-            printf("Trying device %s/%s\n", bus->dirname, dev->filename);
 
-            printf("\tID_VENDOR = 0x%04x\n", dev->descriptor.idVendor);
-            printf("\tID_PRODUCT = 0x%04x\n", dev->descriptor.idProduct);
-        }
+	// Inventory attached devices via the shared, board-agnostic classifier
+	// (kernel ABIs, not VID/PID). Replaces the old libusb VID/PID dump.
+	for (const auto &u : condetect::scanUsbInterfaces())
+		std::cout << "usb:   " << u.iface << "  " << u.className << std::endl;
+	for (const auto &d : condetect::scanInputDevices())
+		std::cout << "input: " << d.node << "  [" << d.type << "]  " << d.name << std::endl;
+
 	stop = true;
 	static const char short_options[] = "rvcx:d:a:";
 	static const struct option long_options[] = {
