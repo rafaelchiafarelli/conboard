@@ -10,6 +10,10 @@ add_executable(launcher ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC "/usr/include")
 
 target_link_libraries(launcher ${CMAKE_SOURCE_DIR}/../Common/build/libcommon.so)
+# Find libcommon.so relative to this binary at runtime (it sits at
+# ../../Common/build), so the artifact works wherever /conboard is installed —
+# not at the absolute path of the (cross-)build machine.
+set_target_properties(launcher PROPERTIES BUILD_RPATH "$ORIGIN/../../Common/build")
 target_link_libraries(launcher stdc++fs)
 target_link_libraries(launcher asound)
 target_link_libraries(launcher pthread)
