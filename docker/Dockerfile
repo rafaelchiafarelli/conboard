@@ -29,11 +29,21 @@ ENV DEBIAN_FRONTEND=noninteractive
 #   libboost-{system,date-time}-dev -> Crow (HTTP in dispatcher) needs Boost
 #   file                 -> manifest only (records ELF arch per binary)
 # (libusb dropped: device detection now uses kernel sysfs/evdev, not libusb.)
+#   ccache               -> caches compiled objects across builds (see below)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential cmake git pkg-config ca-certificates file \
+        build-essential cmake git pkg-config ca-certificates file ccache \
         libzmq3-dev libasound2-dev uuid-dev \
         libboost-dev libboost-system-dev libboost-date-time-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Make the compiler go through ccache so a *second* build only recompiles the
+# files that actually changed. Debian's ccache shims cover gcc/g++ but NOT cc/c++
+# (which CMake picks by default), so add those two; then put the shim dir first
+# on PATH and point ccache at the path we mount as a persistent cache below.
+RUN ln -sf /usr/bin/ccache /usr/lib/ccache/cc \
+ && ln -sf /usr/bin/ccache /usr/lib/ccache/c++
+ENV PATH="/usr/lib/ccache:${PATH}"
+ENV CCACHE_DIR=/ccache
 
 # cppzmq: header + CMake package config (the modules call find_package(cppzmq)).
 # Mirror scripts/configure.sh: install upstream, then overlay the repo's own
@@ -62,12 +72,16 @@ RUN if [ -f LowLevel/Common/Crow/include/crow.h ]; then \
     fi
 
 # Build everything via the existing recipe:
-#   common -> joystick -> keyboard -> midi -> mouse -> launcher -> dispatcher
-RUN chmod +x LowLevel/scripts/compiler.sh \
+#   common -> joystick -> keyboard -> midi -> mouse -> launcher -> dispatcher -> devprobe
+# The cache mount persists ccache's object cache across builds; ccache -s at the
+# end prints the hit/miss stats so you can see the cache working.
+RUN --mount=type=cache,target=/ccache \
+    chmod +x LowLevel/scripts/compiler.sh \
              LowLevel/*/scripts/*.sh \
              tools/*/scripts/*.sh \
              docker/package.sh \
-    && LowLevel/scripts/compiler.sh
+    && LowLevel/scripts/compiler.sh \
+    && echo "==== ccache stats ====" && ccache -s
 
 # Assemble the installable artifact tree + tarball under /out.
 RUN BOARD_ID="${BOARD_ID}" BOARD_DESC="${BOARD_DESC}" BOARD_OTG="${BOARD_OTG}" \
