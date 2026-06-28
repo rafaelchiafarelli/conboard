@@ -48,6 +48,27 @@ TEST_SUITE("joystick") {
     }
 }
 
+TEST_SUITE("filter") {
+    TEST_CASE("a hub-only device is not actionable") {
+        CHECK_FALSE(isActionableInterfaces(":090000:"));
+    }
+    TEST_CASE("HID (keyboard) is actionable") {
+        CHECK(isActionableInterfaces(":030101:"));
+    }
+    TEST_CASE("audio / MIDIStreaming is actionable") {
+        CHECK(isActionableInterfaces(":010100:010200:010300:"));
+    }
+    TEST_CASE("mass-storage-only is not actionable") {
+        CHECK_FALSE(isActionableInterfaces(":080650:"));
+    }
+    TEST_CASE("composite hub+HID counts (any actionable interface)") {
+        CHECK(isActionableInterfaces(":090000:030101:"));
+    }
+    TEST_CASE("empty / absent is not actionable") {
+        CHECK_FALSE(isActionableInterfaces(""));
+    }
+}
+
 TEST_SUITE("usb") {
     TEST_CASE("Audio/MIDIStreaming is reported as MIDI") {
         CHECK(usbClassName(0x01, 0x03, 0x00) == "Audio / MIDIStreaming (MIDI)");

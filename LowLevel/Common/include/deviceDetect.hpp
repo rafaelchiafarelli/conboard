@@ -50,6 +50,13 @@ std::string classifyEvdev(const EvdevBits &caps);
 // Map a USB class/subclass/protocol triplet to a human-readable name.
 std::string usbClassName(int cls, int sub, int proto);
 
+// Decide whether a device is something conboard should handle, from a udev
+// ID_USB_INTERFACES string (e.g. ":030101:010100:" — colon-separated CCSSPP
+// triplets). True iff any interface class is HID (0x03) or Audio/MIDI (0x01);
+// a hub (0x09) or storage-only device is not actionable. Empty string -> false.
+// Lets the launcher skip hubs instead of spawning dummy handlers for them.
+bool isActionableInterfaces(const std::string &idUsbInterfaces);
+
 // Scan /sys/bus/usb/devices for interfaces (empty if sysfs is unavailable).
 std::vector<UsbInterface> scanUsbInterfaces();
 
