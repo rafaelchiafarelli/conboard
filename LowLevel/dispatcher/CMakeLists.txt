@@ -15,6 +15,8 @@ find_package(cppzmq)
 
 target_link_libraries(dispatcher cppzmq)
 target_link_libraries(dispatcher ${CMAKE_SOURCE_DIR}/../Common/build/libcommon.so)
+# Find libcommon.so relative to this binary at runtime (see launcher CMakeLists).
+set_target_properties(dispatcher PROPERTIES BUILD_RPATH "$ORIGIN/../../Common/build")
 target_link_libraries(dispatcher uuid)
 
 target_link_libraries(dispatcher boost_system)
