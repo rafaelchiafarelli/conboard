@@ -4,8 +4,12 @@ Documentation=https://github.com/rafaelchiafarelli/conboard
 
 [Service]
 User=root
-Type=oneshot
+# The dispatcher is a long-running daemon (ZMQ + Crow HTTP run loop, joined
+# threads), so it must be Type=simple. As Type=oneshot, `systemctl start` waited
+# forever for it to exit (installer hang; and a boot-time stall until timeout).
+Type=simple
 ExecStart=/conboard/LowLevel/dispatcher/build/dispatcher  -x /conboard/LowLevel/dispatcher/assets/config.json
+Restart=on-failure
 
 
 [Install]
