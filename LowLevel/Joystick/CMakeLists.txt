@@ -9,6 +9,8 @@ file(GLOB SOURCES "src/*.cpp")
 add_executable(conJoyS ${SOURCES})
 
 target_link_libraries(conJoyS ${CMAKE_SOURCE_DIR}/../Common/build/libcommon.so)
+# Find libcommon.so relative to this binary at runtime (see launcher CMakeLists).
+set_target_properties(conJoyS PROPERTIES BUILD_RPATH "$ORIGIN/../../Common/build")
 target_include_directories(${PROJECT_NAME} PUBLIC "/usr/include")
 target_link_libraries(conJoyS stdc++fs)
 target_link_libraries(conJoyS asound)
