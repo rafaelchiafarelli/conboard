@@ -18,6 +18,15 @@ fi
 #mount -o loop,ro,offset=2048 -t vfat $FILE ${FILE/img/d}
 cd /sys/kernel/config/usb_gadget/
 
+# Tear down any existing gadget first so re-runs don't fail with "Device or
+# resource busy": a gadget already bound to a UDC (e.g. left over from
+# usb-hid-start.sh), or a mass-storage LUN whose backing file is open, can't be
+# reconfigured in place.
+if [ -d g1 ]; then
+	echo "removing existing gadget g1"
+	"$SCRIPTS_DIR/usb-gadget-stop.sh" || true
+fi
+
 mkdir -p g1
 cd g1
 #echo '' > UDC
@@ -28,7 +37,9 @@ echo 0x0100 > bcdDevice # v1.0.0
 echo 0x0200 > bcdUSB # USB2
 
 mkdir -p strings/0x409
-echo `cat /proc/device-tree/serial-number` > strings/0x409/serialnumber
+# device-tree strings carry a trailing NUL; strip it to avoid the
+# "command substitution: ignored null byte in input" warning.
+echo "$(tr -d '\0' < /proc/device-tree/serial-number)" > strings/0x409/serialnumber
 echo `uname -r` > strings/0x409/manufacturer 
 echo `hostname -s` > strings/0x409/product 
 
@@ -65,8 +76,15 @@ ln -s functions/acm.gs0 configs/c.$C/
 ln -s functions/mass_storage.$N configs/c.$C/
 ln -s functions/hid.$N configs/c.$C/
 
-# this lists available UDC drivers
-ls /sys/class/udc > UDC
+# bind to the first available UDC (auto-detect; matches usb-hid-start.sh).
+# On the Zero 3 (H618) this is musb-hdrc.5.auto; on the Zero (H3) musb-hdrc.1.auto.
+udc=$(ls /sys/class/udc | head -n1)
+if [ -z "$udc" ]; then
+	echo "ERROR: no USB Device Controller under /sys/class/udc (OTG not enabled?)" >&2
+	exit 1
+fi
+echo "binding gadget to UDC: $udc"
+echo "$udc" > UDC
 
 #ifconfig $N 10.0.0.1 netmask 255.255.255.252 up
 #route add -net default gw 10.0.0.2
