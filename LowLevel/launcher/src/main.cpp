@@ -363,6 +363,19 @@ void create_json(char *devInfo, char *folder)
 
 	keyParser info(devInfo,'=');
 	vector<KeyValue> info_from_dev = info.GetParsed();
+
+	// Skip devices that expose nothing conboard can handle (e.g. a USB hub) so we
+	// don't spawn a dummy handler for them. Only filter when udev gave a positive,
+	// non-actionable interface list; if ID_USB_INTERFACES is absent, proceed.
+	std::string ifaces;
+	for (const auto &kv : info_from_dev)
+		if (kv.key == "ID_USB_INTERFACES") { ifaces = kv.value; break; }
+	if (!ifaces.empty() && !condetect::isActionableInterfaces(ifaces))
+	{
+		std::cout << "ignoring non-actionable device (interfaces " << ifaces << ")" << std::endl;
+		return;
+	}
+
 	std::vector<ModeType> Mode;
 	std::vector<Actions> h;
 	jsonParser *local_json;
