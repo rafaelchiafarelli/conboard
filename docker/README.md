@@ -1,12 +1,17 @@
 # Cross-building conboard with Docker buildx
 
-This replaces "building locally is miserable" with one command that produces
-ready-to-install artifacts for both Orange Pi boards:
+This replaces "building locally is miserable" with one command that produces a
+ready-to-install artifact per **board**. Boards are declared in
+[`boards.conf`](boards.conf) — adding a target is a one-line edit there. See the
+current list with:
 
-| Board               | SoC   | Arch    | Docker platform | Artifact                  |
-|---------------------|-------|---------|-----------------|---------------------------|
-| Orange Pi Zero 3    | H618  | arm64   | `linux/arm64`   | `conboard-arm64.tar.gz`   |
-| Orange Pi Zero      | H3    | armhf   | `linux/arm/v7`  | `conboard-armhf.tar.gz`   |
+```bash
+./build-cross.sh list
+```
+
+Each board maps to a Docker platform/arch; several boards can share an arch
+(e.g. the Zero 3 and a 64-bit Raspberry Pi are both `arm64`), but each gets its
+own clearly-labelled output folder.
 
 ## How it works
 
@@ -29,51 +34,50 @@ cross-toolchain), which is fine for an occasional packaging build.
 ## Build
 
 ```bash
-./build-cross.sh                       # both arches
-PLATFORMS=linux/arm64 ./build-cross.sh # just the Zero 3
+./build-cross.sh             # build ALL boards in boards.conf
+./build-cross.sh zero3       # build one board
+./build-cross.sh zero3 rpi64 # build several
+./build-cross.sh list        # show the board registry
 ```
 
-The four steps it prints:
+It registers the QEMU emulators (one-time, `--privileged`), ensures a
+`docker-container` buildx builder, inits the Crow submodule, then builds each
+selected board (`docker buildx build --platform … --output type=local`).
 
-1. **register QEMU** — `tonistiigi/binfmt --install` (one-time, needs `--privileged`).
-2. **builder** — creates a `docker-container` buildx builder (multi-platform output).
-3. **submodules** — `git submodule update --init` to fetch Crow.
-4. **build** — `docker buildx build --platform … --output type=local,dest=dist`.
-
-Output lands in `dist/<platform>/`:
+Output lands in `dist/<board-id>/`, one self-describing folder per board:
 
 ```
 dist/
-├── linux_arm64/
-│   ├── conboard/               # the unpacked tree (mirrors /conboard on the board)
-│   └── conboard-arm64.tar.gz
-└── linux_arm_v7/
-    ├── conboard/
-    └── conboard-armhf.tar.gz
+└── zero3/
+    ├── conboard-zero3.tar.gz   # the installable artifact
+    ├── BOARD.txt               # which board this is for ("surname") + arch + OTG status
+    ├── HOW-TO-INSTALL.txt       # the main install commands, ready to copy/paste
+    └── conboard/               # the unpacked tree (mirrors /conboard on the board) + MANIFEST.txt
 ```
 
 ## Eyeball it before shipping
 
-Every artifact carries a `MANIFEST.txt` — arch, ELF type per binary, the
-dispatcher's shared-library needs, and sha256 of every file:
+- `BOARD.txt` tells you which board the folder is for at a glance.
+- `HOW-TO-INSTALL.txt` has the exact install commands for that board.
+- `MANIFEST.txt` (inside `conboard/`) lists the board, arch, ELF type per
+  binary, the dispatcher's shared-library needs, and sha256 of every file:
 
 ```bash
-tar xzO -f dist/linux_arm64/conboard-arm64.tar.gz conboard/MANIFEST.txt
+cat dist/zero3/BOARD.txt
+tar xzO -f dist/zero3/conboard-zero3.tar.gz conboard/MANIFEST.txt
 ```
 
-The `binaries` section is the quick correctness check: every line for the arm64
-artifact should say `ELF 64-bit … aarch64`, and the armhf one `ELF 32-bit … ARM`.
+The `binaries` section is the quick correctness check: every line for an arm64
+board should say `ELF 64-bit … aarch64`, and an armhf one `ELF 32-bit … ARM`.
 
 ## Install on the board
 
-Copy the tarball to the Pi, unpack, and run the bundled installer (it installs
-runtime libs, drops the tree at `/conboard`, and enables the systemd units — no
-compilation on the board):
+`HOW-TO-INSTALL.txt` spells out the commands for the specific board; in general:
 
 ```bash
-scp dist/linux_arm64/conboard-arm64.tar.gz orangepi@<board-ip>:~
+scp dist/zero3/conboard-zero3.tar.gz orangepi@<board-ip>:~
 ssh orangepi@<board-ip>
-tar xzf conboard-arm64.tar.gz
+tar xzf conboard-zero3.tar.gz
 cd conboard
 sudo ./install-on-device.sh
 ```
