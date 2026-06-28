@@ -52,6 +52,14 @@ rsync -a --delete \
     --exclude install-on-device.sh --exclude MANIFEST.txt \
     "$HERE"/ /conboard/
 
+echo "== registering libcommon.so with the dynamic linker =="
+# The conboard binaries link libcommon.so (which lives next to them under
+# LowLevel/Common/build). The binaries also carry an $ORIGIN-relative RUNPATH,
+# but install it into a standard lib dir + ldconfig as well, so resolution never
+# depends on RUNPATH or on how/where the binary is launched.
+install -m 644 /conboard/LowLevel/Common/build/libcommon.so /usr/local/lib/
+ldconfig
+
 echo "== installing systemd units =="
 install -m 644 /conboard/LowLevel/assets/usb-otg.service            /etc/systemd/system/
 install -m 644 /conboard/LowLevel/assets/launcher.service           /etc/systemd/system/
@@ -62,12 +70,21 @@ echo "== installing udev rule + event handler =="
 install -m 644 /conboard/LowLevel/assets/100-usb.rules /etc/udev/rules.d/
 udevadm control --reload-rules && udevadm trigger || true
 
-echo "== enabling + starting services =="
-systemctl enable --now usb-otg.service
-systemctl enable --now dispatcher.service
-systemctl enable --now launcher.service
+echo "== enabling services (start on boot) =="
+systemctl enable usb-otg.service dispatcher.service launcher.service
+
+# Start now — but NOT with `enable --now`. launcher.service is a Type=oneshot
+# that scans devices and can call `systemctl restart` for a matched device;
+# starting it inside the same systemd transaction that `--now` opens deadlocks
+# the two jobs (the installer hangs). Start as plain, separate jobs instead.
+echo "== starting services =="
+systemctl start usb-otg.service       # brings up the USB gadget now
+systemctl start dispatcher.service
+# launcher is a scan-and-exit oneshot; let boot / udev events run it so its
+# internal `systemctl restart` calls never nest inside its own start job.
 
 echo
-echo "Done. Quick checks:"
+echo "Done. The launcher runs at boot and on device hotplug (udev)."
+echo "Quick checks:"
 echo "  ls /sys/class/udc            # must be non-empty for USB gadget to bind"
 echo "  systemctl status usb-otg.service dispatcher.service launcher.service"
