@@ -17,7 +17,12 @@
 // only the evdev input layer (the conMIDI counterpart of MIDI::in_func).
 class Joystick : public DeviceEngine {
 public:
-    Joystick(const std::string &jsonFileName, const std::string &devNode);
+    // devNode: explicit /dev/input node (highest priority, may be empty).
+    // usbDevpath: USB DEVPATH of the physical port (from the launcher); when set,
+    // the node is resolved to the gamepad UNDER that port, so two pads with the
+    // same VID/PID on different ports are read independently.
+    Joystick(const std::string &jsonFileName, const std::string &devNode,
+             const std::string &usbDevpath = "");
     ~Joystick() override;
 
     // Stop the reader, then the engine (called by condev::runDevice).
@@ -25,10 +30,13 @@ public:
 
 private:
     // Resolve the /dev/input/eventN node when one wasn't passed on the command
-    // line: prefer the evdev device whose name matches the profile's "input"
-    // (json.DevInput), else the first joystick/gamepad node. Mirrors how conMIDI
-    // self-discovers its ALSA port, and survives evdev renumbering on replug.
+    // line, in priority order: (1) the gamepad UNDER usbDevpath (so identical
+    // pads on different ports stay separate), (2) the node whose name matches
+    // the profile's "input" (json.DevInput), (3) the first gamepad node. Mirrors
+    // how conMIDI self-discovers its ALSA port and survives evdev renumbering.
     std::string resolveNode();
+
+    std::string usbDevpath;                                  // physical port to bind to (may be empty)
 
     void in_func();                                          // evdev reader thread
     void runRules(const evmatch::evEvent &e);                // match + enqueue (no report)

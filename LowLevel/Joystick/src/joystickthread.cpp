@@ -21,23 +21,30 @@ static long nowMs() {
 
 std::string Joystick::resolveNode() {
     std::vector<condetect::InputDevice> inputs = condetect::scanInputDevices();
-    // 1) match the profile's declared input name (EVIOCGNAME)
+    // 1) the gamepad UNDER the bound physical port (separates identical pads)
+    if (!usbDevpath.empty())
+        for (std::vector<condetect::InputDevice>::iterator d = inputs.begin(); d != inputs.end(); ++d)
+            if (d->type.find("joystick") != std::string::npos &&
+                condetect::nodeUnderUsbPath(d->sysfsPath, usbDevpath))
+                return d->node;
+    // 2) the node whose name matches the profile's declared input (EVIOCGNAME)
     if (!json.DevInput.empty())
         for (std::vector<condetect::InputDevice>::iterator d = inputs.begin(); d != inputs.end(); ++d)
             if (d->name == json.DevInput)
                 return d->node;
-    // 2) fall back to the first node classified as a joystick/gamepad
+    // 3) fall back to the first node classified as a joystick/gamepad
     for (std::vector<condetect::InputDevice>::iterator d = inputs.begin(); d != inputs.end(); ++d)
         if (d->type.find("joystick") != std::string::npos)
             return d->node;
     return "";
 }
 
-Joystick::Joystick(const std::string &jsonFileName, const std::string &devNode_)
-    : DeviceEngine(jsonFileName), devNode(devNode_)
+Joystick::Joystick(const std::string &jsonFileName, const std::string &devNode_,
+                   const std::string &usbDevpath_)
+    : DeviceEngine(jsonFileName), usbDevpath(usbDevpath_), devNode(devNode_)
 {
     if (devNode.empty())
-        devNode = resolveNode();   // self-discover from the profile (launcher passes no -p)
+        devNode = resolveNode();   // self-discover (launcher passes the port via -d, not -p)
 
     if (!devNode.empty())
         fd = open(devNode.c_str(), O_RDONLY | O_NONBLOCK);
