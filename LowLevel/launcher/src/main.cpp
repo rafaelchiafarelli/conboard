@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <spawn.h>
 #include <fstream>
+#include <sstream>
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -23,15 +24,6 @@ using namespace std;
 
 extern char **environ;
 
-// Last path segment of a USB DEVPATH (the physical port), sanitized to a safe
-// service-name token: e.g. "/devices/.../usb1/1-1/1-1.2" -> "1-1_2".
-static std::string portSuffixFromDevpath(const std::string &devpath)
-{
-	std::string base = devpath.substr(devpath.find_last_of('/') + 1);
-	for (size_t i = 0; i < base.size(); i++)
-		if (!isalnum((unsigned char)base[i])) base[i] = '_';
-	return base;
-}
 
 // Value of a udev variable (e.g. DEVPATH) from the parsed /tmp/temp.vars, or "".
 static std::string udevVar(const std::vector<KeyValue> &vars, const std::string &key)
@@ -191,11 +183,12 @@ int main(int argc, char *argv[])
  */ 
 void stop_device(char *dt_name, char *json_name)
 {
-	// On remove, udev provides DEVPATH (the rich ID_* vars are typically absent
-	// on remove), so we tear down the per-port service bound to that physical
-	// port. This is also what makes a MOVE work: moving a device fires
-	// remove(old port) -> stop the old service here -> add(new port) ->
-	// create_json starts a fresh one. dt_name is the /tmp/temp.vars dump.
+	// On remove, udev provides only DEVPATH (the rich ID_* vars, incl. the
+	// serial, are absent) -- so we cannot reconstruct a serial-keyed service
+	// name. Instead we find the service whose ExecStart was generated with this
+	// exact "-d <devpath>" and stop it. That handles BOTH port- and serial-keyed
+	// services, and makes a MOVE work: remove(old port) stops the old handler,
+	// add(new port) (re)writes + starts it. dt_name is the /tmp/temp.vars dump.
 	(void)json_name;
 
 	keyParser info(dt_name, '=');
@@ -207,28 +200,41 @@ void stop_device(char *dt_name, char *json_name)
 		return;
 	}
 
-	// Match any "<name>-port-<thisport>.service".
-	std::string suffix = "-port-";
-	suffix.append(portSuffixFromDevpath(devpath));
-	suffix.append(".service");
+	std::string needle = " -d ";
+	needle.append(devpath);   // the exact token written into ExecStart
 
-	DIR *service_dir = opendir("/etc/systemd/system/");
+	const char *service_folder = "/etc/systemd/system/";
+	DIR *service_dir = opendir(service_folder);
 	if (service_dir == NULL)
 		return;
 	struct dirent *service_entry;
 	while ((service_entry = readdir(service_dir)) != NULL)
 	{
 		std::string name = service_entry->d_name;
-		if (name.size() >= suffix.size() &&
-		    name.compare(name.size() - suffix.size(), suffix.size(), suffix) == 0)
-		{
-			char cmd[512];
-			std::cout << "device removed from port -> stopping " << name << std::endl;
-			sprintf(cmd, "systemctl stop %s", name.c_str());
-			system(cmd);
-			sprintf(cmd, "systemctl disable %s", name.c_str());
-			system(cmd);
-		}
+		if (name.find(".service") == std::string::npos)
+			continue;
+		std::string path = service_folder;
+		path.append(name);
+		std::ifstream sf(path.c_str());
+		if (!sf.is_open())
+			continue;
+		std::stringstream ss;
+		ss << sf.rdbuf();
+		std::string content = ss.str();
+		std::string::size_type p = content.find(needle);
+		if (p == std::string::npos)
+			continue;
+		// Ensure the devpath ends at a boundary so "1-1.2" != "1-1.2.3".
+		std::string::size_type end = p + needle.size();
+		char after = (end < content.size()) ? content[end] : '\n';
+		if (after == '/' || after == '.' || after == '-' || isalnum((unsigned char)after))
+			continue;
+		char cmd[512];
+		std::cout << "device removed from port -> stopping " << name << std::endl;
+		sprintf(cmd, "systemctl stop %s", name.c_str());
+		system(cmd);
+		sprintf(cmd, "systemctl disable %s", name.c_str());
+		system(cmd);
 	}
 	closedir(service_dir);
 }
@@ -384,18 +390,23 @@ void create_json(char *devInfo, char *folder)
 			hasHandler = launchmatch::deviceMatchesTags(info_from_dev, tags);
 			bool has_service = false;
 
-			// Per-physical-port instancing for evdev devices (joystick): key the
-			// service on the USB port (DEVPATH) so two pads with the same VID/PID
-			// on different ports get separate services + nodes. MIDI keeps the
-			// plain DevName.service. execExtra passes the bound port to conJoyS (-d).
+			// Per-DEVICE instancing for evdev input devices (joystick / keyboard /
+			// mouse): key the service on a stable identity -- the serial when
+			// trustworthy (so it follows the controller across ports), else the
+			// physical port (so clones with fake serials still separate). MIDI
+			// (ALSA, binds by name) is unaffected and keeps the plain DevName.
+			// execExtra passes the bound port to the handler via -d.
 			std::string serviceName = local_json->DevName;
 			serviceName.erase(remove_if(serviceName.begin(), serviceName.end(), ::isspace), serviceName.end());
 			std::string execExtra;
 			std::string devpath = udevVar(info_from_dev, "DEVPATH");
-			if(local_json->GetType() == devType::joystick && !devpath.empty())
+			devType dtype = local_json->GetType();
+			bool isEvdev = (dtype == devType::joystick || dtype == devType::keyboard || dtype == devType::mouse);
+			if(isEvdev && !devpath.empty())
 			{
-				serviceName.append("-port-");
-				serviceName.append(portSuffixFromDevpath(devpath));
+				std::string serial = udevVar(info_from_dev, "ID_SERIAL_SHORT");
+				serviceName.append("-");
+				serviceName.append(condetect::deviceIdentity(serial, devpath));
 				execExtra = " -d ";
 				execExtra.append(devpath);
 			}
