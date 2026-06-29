@@ -7,8 +7,12 @@ set(COMMON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../LowLevel/Common)
 
 add_executable(conboard_tests
     test_devicedetect.cpp
+    test_midimap.cpp
+    test_jsonparser.cpp
     test_launchermatch.cpp
     ${COMMON_DIR}/src/deviceDetect.cpp
+    ${COMMON_DIR}/src/midiMap.cpp
+    ${COMMON_DIR}/src/jsonParser.cpp
     ${COMMON_DIR}/src/launcherMatch.cpp)
 
 target_include_directories(conboard_tests PRIVATE
@@ -21,7 +25,7 @@ set_target_properties(conboard_tests PROPERTIES
 
 # Register one CTest entry per doctest suite, so `ctest -R joystick` works too.
 enable_testing()
-foreach(suite classifier joystick usb launch filter)
+foreach(suite classifier joystick usb midi json launch filter)
     add_test(NAME ${suite}
              COMMAND conboard_tests --test-suite=${suite} --no-intro)
 endforeach()

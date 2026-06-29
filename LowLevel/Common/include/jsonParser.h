@@ -69,7 +69,9 @@ class jsonParser
 		unsigned int timeout;
 		devActions parseIO(rapidjson::Value& act);
 		bool Initializer();
-		
+
+		void resetState(std::vector<ModeType> *Mode, std::vector<Actions> *h);
+		bool parseData();   // Doc.Parse(data); false on parse error
 		bool loadFile();
 
 		void ProcessHeader(rapidjson::Value &header);
@@ -93,6 +95,10 @@ class jsonParser
 			loaded = false;
 		}
 		void Reload(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h);
+
+		// Parse JSON straight from a string (no file) — used by unit tests and
+		// any in-memory caller. Returns true if a DEVICE block was parsed.
+		bool ReloadFromString(const std::string &json, std::vector<ModeType> *Mode,std::vector<Actions> *h);
 
 		void SaveToFile(std::string _FileName){
 				Save(_FileName);
