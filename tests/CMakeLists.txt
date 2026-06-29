@@ -29,7 +29,7 @@ set_target_properties(conboard_tests PROPERTIES
 
 # Register one CTest entry per doctest suite, so `ctest -R joystick` works too.
 enable_testing()
-foreach(suite classifier joystick usb midi json launch filter evmatch holdgen port)
+foreach(suite classifier joystick usb midi json launch filter evmatch holdgen port identity)
     add_test(NAME ${suite}
              COMMAND conboard_tests --test-suite=${suite} --no-intro)
 endforeach()

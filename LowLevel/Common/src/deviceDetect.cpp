@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <cctype>
 #include <fstream>
 #include <algorithm>
 
@@ -156,6 +157,33 @@ bool nodeUnderUsbPath(const std::string &nodeSysfsPath, const std::string &usbDe
     // the start).
     std::string::size_type end = p + usbDevpath.size();
     return end == nodeSysfsPath.size() || nodeSysfsPath[end] == '/';
+}
+
+static std::string sanitizeToken(const std::string &s) {
+    std::string r = s;
+    for (size_t i = 0; i < r.size(); i++)
+        if (!isalnum((unsigned char)r[i]) && r[i] != '-') r[i] = '_';  // keep '-' (port ids, valid in unit names)
+    return r;
+}
+
+bool isTrustworthySerial(const std::string &serial) {
+    if (serial.empty()) return false;
+    // Trustworthy iff it has at least one char that isn't a placeholder 'F'/'0'.
+    for (size_t i = 0; i < serial.size(); i++) {
+        char c = serial[i];
+        if (c != 'F' && c != 'f' && c != '0') return true;
+    }
+    return false;
+}
+
+std::string portToken(const std::string &usbDevpath) {
+    if (usbDevpath.empty()) return "";
+    return sanitizeToken(usbDevpath.substr(usbDevpath.find_last_of('/') + 1));
+}
+
+std::string deviceIdentity(const std::string &serial, const std::string &usbDevpath) {
+    if (isTrustworthySerial(serial)) return "ser-" + sanitizeToken(serial);
+    return "port-" + portToken(usbDevpath);
 }
 
 InputDevice probeInput(const std::string &node) {

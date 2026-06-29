@@ -41,6 +41,22 @@ struct InputDevice {
 // (path-segment aware: "1-1.2" does not match "1-1.2.3"); unit-tested.
 bool nodeUnderUsbPath(const std::string &nodeSysfsPath, const std::string &usbDevpath);
 
+// Is a USB serial trustworthy as a stable identity? False for empty or
+// placeholder serials made entirely of 'F'/'f'/'0' (clones commonly report
+// "FFFFFFF" / "00000000", and several identical clones would all collide).
+bool isTrustworthySerial(const std::string &serial);
+
+// Sanitized last path segment of a USB DEVPATH (the physical-port token):
+// "/devices/.../usb1/1-1/1-1.2" -> "1-1_2".
+std::string portToken(const std::string &usbDevpath);
+
+// Stable per-device identity used to name a handler's service, hybrid:
+//   - "ser-<serial>"  when the serial is trustworthy  -> identity follows the
+//                     controller across USB ports (its state can move with it),
+//   - "port-<token>"  otherwise                        -> per-physical-port
+//                     separation (so clones with fake/shared serials still split).
+std::string deviceIdentity(const std::string &serial, const std::string &usbDevpath);
+
 // Evdev capabilities as plain sets of present codes (EV_*, KEY_*/BTN_*, ABS_*,
 // REL_*). This is the pure input to classification, so classifyEvdev() can be
 // unit-tested with synthetic data — no real /dev/input node required.
