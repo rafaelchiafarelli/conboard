@@ -59,43 +59,51 @@ are in that board's `HOW-TO-INSTALL.txt`.
     * device installed as a keyboard, a mouse, a joystick and a PenDrive (bootable storage)
     * detection of inserted device with udev
     * launch of a service identified with json or a dummy service with a json constructed with udev variables
-    * detection of witch device belongs to witch json and witch .service
+    * detection of which device belongs to which json and which .service
+    * **device detection by kernel ABIs** (evdev / USB class), not VID/PID; VID/PID is identity-only (`tools/devprobe`)
+    * **hubs / non-actionable devices are skipped** instead of getting a dummy handler (`isActionableInterfaces`); a device that matches a known profile is always handled even if vendor-specific (e.g. Xbox)
     * Keyboard and Mouse are standard to the PC
     * All devices can send Keyboard and/or mouse.
     * a websocket will launch any user event to the client
     * operation mode for all devices, no limit of operating modes
-    * standarized language for all input devices
+    * **standardized rule language**: MIDI triggers (`b0/b1/b2` + mode) and evdev triggers (symbolic `BTN_*`/`KEY_*`/`ABS_*`/`REL_*` + mode) map to a shared `out[]` of keyboard/mouse/midi actions
+    * **shared device engine**: `DeviceEngine` (output queue + zmq coms + modes) and `condev::runDevice` (per-device main) factored into `LowLevel/Common`; each handler is its own process
+    * **unit-test harness** (doctest, pure logic / synthetic inputs): 55 cases across classifier, usb, joystick, midi, json, launch, filter, evmatch, holdgen
 
-* midi device (IO) supported
+* midi device (IO) supported — HARDWARE-VERIFIED
     * Input/Output MIDI 
     * Memory kept for the current working mode
     * Event for push down and for pull up key
     * Delay in action to send to the PC
     * Multiple output to the device types (blink, normal, etc)
 
-* keyboard device (IO) supported
-    * keys are read 
+* joystick device (input) — BUILT, pending hardware test
+    * evdev reader on `DeviceEngine`; pure `evMatch` matcher (press / release / hold / hold_once / higher / lower / spot)
+    * `holdGen` synthesizes hold events for non-autorepeating gamepad buttons (repeat + long-press)
+    * self-discovers its `/dev/input` node from the profile; launcher spawns `conJoyS`
+    * starter profile: `boards/Xbox360.json`
 
-* joystick device (IO) supported
+* keyboard device (input)
+    * the shared evdev matcher already covers keyboard triggers; a `conKeyB` reader is not built yet
 
     
 # What is Missing?
 
 * generalized behavior 
-    * missing installing the system as an ethernet port (it would sinplify access by users)
-    * detection of inserted device does not filter by device type (MIDI, Keyboard, Joystick or HID,). Always push this event to the launcher witch in turn, creates a dummy device, even if this device is a usb hub, or something that does not have any actions.
-    * lauch of a service is very heavily dependent on the user configuration witch is very dangerous, user should not have that power. 
-    * detection of the device is very heavily dependent on the user configuration witch is very dangerous, user should not have that power.
+    * missing installing the system as an ethernet port (it would simplify access by users)
+    * launch/detection of a service is heavily dependent on user configuration, which is dangerous — the user should not have that power
     * no UI yet. only a websocket 
     * no security planned yet, needs a firewall or something that could prevent outside access to the communications. 
-    * backend in python-flask is deprecated, but it makes more sense since has a lot of features that would speed up the process
+    * backend in python-flask is deprecated, but it makes more sense since it has a lot of features that would speed up the process
 * midi device
     * SysEx commands are not working
-    * multiple commands and multiple actions can overrun the system.
-* keyboard device 
-    * not even working properly
+    * multiple commands and multiple actions can overrun the system (pre-existing 10-slot reporting-queue overflow, `STACKED_IO_MSG`)
+    * not yet migrated onto the shared `DeviceEngine` (still uses its own orchestration)
 * joystick device
-    * not even started.
+    * not yet exercised on real hardware (built + unit-tested + compiles only)
+    * confirm the controller's USB VID/PID matches the profile (default is Xbox 360 wired `045e:028e`)
+* keyboard / mouse as input devices
+    * `conKeyB` / `conMouse` evdev readers not built yet (only the shared matcher exists)
 
     
 
