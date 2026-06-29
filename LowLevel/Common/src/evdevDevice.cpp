@@ -1,6 +1,6 @@
-#include "joystickthread.hpp"
+#include "evdevDevice.hpp"
 #include "evMatch.hpp"
-#include "deviceDetect.hpp"   // condetect::scanInputDevices for node self-discovery
+#include "deviceDetect.hpp"   // condetect::scanInputDevices / nodeUnderUsbPath
 
 #include <linux/input.h>
 #include <fcntl.h>
@@ -19,12 +19,12 @@ static long nowMs() {
     return (long) duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
-std::string Joystick::resolveNode() {
+std::string EvdevDevice::resolveNode() {
     std::vector<condetect::InputDevice> inputs = condetect::scanInputDevices();
-    // 1) the gamepad UNDER the bound physical port (separates identical pads)
+    // 1) the device UNDER the bound physical port (separates identical units)
     if (!usbDevpath.empty())
         for (std::vector<condetect::InputDevice>::iterator d = inputs.begin(); d != inputs.end(); ++d)
-            if (d->type.find("joystick") != std::string::npos &&
+            if (d->type.find(classifierMatch) != std::string::npos &&
                 condetect::nodeUnderUsbPath(d->sysfsPath, usbDevpath))
                 return d->node;
     // 2) the node whose name matches the profile's declared input (EVIOCGNAME)
@@ -32,46 +32,49 @@ std::string Joystick::resolveNode() {
         for (std::vector<condetect::InputDevice>::iterator d = inputs.begin(); d != inputs.end(); ++d)
             if (d->name == json.DevInput)
                 return d->node;
-    // 3) fall back to the first node classified as a joystick/gamepad
+    // 3) the first node of this device's class
     for (std::vector<condetect::InputDevice>::iterator d = inputs.begin(); d != inputs.end(); ++d)
-        if (d->type.find("joystick") != std::string::npos)
+        if (d->type.find(classifierMatch) != std::string::npos)
             return d->node;
     return "";
 }
 
-Joystick::Joystick(const std::string &jsonFileName, const std::string &devNode_,
-                   const std::string &usbDevpath_)
-    : DeviceEngine(jsonFileName), usbDevpath(usbDevpath_), devNode(devNode_)
+EvdevDevice::EvdevDevice(devType inputType_, const std::string &classifierMatch_,
+                         const std::string &jsonFileName, const std::string &devNode_,
+                         const std::string &usbDevpath_)
+    : DeviceEngine(jsonFileName),
+      inputType(inputType_), classifierMatch(classifierMatch_),
+      usbDevpath(usbDevpath_), devNode(devNode_)
 {
     if (devNode.empty())
-        devNode = resolveNode();   // self-discover (launcher passes the port via -d, not -p)
+        devNode = resolveNode();
 
     if (!devNode.empty())
         fd = open(devNode.c_str(), O_RDONLY | O_NONBLOCK);
     if (fd < 0)
-        std::cout << "joystick: no usable evdev node ('" << devNode << "') -- reader not started" << std::endl;
+        std::cout << "evdev: no usable node ('" << devNode << "') -- reader not started" << std::endl;
     else
-        std::cout << "joystick: reading " << devNode << std::endl;
+        std::cout << "evdev: reading " << devNode << std::endl;
 
-    startEngine();   // output + coms threads, run header, activate initial mode
+    startEngine();
 
     if (fd >= 0)
-        in_thread = new std::thread(&Joystick::in_func, this);
+        in_thread = new std::thread(&EvdevDevice::in_func, this);
 }
 
-Joystick::~Joystick() { Stop(); }
+EvdevDevice::~EvdevDevice() { Stop(); }
 
-void Joystick::Stop() {
-    stop = true;                                  // shared flag: stops reader + engine loops
+void EvdevDevice::Stop() {
+    stop = true;
     if (in_thread) { in_thread->join(); delete in_thread; in_thread = nullptr; }
     if (fd >= 0)   { close(fd); fd = -1; }
     stopEngine();
 }
 
-bool Joystick::hasHoldRule(int code) const {
+bool EvdevDevice::hasHoldRule(int code) const {
     for (std::vector<Actions>::const_iterator a = CurrentMode.body_actions.begin();
          a != CurrentMode.body_actions.end(); ++a) {
-        if (a->in.tp == joystick &&
+        if (a->in.tp == inputType &&
             (a->in.evtrig.mode == evmatch::ev_hold || a->in.evtrig.mode == evmatch::ev_hold_once) &&
             a->in.evtrig.code == code)
             return true;
@@ -79,10 +82,10 @@ bool Joystick::hasHoldRule(int code) const {
     return false;
 }
 
-void Joystick::runRules(const evEvent &e) {
+void EvdevDevice::runRules(const evEvent &e) {
     for (std::vector<Actions>::iterator a = CurrentMode.body_actions.begin();
          a != CurrentMode.body_actions.end(); ++a) {
-        if (a->in.tp != joystick) continue;       // only this device's input rules
+        if (a->in.tp != inputType) continue;     // only this device's input rules
         if (evmatch::matches(a->in.evtrig, e)) {
             enqueue(evmatch::resolveOutputs(*a, e, a->in.evtrig.mode));
             if (a->change_mode && a->change_to != -1)
@@ -91,12 +94,12 @@ void Joystick::runRules(const evEvent &e) {
     }
 }
 
-void Joystick::processEvent(const evEvent &e, long now) {
+void EvdevDevice::processEvent(const evEvent &e, long now) {
     char buf[32];
     std::snprintf(buf, sizeof(buf), "[%d,%d,%d]", e.type, e.code, e.value);
     report(buf);
 
-    // Track hold state for buttons that have a hold rule in the current mode.
+    // Track hold state for keys/buttons that have a hold rule in this mode.
     if (e.type == evmatch::EV_KEY_) {
         if (e.value == 1 && hasHoldRule(e.code))
             holdgen::press(holdState[e.code], now);
@@ -110,10 +113,10 @@ void Joystick::processEvent(const evEvent &e, long now) {
     runRules(e);
 }
 
-void Joystick::serviceHolds(long now) {
+void EvdevDevice::serviceHolds(long now) {
     for (std::vector<Actions>::iterator a = CurrentMode.body_actions.begin();
          a != CurrentMode.body_actions.end(); ++a) {
-        if (a->in.tp != joystick) continue;
+        if (a->in.tp != inputType) continue;
         evmatch::ev_mode m = a->in.evtrig.mode;
         if (m != evmatch::ev_hold && m != evmatch::ev_hold_once) continue;
 
@@ -133,7 +136,7 @@ void Joystick::serviceHolds(long now) {
     }
 }
 
-void Joystick::in_func() {
+void EvdevDevice::in_func() {
     struct pollfd pfd;
     pfd.fd = fd;
     pfd.events = POLLIN;
@@ -148,7 +151,9 @@ void Joystick::in_func() {
             if (n > 0) {
                 size_t count = (size_t) n / sizeof(struct input_event);
                 for (size_t i = 0; i < count; ++i) {
-                    if (iev[i].type == EV_SYN) continue;   // packet boundary
+                    if (iev[i].type == EV_SYN) continue;                 // packet boundary
+                    if (iev[i].type == EV_KEY && iev[i].value == 2)      // kernel autorepeat:
+                        continue;                                        // dropped -- holdGen owns holds
                     evEvent e;
                     e.type  = iev[i].type;
                     e.code  = iev[i].code;

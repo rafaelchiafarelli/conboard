@@ -1,61 +1,47 @@
-#include "main.hpp"
+// conMouse -- the mouse (evdev) input handler process. A thin main over the
+// shared EvdevDevice (same engine as conJoyS / conKeyB), matching mouse input
+// rules (BTN_* buttons, REL_* motion/wheel). The launcher spawns it with the
+// profile and the USB port (-d).
+#include "evdevDevice.hpp"
+#include "runDevice.hpp"
 
+#include <getopt.h>
+#include <iostream>
+#include <string>
 
 using namespace std;
 
-
-static void sig_handler(int dummy)
-{
-	stop = true;
-}
-
 int main(int argc, char *argv[])
 {
-	stop = true;
-	static const char short_options[] = "i:p:x:";
-	static const struct option long_options[] = {
-		{"ID", 1, NULL, 'i'},
-		{"port", 1, NULL, 'p'},
-		{"xml", 1, NULL, 'x'},
-		{ }
-	};
-    
-	if(argc < 4)
-	{
-		std::cout<<"error, must specifi port and xml. Usage ./midi -p: \"hw:1,0,0\" -x \"/home/user/file.xml\""<<endl;
-		return -1;
-	}
-    char p_name[256];
-	memset(p_name,256,0);
-	char fifoFile[256];
-	memset(fifoFile,0,256);
-    string xmlFileName;
-	int c;
-	while ((c = getopt_long(argc, argv, short_options,
-		     		long_options, NULL)) != -1) {
-		switch (c) {
+    static const char short_options[] = "x:p:d:";
+    static const struct option long_options[] = {
+        {"json",    1, NULL, 'x'},
+        {"port",    1, NULL, 'p'},   // explicit evdev node (optional)
+        {"devpath", 1, NULL, 'd'},   // USB DEVPATH of the physical port (launcher sets this)
+        { }
+    };
 
-		case 'p':
-		
-			strcpy(p_name,optarg);
-			break;
-		case 'x':
-		
-			xmlFileName = string(optarg);
-			break;
-		case 'i':
-		
-			sprintf(fifoFile, "%s",optarg);
-			break;
+    if (argc < 2) {
+        cout << "usage: ./conMouse -x \"/path/file.json\" [-d <usb-devpath>] [-p /dev/input/eventN]" << endl;
+        return -1;
+    }
 
-		default:
-			std::cout<<"Try more information."<<endl;
-			return 1;
-		}
-		
-	}
- 
-    return 0;
+    string jsonFileName, devNode, usbDevpath;
+    int c;
+    while ((c = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
+        switch (c) {
+            case 'x': jsonFileName = optarg; break;
+            case 'p': devNode      = optarg; break;
+            case 'd': usbDevpath   = optarg; break;
+            default:  cout << "Try more information." << endl; return 1;
+        }
+    }
+    if (jsonFileName.empty()) {
+        cout << "usage: ./conMouse -x \"/path/file.json\" [-d <usb-devpath>] [-p /dev/input/eventN]" << endl;
+        return -1;
+    }
+
+    return condev::runDevice([&]{
+        return new EvdevDevice(mouse, "mouse", jsonFileName, devNode, usbDevpath);
+    });
 }
-
-
