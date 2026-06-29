@@ -69,6 +69,30 @@ TEST_SUITE("filter") {
     }
 }
 
+TEST_SUITE("port") {
+    // Binding a handler to a specific physical port: an input node's /sys path
+    // sits under the USB device's DEVPATH iff they share the port segment.
+    const std::string node =
+        "/sys/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2/1-1.2:1.0/input/input7/event7";
+
+    TEST_CASE("node under the matching port") {
+        CHECK(nodeUnderUsbPath(node, "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2"));
+    }
+    TEST_CASE("node NOT under a different port") {
+        CHECK_FALSE(nodeUnderUsbPath(node, "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.3"));
+    }
+    TEST_CASE("port prefix is not a deeper port (1-1.2 != 1-1.2.3)") {
+        const std::string deeper =
+            "/sys/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2.3/1-1.2.3:1.0/input/input8/event8";
+        CHECK(nodeUnderUsbPath(deeper, "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2.3"));
+        CHECK_FALSE(nodeUnderUsbPath(deeper, "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2"));
+    }
+    TEST_CASE("empty inputs never match") {
+        CHECK_FALSE(nodeUnderUsbPath(node, ""));
+        CHECK_FALSE(nodeUnderUsbPath("", "/devices/x"));
+    }
+}
+
 TEST_SUITE("usb") {
     TEST_CASE("Audio/MIDIStreaming is reported as MIDI") {
         CHECK(usbClassName(0x01, 0x03, 0x00) == "Audio / MIDIStreaming (MIDI)");

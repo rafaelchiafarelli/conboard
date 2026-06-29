@@ -30,8 +30,16 @@ struct InputDevice {
     std::string node;         // /dev/input/eventN
     std::string name;         // EVIOCGNAME
     std::string type;         // "keyboard" | "mouse" | "joystick / gamepad" | ...
+    std::string sysfsPath;    // resolved /sys path of the node (contains the USB DEVPATH)
     int keys = 0, absAxes = 0, relAxes = 0;
 };
+
+// Does an input node's resolved sysfs path sit under a given USB device DEVPATH
+// (the udev DEVPATH of the usb_device, e.g. "/devices/.../usb1/1-1/1-1.2")?
+// Used to bind a handler to the specific physical port, so two devices with the
+// SAME VID/PID on different ports are handled separately. Pure string logic
+// (path-segment aware: "1-1.2" does not match "1-1.2.3"); unit-tested.
+bool nodeUnderUsbPath(const std::string &nodeSysfsPath, const std::string &usbDevpath);
 
 // Evdev capabilities as plain sets of present codes (EV_*, KEY_*/BTN_*, ABS_*,
 // REL_*). This is the pure input to classification, so classifyEvdev() can be
