@@ -1,5 +1,6 @@
 #include "joystickthread.hpp"
 #include "evMatch.hpp"
+#include "deviceDetect.hpp"   // condetect::scanInputDevices for node self-discovery
 
 #include <linux/input.h>
 #include <fcntl.h>
@@ -18,12 +19,32 @@ static long nowMs() {
     return (long) duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
+std::string Joystick::resolveNode() {
+    std::vector<condetect::InputDevice> inputs = condetect::scanInputDevices();
+    // 1) match the profile's declared input name (EVIOCGNAME)
+    if (!json.DevInput.empty())
+        for (std::vector<condetect::InputDevice>::iterator d = inputs.begin(); d != inputs.end(); ++d)
+            if (d->name == json.DevInput)
+                return d->node;
+    // 2) fall back to the first node classified as a joystick/gamepad
+    for (std::vector<condetect::InputDevice>::iterator d = inputs.begin(); d != inputs.end(); ++d)
+        if (d->type.find("joystick") != std::string::npos)
+            return d->node;
+    return "";
+}
+
 Joystick::Joystick(const std::string &jsonFileName, const std::string &devNode_)
     : DeviceEngine(jsonFileName), devNode(devNode_)
 {
-    fd = open(devNode.c_str(), O_RDONLY | O_NONBLOCK);
+    if (devNode.empty())
+        devNode = resolveNode();   // self-discover from the profile (launcher passes no -p)
+
+    if (!devNode.empty())
+        fd = open(devNode.c_str(), O_RDONLY | O_NONBLOCK);
     if (fd < 0)
-        std::cout << "joystick: cannot open " << devNode << " -- reader not started" << std::endl;
+        std::cout << "joystick: no usable evdev node ('" << devNode << "') -- reader not started" << std::endl;
+    else
+        std::cout << "joystick: reading " << devNode << std::endl;
 
     startEngine();   // output + coms threads, run header, activate initial mode
 

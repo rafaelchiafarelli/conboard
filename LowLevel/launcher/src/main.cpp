@@ -365,17 +365,16 @@ void create_json(char *devInfo, char *folder)
 	keyParser info(devInfo,'=');
 	vector<KeyValue> info_from_dev = info.GetParsed();
 
-	// Skip devices that expose nothing conboard can handle (e.g. a USB hub) so we
-	// don't spawn a dummy handler for them. Only filter when udev gave a positive,
-	// non-actionable interface list; if ID_USB_INTERFACES is absent, proceed.
+	// A device that MATCHES a known profile is always handled -- even if its
+	// interface class isn't in the generic "actionable" set. (An Xbox pad is USB
+	// class 0xff/vendor-specific, not HID, so an early actionable filter would
+	// wrongly skip it.) So the actionable check below only gates DUMMY generation
+	// for UNMATCHED devices, so we still don't spawn dummy handlers for hubs.
+	// isActionableInterfaces stays the shared, unit-tested rule.
 	std::string ifaces;
 	for (const auto &kv : info_from_dev)
 		if (kv.key == "ID_USB_INTERFACES") { ifaces = kv.value; break; }
-	if (!ifaces.empty() && !condetect::isActionableInterfaces(ifaces))
-	{
-		std::cout << "ignoring non-actionable device (interfaces " << ifaces << ")" << std::endl;
-		return;
-	}
+	bool actionable = ifaces.empty() || condetect::isActionableInterfaces(ifaces);
 
 	std::vector<ModeType> Mode;
 	std::vector<Actions> h;
@@ -465,7 +464,11 @@ void create_json(char *devInfo, char *folder)
 				system(cmd);				
 			}
 
-			if(!hasHandler)
+			if(!hasHandler && !actionable)
+			{
+				std::cout<<"no profile matched and device is non-actionable (interfaces "<<ifaces<<") -- skipping dummy"<<std::endl;
+			}
+			else if(!hasHandler)
 			{
 				std::cout<<"no handler! generate the dummy"<<std::endl;
 				std::string dummyjson("{\"DEVICE\":{\"type\":\"\", \"name\":\"\", \"input\":\"\", \"output\":\"\"}, \"header\":{\"identifier\":{\"generics\":{");

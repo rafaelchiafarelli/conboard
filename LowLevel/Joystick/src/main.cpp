@@ -18,11 +18,14 @@ int main(int argc, char *argv[])
         { }
     };
 
-    if (argc < 3) {
-        cout << "usage: ./conJoyS -p /dev/input/eventN -x \"/path/file.json\"" << endl;
+    if (argc < 2) {
+        cout << "usage: ./conJoyS -x \"/path/file.json\" [-p /dev/input/eventN]" << endl;
         return -1;
     }
 
+    // -x (json) is required; -p (evdev node) is optional -- when omitted, the
+    // handler self-discovers the node from the profile, like conMIDI does for
+    // its ALSA port. The launcher relies on this and passes only -x.
     string jsonFileName, devNode;
     int c;
     while ((c = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
@@ -33,8 +36,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (jsonFileName.empty() || devNode.empty()) {
-        cout << "usage: ./conJoyS -p /dev/input/eventN -x \"/path/file.json\"" << endl;
+    if (jsonFileName.empty()) {
+        cout << "usage: ./conJoyS -x \"/path/file.json\" [-p /dev/input/eventN]" << endl;
         return -1;
     }
 

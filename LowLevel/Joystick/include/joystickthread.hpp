@@ -24,6 +24,12 @@ public:
     void Stop();
 
 private:
+    // Resolve the /dev/input/eventN node when one wasn't passed on the command
+    // line: prefer the evdev device whose name matches the profile's "input"
+    // (json.DevInput), else the first joystick/gamepad node. Mirrors how conMIDI
+    // self-discovers its ALSA port, and survives evdev renumbering on replug.
+    std::string resolveNode();
+
     void in_func();                                          // evdev reader thread
     void runRules(const evmatch::evEvent &e);                // match + enqueue (no report)
     void processEvent(const evmatch::evEvent &e, long now);  // report + holds + rules
