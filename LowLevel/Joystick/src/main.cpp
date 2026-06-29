@@ -1,6 +1,7 @@
-// conJoyS -- the joystick (evdev) handler process. Launched by the launcher for
-// a gamepad/joystick, given the device's json profile and its /dev/input node.
-#include "joystickthread.hpp"
+// conJoyS -- the joystick (evdev) handler process. A thin main over the shared
+// EvdevDevice; the launcher spawns it for a gamepad with the device's json
+// profile and (for separation) its USB port via -d.
+#include "evdevDevice.hpp"
 #include "runDevice.hpp"
 
 #include <getopt.h>
@@ -14,7 +15,7 @@ int main(int argc, char *argv[])
     static const char short_options[] = "x:p:d:";
     static const struct option long_options[] = {
         {"json",    1, NULL, 'x'},
-        {"port",    1, NULL, 'p'},   // explicit evdev node, e.g. /dev/input/event5
+        {"port",    1, NULL, 'p'},   // explicit evdev node (optional)
         {"devpath", 1, NULL, 'd'},   // USB DEVPATH of the physical port (launcher sets this)
         { }
     };
@@ -24,10 +25,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // -x (json) is required. -p (explicit node) and -d (bind to a USB port) are
-    // optional; with neither, the handler self-discovers a gamepad node like
-    // conMIDI finds its ALSA port. The launcher passes -d so two identical pads
-    // on different ports stay separate.
     string jsonFileName, devNode, usbDevpath;
     int c;
     while ((c = getopt_long(argc, argv, short_options, long_options, NULL)) != -1) {
@@ -38,13 +35,12 @@ int main(int argc, char *argv[])
             default:  cout << "Try more information." << endl; return 1;
         }
     }
-
     if (jsonFileName.empty()) {
         cout << "usage: ./conJoyS -x \"/path/file.json\" [-d <usb-devpath>] [-p /dev/input/eventN]" << endl;
         return -1;
     }
 
-    // Shared scaffolding (signals, spin loop, Stop/delete); device-specific
-    // construction is the factory.
-    return condev::runDevice([&]{ return new Joystick(jsonFileName, devNode, usbDevpath); });
+    return condev::runDevice([&]{
+        return new EvdevDevice(joystick, "joystick", jsonFileName, devNode, usbDevpath);
+    });
 }
