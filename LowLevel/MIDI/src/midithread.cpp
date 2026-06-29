@@ -212,95 +212,18 @@ void MIDI::processInput(midiSignal midiS)
     
     if(CurrentMode.is_active)
     {
+        // Matching/output logic lives in the shared, unit-tested midimap module
+        // (LowLevel/Common/midiMap.*) so this thread and the tests agree.
         for( std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin(); it_act != CurrentMode.body_actions.end(); it_act++)
         {
-            switch(it_act->in.mAct.midi_mode)
+            if(midimap::matches(it_act->in.mAct, midiS))
             {
-                case midi_normal:
+                oQueue.push(midimap::resolveOutputs(*it_act, midiS));
+                send = true;
+                if(it_act->change_mode && it_act->change_to != -1)
                 {
-                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
-                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
-                    (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
-                    {
-                        oQueue.push(it_act->out);
-                        send = true;
-                        if(it_act->change_mode && it_act->change_to != -1)
-                        {
-                            changeMode(it_act);
-                        }
-                    }
+                    changeMode(it_act);
                 }
-                break;
-                case midi_trigger_higher:
-                {
-                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
-                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
-                    (it_act->in.mAct.midi.byte[2] < midiS.byte[2]))
-                    {
-                        oQueue.push(it_act->out);
-                        send = true;
-                        if(it_act->change_mode && it_act->change_to != -1)
-                        {
-                            changeMode(it_act);
-                        }
-                    }
-                }
-                break;                
-                case midi_trigger_lower:
-                {
-                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
-                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
-                    (it_act->in.mAct.midi.byte[2] > midiS.byte[2]))
-                    {
-                        oQueue.push(it_act->out);
-                        send = true;
-                        if(it_act->change_mode && it_act->change_to != -1)
-                        {
-                            changeMode(it_act);
-                        }
-                    }
-                }
-                break;
-                case midi_spot:
-                {
-                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
-                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]))
-                    {
-                        for(vector<devActions>::iterator out_it=it_act->out.begin();
-                            out_it!=it_act->out.end();
-                            out_it++)
-                            {
-                                out_it->spot = (int) midiS.byte[2];
-                            }
-                        oQueue.push(it_act->out);
-                        send = true;
-                        if(it_act->change_mode && it_act->change_to != -1)
-                        {
-                            changeMode(it_act);
-                        }
-                    }
-                }
-                case midi_blink:
-                {
-                if((it_act->in.mAct.midi.byte[0] == midiS.byte[0]) &&
-                    (it_act->in.mAct.midi.byte[1] == midiS.byte[1]) &&
-                    (it_act->in.mAct.midi.byte[2] == midiS.byte[2]))
-                    {
-                        for(vector<devActions>::iterator out_it=it_act->out.begin();
-                            out_it!=it_act->out.end();
-                            out_it++)
-                            {
-                                out_it->spot = (int) midiS.byte[2];
-                            }
-                        oQueue.push(it_act->out);
-                        send = true;
-                        if(it_act->change_mode && it_act->change_to != -1)
-                        {
-                            changeMode(it_act);
-                        }
-                    }
-                }                
-                break;
             }
         }
     }
@@ -469,7 +392,7 @@ void MIDI::in_func()
             midiS.byte[0] = buf[0];
             midiS.byte[1] = buf[1];
             midiS.byte[2] = buf[2];
-            midiS.byte[4] = 0;
+            midiS.byte[3] = 0;   // was byte[4] — out-of-bounds write (char[4])
             processInput(midiS);
 		}
 	}
