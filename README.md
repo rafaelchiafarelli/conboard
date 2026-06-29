@@ -77,14 +77,12 @@ are in that board's `HOW-TO-INSTALL.txt`.
     * Delay in action to send to the PC
     * Multiple output to the device types (blink, normal, etc)
 
-* joystick device (input) — BUILT, pending hardware test
-    * evdev reader on `DeviceEngine`; pure `evMatch` matcher (press / release / hold / hold_once / higher / lower / spot)
-    * `holdGen` synthesizes hold events for non-autorepeating gamepad buttons (repeat + long-press)
-    * self-discovers its `/dev/input` node from the profile; launcher spawns `conJoyS`
-    * starter profile: `boards/Xbox360.json`
-
-* keyboard device (input)
-    * the shared evdev matcher already covers keyboard triggers; a `conKeyB` reader is not built yet
+* joystick / keyboard / mouse (input) — BUILT, pending hardware test
+    * one shared `EvdevDevice` engine (on `DeviceEngine`) serves `conJoyS` / `conKeyB` / `conMouse`; a new device is a ~45-line main
+    * pure `evMatch` matcher (press / release / hold / hold_once / higher / lower / spot), symbolic triggers (`BTN_*`/`KEY_*`/`ABS_*`/`REL_*`)
+    * `holdGen` synthesizes all hold events uniformly (rule-timed repeat + long-press); kernel autorepeat is dropped so behaviour is identical across device types
+    * self-discovers its `/dev/input` node; per-device separation by physical port or trustworthy serial; handles device moves between ports
+    * starter joystick profile: `boards/Xbox360.json` (keyboard/mouse profiles are per-device, add like that one)
 
     
 # What is Missing?
@@ -99,11 +97,10 @@ are in that board's `HOW-TO-INSTALL.txt`.
     * SysEx commands are not working
     * multiple commands and multiple actions can overrun the system (pre-existing 10-slot reporting-queue overflow, `STACKED_IO_MSG`)
     * not yet migrated onto the shared `DeviceEngine` (still uses its own orchestration)
-* joystick device
-    * not yet exercised on real hardware (built + unit-tested + compiles only)
-    * confirm the controller's USB VID/PID matches the profile (default is Xbox 360 wired `045e:028e`)
-* keyboard / mouse as input devices
-    * `conKeyB` / `conMouse` evdev readers not built yet (only the shared matcher exists)
+    * identical-MIDI separation not done — it's ALSA (binds by name), so it needs ALSA-card binding rather than the evdev per-port mechanism
+* joystick / keyboard / mouse (input)
+    * built + unit-tested + compiles, but **not yet exercised on real hardware**
+    * keyboard / mouse need per-device json profiles (none shipped yet — add like `boards/Xbox360.json`)
 
     
 
