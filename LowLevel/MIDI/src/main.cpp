@@ -18,6 +18,7 @@
 #include "main.hpp"
 
 #include "midithread.hpp"
+#include "runDevice.hpp"
 #include <chrono>
 #include <string>
 #include <atomic>
@@ -180,21 +181,14 @@ static void device_list(void)
 	} while (card >= 0);
 }
 
-static void sig_handler(int dummy)
-{
-	stop = true;
-}
-
 int main(int argc, char *argv[])
 {
-
-	stop = false;
 	static const char short_options[] = "x:";
 	static const struct option long_options[] = {
 		{"json", 1, NULL, 'x'},
 		{ }
 	};
-    
+
 	if(argc < 2)
 	{
 		cout<<"error, must specifi json. Usage ./midi -x \"/home/user/file.json\""<<endl;
@@ -202,10 +196,10 @@ int main(int argc, char *argv[])
 	}
     string jsonFileName;
 	int c;
-	while ((c = getopt_long(argc, 
-							argv, 
+	while ((c = getopt_long(argc,
+							argv,
 							short_options,
-				     		long_options, NULL)) != -1) 
+				     		long_options, NULL)) != -1)
 	{
 		switch (c) {
 		case 'x':
@@ -214,30 +208,16 @@ int main(int argc, char *argv[])
 		default:
 			cout<<"Try more information."<<endl;
 			return 1;
-		}	
-	}
-    device_list();
-
-	MIDI *devMIDI;
-	
-	devMIDI = new MIDI(jsonFileName,hw_ports);
-
-	signal(SIGINT,  sig_handler);
-	signal(SIGTERM, sig_handler);
-	signal(SIGKILL, sig_handler);
-	signal(SIGQUIT, sig_handler);
-
-	while(!stop)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		//messenger must be here
+		}
 	}
 
-	devMIDI->Stop();
-	delete devMIDI;
-
-    return 0;
-
+	// Signal handling + spin loop + Stop()/delete are the shared per-device
+	// boilerplate, now in condev::runDevice. Only MIDI-specific discovery and
+	// construction stay here.
+	return condev::runDevice([&]{
+		device_list();
+		return new MIDI(jsonFileName, hw_ports);
+	});
 }
 
 
