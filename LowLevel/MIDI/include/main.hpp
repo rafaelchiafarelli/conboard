@@ -9,6 +9,6 @@ using namespace std;
 
 
 
-atomic_bool stop;
+// The process-wide stop flag now lives in condev::runDevice (runDevice.hpp).
 vector<raw_midi> hw_ports;
 
