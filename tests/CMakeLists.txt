@@ -10,10 +10,14 @@ add_executable(conboard_tests
     test_midimap.cpp
     test_jsonparser.cpp
     test_launchermatch.cpp
+    test_evmatch.cpp
+    test_holdgen.cpp
     ${COMMON_DIR}/src/deviceDetect.cpp
     ${COMMON_DIR}/src/midiMap.cpp
     ${COMMON_DIR}/src/jsonParser.cpp
-    ${COMMON_DIR}/src/launcherMatch.cpp)
+    ${COMMON_DIR}/src/launcherMatch.cpp
+    ${COMMON_DIR}/src/evMatch.cpp
+    ${COMMON_DIR}/src/holdGen.cpp)
 
 target_include_directories(conboard_tests PRIVATE
     ${COMMON_DIR}/include
@@ -25,7 +29,7 @@ set_target_properties(conboard_tests PROPERTIES
 
 # Register one CTest entry per doctest suite, so `ctest -R joystick` works too.
 enable_testing()
-foreach(suite classifier joystick usb midi json launch filter)
+foreach(suite classifier joystick usb midi json launch filter evmatch holdgen)
     add_test(NAME ${suite}
              COMMAND conboard_tests --test-suite=${suite} --no-intro)
 endforeach()
