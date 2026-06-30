@@ -1,0 +1,17 @@
+[Unit]
+Description=conboard backend (C++ / Crow) — management API + dispatcher relay
+Documentation=https://github.com/rafaelchiafarelli/conboard
+After=network.target postgresql.service
+
+[Service]
+User=root
+Type=simple
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+WorkingDirectory=/conboard/backend
+# Built binary (see backend/CMakeLists.txt). Listens on localhost:8080 (nginx proxies).
+ExecStart=/conboard/backend/build/conboard_backend
+
+[Install]
+WantedBy=multi-user.target

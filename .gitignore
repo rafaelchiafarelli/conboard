@@ -35,6 +35,8 @@ build/
 backend/venv/
 backend/static/
 backend/templates/
+backend/db/.env
+backend/build/
 frontend/venv/
 *.pyc
 *__pycache__
