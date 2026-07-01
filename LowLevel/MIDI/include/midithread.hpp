@@ -1,41 +1,32 @@
 /**
- * A device is a set of actions executed during boot-up and a set of actions 
- * that are taken in a by event manner.
- * Device has a personalized thread to be executed continously reading the events
- * from the phisycal device.
- * As the device sends input signals, these becomes actions and responses could
- * could be output to the keyboard or mouse, or midi responses to the sender.
- * 
- * features:
- *  - change mode: When a specific action happens (as defined in the xml). We must change
- *  the current mode (all the actions are descripted by another mode). More than that, 
- *  mode can be changed by increase, decrease or specific.
- *  - delay: a time waited in milliseconds, as described in the xml, for the next output to be executed
- *  - action queue: since delay stop the output of this thread, a queue must be exacted.
- *  - blink: an outputn special type. It will send the midi on and than send the midi off
- */ 
+ * MIDI input handler -- now a thin subclass of DeviceEngine.
+ *
+ * A device is a set of boot-up actions plus a set of event-driven actions. As the
+ * physical MIDI device sends input signals, they are matched against the current
+ * mode's rules and turned into outputs (keyboard/mouse HID, or MIDI feedback back
+ * to the sender -- e.g. an LED blink).
+ *
+ * Everything that does NOT depend on the MIDI wire format lives in DeviceEngine:
+ *   - the output queue + executor thread (keyboard/mouse/joystick HID),
+ *   - the backend coms/heartbeat loop (reload / file / outstop commands),
+ *   - the mode model + mode switching, Reload, and file logging.
+ * MIDI adds only:
+ *   - its INPUT layer: the ALSA rawmidi reader (in_func) + the pure midimap matcher,
+ *   - its device-native OUTPUT: emitNative() -> raw MIDI (LED feedback / blink).
+ */
 
 #ifndef MIDITHREAD_HPP
 #define MIDITHREAD_HPP
 
-#include "stdio.h"
+#include "deviceEngine.hpp"
 #include "actions.h"
-#include "jsonParser.h"
-#include <sstream>
-#include <string>
-#include <alsa/asoundlib.h>
+#include "midiMap.hpp"
 #include "aconfig.h"
-#include <thread>
-#include <set>
-#include <atomic>
+
+#include <alsa/asoundlib.h>
 #include <string>
 #include <vector>
-#include <queue>
-#include <mutex>
-#include <oActions.hpp>
-#include "midiMap.hpp"
-
-#include "zmq_coms.hpp"
+#include <thread>
 
 using namespace std;
 #define PORT_NAME_SIZE 10
@@ -56,65 +47,32 @@ class raw_midi{
     };
 };
 
-class MIDI : private oActions{
+class MIDI : public DeviceEngine {
+    public:
+        MIDI(string jsonFileName, vector<raw_midi> hw_ports);
+        ~MIDI() override;
+
+        // Stop the reader, then tear down the engine. Idempotent.
+        void Stop();
+
+    protected:
+        // Device-native feedback: only MIDI-typed outputs are emitted here (raw
+        // MIDI to the sender); keyboard/mouse HID are handled generically by the
+        // engine's output executor.
+        void emitNative(const devActions &out) override;
 
     private:
-
-        std::string jsonFileName;
-
-        mutex locking_mechanism;
-        std::thread *in_thread;
-        std::thread *out_thread;
-        std::thread *thcoms;
-        zmq_coms *com;
-        
-        
-        std::queue<std::vector<devActions> > oQueue;
-        void in_func(); //midi input handler
-        void out_func(); //keyboard and mouse handler
-        bool outToFile;
-        std::string outFileName;
-        ofstream outFileStream;
-
-        atomic_bool send;
-        atomic_bool stop;
-        int timeout;
-
-        std::vector<Actions> header;
-        std::vector<ModeType> modes;
-        ModeType CurrentMode;
-        jsonParser json;
-
-        unsigned int SelectedMode;
-
-        snd_rawmidi_t *input;
-        snd_rawmidi_t *output;
-        char port_name[PORT_NAME_SIZE];
-        void saveJSON();
-        void changeMode(std::vector<Actions>::iterator it_act);
-        void execHeader();
-        void parse();
-        void processInput(midiSignal midiS);
-        void processMode(ModeType m);
+        void in_func();                         // ALSA rawmidi reader thread
+        void processInput(midiSignal midiS);    // report + match + enqueue
         void send_midi(char *send_data, size_t send_data_length);
-        void send_mouse(mouseActions mouse);
-        void send_joystick(){};
-        void startup();
 
-        std::vector<std::string> explode(std::string const & s, char delim);
-    public:
-        void coms_handler();
-        void Stop();
-        void Reload();
-        void outStop();
-        bool outFile(string name);
-        void oMouse(mouseActions){};
-        void oJoystick(joystickActions){};
-        void oKeyboard(keyboardActions){};
-        MIDI( string xmlFileName, vector<raw_midi> hw_ports);
-        ~MIDI();
-
+        std::thread   *in_thread = nullptr;
+        snd_rawmidi_t *input  = nullptr;
+        snd_rawmidi_t *output = nullptr;
+        char           port_name[PORT_NAME_SIZE];
+        // Reader idle budget. Kept for parity with the original reader loop; its
+        // value is inconsequential (both branches on a poll timeout `continue`).
+        int            timeout = 0;
 };
-
 
 #endif
