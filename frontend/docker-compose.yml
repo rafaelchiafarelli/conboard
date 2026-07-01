@@ -1,0 +1,28 @@
+# conboard frontend — containerized dev server (Vite). No host Node required.
+#
+#   docker compose up console        # http://localhost:5173  (hot reload)
+#   docker compose down              # stop
+#   docker compose run --rm console npm install <pkg>   # manage deps in-container
+#   docker compose run --rm console npm run typecheck
+#
+# node_modules lives in a named volume so it never touches the host source tree
+# (and survives `down`). Wipe it with:  docker volume rm frontend_console_node_modules
+services:
+  console:
+    build:
+      context: ./console
+      target: dev
+    container_name: conboard-console
+    ports:
+      - "${CONSOLE_PORT:-5173}:5173"
+    volumes:
+      - ./console:/app
+      - console_node_modules:/app/node_modules
+    environment:
+      # inotify doesn't cross the bind mount reliably; Vite is configured to poll.
+      CHOKIDAR_USEPOLLING: "true"
+    stdin_open: true
+    tty: true
+
+volumes:
+  console_node_modules:
