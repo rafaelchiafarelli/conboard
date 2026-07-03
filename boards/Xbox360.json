@@ -36,11 +36,11 @@
                         "output": [ { "type": "keyboard", "data": "letter_b", "keyType": "oneKey", "hold": "not_hold", "delay": 0 } ]
                     },
                     {
-                        "input":  { "type": "joystick", "code": "BTN_WEST", "mode": "press" },
+                        "input":  { "type": "joystick", "code": "BTN_NORTH", "mode": "press" },
                         "output": [ { "type": "keyboard", "data": "letter_x", "keyType": "oneKey", "hold": "not_hold", "delay": 0 } ]
                     },
                     {
-                        "input":  { "type": "joystick", "code": "BTN_NORTH", "mode": "release" },
+                        "input":  { "type": "joystick", "code": "BTN_WEST", "mode": "release" },
                         "output": [ { "type": "keyboard", "data": "letter_y", "keyType": "oneKey", "hold": "not_hold", "delay": 0 } ]
                     },
                     {
