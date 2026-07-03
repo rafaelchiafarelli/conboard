@@ -1,12 +1,22 @@
 [Unit]
-Description=launcher to find all json with assosiated files.
+Description=conboard coldplug: handle USB input devices already attached at boot
 Documentation=https://github.com/rafaelchiafarelli/conboard
+# Handlers can only work once the dispatcher (ZMQ registration) and the USB gadget
+# (/dev/hidgN output) are up, and udevd must be ready to process the trigger.
+After=dispatcher.service usb-otg.service systemd-udevd.service
+Wants=dispatcher.service usb-otg.service
 
 [Service]
-User=root
 Type=oneshot
-ExecStart=/conboard/LowLevel/launcher/build/launcher  -r -x /conboard/boards/ -d /conboard/boards/ 
-
+RemainAfterExit=yes
+# Replay "add" uevents for USB devices present at boot: udev re-runs 100-usb.rules
+# -> /conboard/event_handler.sh -> launcher create_json, which spawns the SAME
+# identity-named handler service ("<DevName>-<identity>.service") as a live hotplug.
+# This replaces the old `launcher -r` scan, which only restarted a pre-existing
+# "<DevName>.service" and therefore never matched the identity-suffixed name the
+# hotplug path creates -- so nothing auto-started on boot until a replug.
+ExecStart=/usr/bin/env udevadm trigger --action=add --subsystem-match=usb
+ExecStart=/usr/bin/env udevadm settle
 
 [Install]
 WantedBy=multi-user.target
