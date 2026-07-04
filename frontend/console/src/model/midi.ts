@@ -1,7 +1,7 @@
 // MIDI decode helpers — turn raw status/data bytes into human-readable terms so
 // the editor can show "Note On · ch1  note 1 = 64" instead of "144 1 64".
 
-const MESSAGE_NAMES: Record<number, string> = {
+export const MESSAGE_NAMES: Record<number, string> = {
   0x80: 'Note Off',
   0x90: 'Note On',
   0xa0: 'Aftertouch',
@@ -9,6 +9,21 @@ const MESSAGE_NAMES: Record<number, string> = {
   0xc0: 'Program Change',
   0xd0: 'Channel Pressure',
   0xe0: 'Pitch Bend',
+}
+
+/** Status byte 0x80..0xe0 → true when the message is Control Change (b1 = CC number). */
+export function isCC(b0: number): boolean {
+  return (b0 & 0xf0) === 0xb0
+}
+
+/** Split a status byte into its message type (high nibble) and 1-based channel. */
+export function splitStatus(b0: number): { type: number; channel: number } {
+  return { type: b0 & 0xf0, channel: (b0 & 0x0f) + 1 }
+}
+
+/** Combine a message type (high nibble) and 1-based channel back into a status byte. */
+export function makeStatus(type: number, channel: number): number {
+  return (type & 0xf0) | ((channel - 1) & 0x0f)
 }
 
 const SHORT_NAMES: Record<number, string> = {
