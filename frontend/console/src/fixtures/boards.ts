@@ -1,11 +1,10 @@
-// Fixtures generated verbatim from the real board files (boards/Arduino_Micro.json,
-// boards/Dj4Mix.json) — the on-device runtime source of truth. This is the COMPLETE
-// configuration (DJ-Tech mode 0 carries all ~198 passthrough rules), not a trimmed
-// subset. Regenerate from the source JSON rather than hand-editing. Stands in for the
-// backend's data provider until the (harpia-generated) management API exists.
+// Fixtures generated verbatim from the real board files: boards/Arduino_Micro.json,
+// boards/Dj4Mix.json (MIDI) and boards/Xbox360.json (joystick, from origin/main — the
+// on-device runtime source of truth). Complete configs, not trimmed. Regenerate from the
+// source JSON rather than hand-editing. Fake keyboard/mouse devices for UI testing live
+// in fakeKeyboards.ts / fakeMice.ts; fixtures/devices.ts aggregates real + fake.
 //
-// Shape matches ../model/rules.ts one-to-one (that model was authored to mirror these
-// files), so the JSON drops straight in as a typed Board[].
+// Shape matches ../model/rules.ts one-to-one, so the JSON drops straight in as Board[].
 
 import type { Board } from '../model/rules'
 
@@ -4028,6 +4027,173 @@ export const BOARDS: Board[] = [
                   "delay": 0,
                   "keyType": "oneKey",
                   "hold": "not_hold"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "DEVICE": {
+      "timeout": 0,
+      "type": "joystick",
+      "name": "Xbox360",
+      "input": "Microsoft X-Box 360 pad",
+      "output": ""
+    },
+    "header": {
+      "identifier": {
+        "generics": {},
+        "tags": {
+          "ID_BUS": "usb",
+          "ID_VENDOR_ID": "045e",
+          "ID_MODEL_ID": "028e"
+        },
+        "executable": {
+          "exec": "/conboard/LowLevel/Joystick/build/conJoyS"
+        }
+      },
+      "actions": []
+    },
+    "body": {
+      "modes": [
+        {
+          "id": 0,
+          "active": true,
+          "mode_header": {
+            "actions": []
+          },
+          "actions": [
+            {
+              "input": {
+                "type": "joystick",
+                "code": "BTN_SOUTH",
+                "mode": "press"
+              },
+              "output": [
+                {
+                  "type": "keyboard",
+                  "data": "letter_a",
+                  "keyType": "oneKey",
+                  "hold": "not_hold",
+                  "delay": 0
+                }
+              ]
+            },
+            {
+              "input": {
+                "type": "joystick",
+                "code": "BTN_EAST",
+                "mode": "press"
+              },
+              "output": [
+                {
+                  "type": "keyboard",
+                  "data": "letter_b",
+                  "keyType": "oneKey",
+                  "hold": "not_hold",
+                  "delay": 0
+                }
+              ]
+            },
+            {
+              "input": {
+                "type": "joystick",
+                "code": "BTN_NORTH",
+                "mode": "press"
+              },
+              "output": [
+                {
+                  "type": "keyboard",
+                  "data": "letter_x",
+                  "keyType": "oneKey",
+                  "hold": "not_hold",
+                  "delay": 0
+                }
+              ]
+            },
+            {
+              "input": {
+                "type": "joystick",
+                "code": "BTN_WEST",
+                "mode": "release"
+              },
+              "output": [
+                {
+                  "type": "keyboard",
+                  "data": "letter_y",
+                  "keyType": "oneKey",
+                  "hold": "not_hold",
+                  "delay": 0
+                }
+              ]
+            },
+            {
+              "input": {
+                "type": "joystick",
+                "code": "BTN_TL",
+                "mode": "hold",
+                "interval": 150
+              },
+              "output": [
+                {
+                  "type": "keyboard",
+                  "data": "letter_l",
+                  "keyType": "oneKey",
+                  "hold": "not_hold",
+                  "delay": 0
+                }
+              ]
+            },
+            {
+              "input": {
+                "type": "joystick",
+                "code": "BTN_TR",
+                "mode": "hold_once",
+                "delay": 800
+              },
+              "output": [
+                {
+                  "type": "keyboard",
+                  "data": "right bumper long press",
+                  "keyType": "text",
+                  "hold": "not_hold",
+                  "delay": 0
+                }
+              ]
+            },
+            {
+              "input": {
+                "type": "joystick",
+                "code": "BTN_START",
+                "mode": "press"
+              },
+              "output": [
+                {
+                  "type": "keyboard",
+                  "data": "sudo systemctl status ",
+                  "keyType": "text",
+                  "hold": "not_hold",
+                  "delay": 0
+                }
+              ]
+            },
+            {
+              "input": {
+                "type": "joystick",
+                "code": "ABS_RZ",
+                "mode": "higher",
+                "value": 200
+              },
+              "output": [
+                {
+                  "type": "keyboard",
+                  "data": "letter_r",
+                  "keyType": "oneKey",
+                  "hold": "not_hold",
+                  "delay": 0
                 }
               ]
             }

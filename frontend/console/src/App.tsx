@@ -1,11 +1,19 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { BOARDS } from './fixtures/devices'
 import { decodeMidi } from './model/midi'
-import { validateBoards, type Rule } from './model/rules'
+import { validateBoards, type Rule, type DeviceType } from './model/rules'
 import RuleEditor from './RuleEditor'
 import Monitor from './Monitor'
 
 type View = 'rules' | 'monitor'
+
+// Device rail grouping — one section per device kind, in a stable order.
+const DEVICE_GROUPS: { type: DeviceType; label: string }[] = [
+  { type: 'midi', label: 'MIDI' },
+  { type: 'joystick', label: 'Joysticks' },
+  { type: 'keyboard', label: 'Keyboards' },
+  { type: 'mouse', label: 'Mice' },
+]
 
 /** One-line summary of a rule's trigger, for the list. */
 function triggerSummary(input: Rule['input']): { badge: string; human: string; bytes: string } {
@@ -120,20 +128,31 @@ export default function App() {
       <div className="work" hidden={view !== 'rules'}>
         <nav className="rail" aria-label="Devices">
           <span className="lbl">Devices</span>
-          {BOARDS.map((d, i) => {
-            const live = d.body.modes.find((m) => m.active)
+          {DEVICE_GROUPS.map((g) => {
+            const items = BOARDS.map((b, i) => ({ b, i })).filter((x) => x.b.DEVICE.type === g.type)
+            if (!items.length) return null
             return (
-              <button
-                key={d.DEVICE.name}
-                className={`dev${i === devIdx ? ' active' : ''}`}
-                onClick={() => select(i, 0, 0)}
-              >
-                <span className="dev-name">{d.DEVICE.name}</span>
-                <span className="dev-meta">
-                  <span className="type-badge">{d.DEVICE.type}</span>
-                  mode {live ? live.id : '-'} live
+              <div className="rail-group" key={g.type}>
+                <span className="rail-group-label">
+                  {g.label} <span className="rail-group-n">{items.length}</span>
                 </span>
-              </button>
+                {items.map(({ b: d, i }) => {
+                  const live = d.body.modes.find((m) => m.active)
+                  return (
+                    <button
+                      key={d.DEVICE.name}
+                      className={`dev${i === devIdx ? ' active' : ''}`}
+                      onClick={() => select(i, 0, 0)}
+                    >
+                      <span className="dev-name">{d.DEVICE.name}</span>
+                      <span className="dev-meta">
+                        <span className="type-badge">{d.DEVICE.type}</span>
+                        mode {live ? live.id : '-'} live
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             )
           })}
         </nav>
