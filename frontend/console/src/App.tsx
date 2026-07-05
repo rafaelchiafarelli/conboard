@@ -74,7 +74,13 @@ export default function App() {
     select(devIdx, modeIdx, Math.max(0, ruleIdx - 1))
   }
   const onAddRule = () => {
-    mode.actions.push({ input: { type: 'midi', b0: 144, b1: 0, b2: 127 }, output: [] })
+    // Trigger kind follows the device engine: MIDI devices fire MIDI, everything
+    // else (joystick/keyboard/mouse) fires evdev.
+    const input: Rule['input'] =
+      device.DEVICE.type === 'midi'
+        ? { type: 'midi', b0: 144, b1: 0, b2: 127 }
+        : { type: 'evdev', code: 'BTN_SOUTH', edge: 'press' }
+    mode.actions.push({ input, output: [] })
     select(devIdx, modeIdx, mode.actions.length - 1)
   }
   // Make a mode the device's live operation mode. Exactly one mode is active at a

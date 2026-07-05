@@ -136,29 +136,15 @@ export default function RuleEditor({
 
 function TriggerSection({ rule, onEdit }: { rule: Rule; onEdit: () => void }) {
   const input = rule.input
-  const isMidi = input.type === 'midi'
-
-  const setType = (type: 'midi' | 'evdev') => {
-    if (type === input.type) return
-    rule.input =
-      type === 'midi'
-        ? ({ type: 'midi', b0: 144, b1: 0, b2: 127 } as MidiTrigger)
-        : ({ type: 'evdev', code: 'BTN_A', edge: 'press' } as EvdevTrigger)
-    onEdit()
-  }
-
+  // The trigger kind is fixed by the device's engine (MIDI vs evdev), not editable
+  // per rule — a MIDI device can only ever fire MIDI triggers, and vice versa.
   return (
     <div className="section trigger">
       <div className="sec-head">
         <span className="accent-bar" />
         <span className="lbl">Trigger — rule input</span>
-        <span className="seg trig">
-          <button className={isMidi ? 'on' : ''} onClick={() => setType('midi')}>
-            MIDI
-          </button>
-          <button className={!isMidi ? 'on' : ''} onClick={() => setType('evdev')}>
-            evdev
-          </button>
+        <span className="trig-kind" title="Determined by the device's input type">
+          {input.type === 'midi' ? 'MIDI' : 'evdev'}
         </span>
       </div>
       <div className="sec-body">
