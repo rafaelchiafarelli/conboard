@@ -248,6 +248,27 @@ function EvdevTriggerFields({ input, onEdit }: { input: EvdevTrigger; onEdit: ()
         </select>
         <span className="hint">{isAxis(input.code) ? 'axis magnitude' : 'button edge'}</span>
       </div>
+      {isAxis(input.code) && (
+        <div className="field">
+          <label>Threshold value</label>
+          <input type="number" value={input.value ?? 0} onChange={(e) => patch({ value: Number(e.target.value) || 0 })} />
+          <span className="hint">magnitude to trip</span>
+        </div>
+      )}
+      {input.mode === 'hold' && (
+        <div className="field">
+          <label>Repeat interval</label>
+          <input type="number" min={0} value={input.interval ?? 0} onChange={(e) => patch({ interval: Number(e.target.value) || 0 })} />
+          <span className="hint">ms between repeats</span>
+        </div>
+      )}
+      {input.mode === 'hold_once' && (
+        <div className="field">
+          <label>Long-press delay</label>
+          <input type="number" min={0} value={input.delay ?? 0} onChange={(e) => patch({ delay: Number(e.target.value) || 0 })} />
+          <span className="hint">ms held to fire</span>
+        </div>
+      )}
     </div>
   )
 }
