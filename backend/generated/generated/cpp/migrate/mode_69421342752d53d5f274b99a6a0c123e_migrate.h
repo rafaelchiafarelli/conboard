@@ -36,7 +36,7 @@ inline bool migrate_mode(::soci::session& db) {
         std::set<std::string> have;
         {
             std::string _cn; ::soci::indicator _ci;
-            ::soci::statement _cs = (db.prepare << "SELECT column_name FROM information_schema.columns WHERE table_name = 'mode_table';",
+            ::soci::statement _cs = (db.prepare << "SELECT \"name\" FROM pragma_table_info('mode_table');",
                                      ::soci::into(_cn, _ci));
             _cs.execute();
             while (_cs.fetch()) { if (_ci == ::soci::i_ok) have.insert(_cn); }
@@ -59,7 +59,7 @@ inline bool migrate_mode(::soci::session& db) {
             db << "ALTER TABLE \"mode_table\" ADD COLUMN \"ORIGINATOR_69421342752d53d5f274b99a6a0c123e\" TEXT;";
         }
         // stamp the current version
-        db << "INSERT INTO \"_harpia_schema_version\" (\"name\", \"version\") VALUES ('mode_table', '69421342752d53d5f274b99a6a0c123e') ON CONFLICT (\"name\") DO UPDATE SET \"version\" = EXCLUDED.\"version\";";
+        db << "INSERT OR REPLACE INTO \"_harpia_schema_version\" (\"name\", \"version\") VALUES ('mode_table', '69421342752d53d5f274b99a6a0c123e');";
         return true;
     } catch (const std::exception&) { return false; }
 }

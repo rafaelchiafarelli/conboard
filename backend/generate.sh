@@ -8,9 +8,13 @@
 # harpia-build image directly with the env the pipeline reads.
 #
 # Usage:
-#   backend/generate.sh                 # postgresql dialect (default, prod target)
-#   HARPIA_DB_BACKEND=sqlite backend/generate.sh   # sqlite (constrained boards / tests)
+#   backend/generate.sh                 # sqlite dialect (default, on-board embedded DB)
+#   HARPIA_DB_BACKEND=postgresql backend/generate.sh   # postgres (central authoring host)
 #   HARPIA_REPO=/path/to/harpia backend/generate.sh
+#
+# conboard runs SQLite everywhere: the rules library is device-local, single-writer,
+# authoring-only and off the realtime path, so an embedded .db file (one bundled
+# libsqlite3.so, no server/daemon) is the portable choice. No apt/docker on the device.
 #
 # The generated tree is committed to the repo so conboard builds standalone without
 # the harpia repo present (USAGE.md section 4). Do NOT hand-edit backend/generated/.
@@ -18,7 +22,7 @@ set -euo pipefail
 
 BACKEND_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HARPIA_REPO="${HARPIA_REPO:-$(cd "$BACKEND_DIR/../../harpia" && pwd)}"
-HARPIA_DB_BACKEND="${HARPIA_DB_BACKEND:-postgresql}"
+HARPIA_DB_BACKEND="${HARPIA_DB_BACKEND:-sqlite}"
 IMAGE="${HARPIA_IMAGE:-harpia-build}"
 
 IN="$BACKEND_DIR/harpia"
