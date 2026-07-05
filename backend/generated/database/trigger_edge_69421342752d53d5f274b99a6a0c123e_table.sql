@@ -1,0 +1,1 @@
+-- trigger_edge: enum, no table

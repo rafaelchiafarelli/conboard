@@ -1,0 +1,31 @@
+syntax = "proto3";
+package frameworkProtos;
+//standard protofile with error code and standard heartBeat messages
+import "protofiles/errorCode.proto";
+import "protofiles/heartBeat.proto";
+
+//user imports from harpia process
+import "protofiles/hold_mode_69421342752d53d5f274b99a6a0c123e.proto";
+
+message hold_mode_Message {
+    hold_mode msg = 1;
+}
+//message for the standard functions 
+message hold_mode_HeartBeat {
+    heartBeat hb = 1;
+}
+
+//message for the pullByID function
+message hold_mode_ID {
+    int32 id = 1;
+}
+message hold_mode_Stream {
+    int32 id = 1;
+    string name = 2;
+}
+service hold_mode_Service {
+    rpc heartBeat(hold_mode_HeartBeat) returns (hold_mode_HeartBeat) {}
+    rpc streamSrc(hold_mode_Stream ) returns (stream hold_mode_Message) {}
+    rpc pullByID(hold_mode_ID) returns (hold_mode_Message) {}
+    rpc push(hold_mode_Message) returns (errorCode) {}
+}
