@@ -1,7 +1,7 @@
 [Unit]
 Description=conboard backend (C++ / Crow) — management API + dispatcher relay
 Documentation=https://github.com/rafaelchiafarelli/conboard
-After=network.target postgresql.service
+After=network.target
 
 [Service]
 User=root
@@ -10,8 +10,14 @@ Restart=always
 RestartSec=5
 TimeoutStopSec=20
 WorkingDirectory=/conboard/backend
-# Built binary (see backend/CMakeLists.txt). Listens on localhost:8080 (nginx proxies).
-ExecStart=/conboard/backend/build/conboard_backend
+# Embedded SQLite rules-library (device-local; no DB server). Created on first boot.
+Environment=CONBOARD_DB=/conboard/backend/data/conboard.db
+Environment=CONBOARD_HTTP_HOST=127.0.0.1
+Environment=CONBOARD_HTTP_PORT=8080
+Environment=CONBOARD_GRPC_ADDR=127.0.0.1:50051
+# Bundled runtime .so's ship beside the binary; resolve them via RUNPATH ($ORIGIN/lib).
+ExecStartPre=/bin/mkdir -p /conboard/backend/data
+ExecStart=/conboard/backend/conboard_backend
 
 [Install]
 WantedBy=multi-user.target
