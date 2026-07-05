@@ -184,6 +184,17 @@ input:focus, select:focus { outline: none; border-color: var(--accent-dim); box-
 .add-out .midi .d { background: var(--midi); }
 .empty-out { color: var(--ink-faint); font-style: italic; font-size: 12.5px; padding: 6px 2px 14px; }
 
+/* hotkey combo builder */
+.hotkey { display: flex; flex-direction: column; gap: 10px; }
+.mod-toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+.modtog { font-family: var(--mono); font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--ground); color: var(--ink-dim); cursor: pointer; }
+.modtog:hover { color: var(--ink); }
+.modtog.on { background: var(--accent-soft); border-color: var(--accent-dim); color: var(--accent); }
+.hotkey-key { display: flex; align-items: center; gap: 10px; }
+.hotkey-key .plus { color: var(--ink-faint); font-family: var(--mono); }
+.hotkey-key > select, .hotkey-key > input { flex: 1; }
+.hotkey .hint code { color: var(--kbd); background: var(--ground); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); }
+
 /* mode switch */
 .toggle-row { display: flex; align-items: center; gap: 12px; }
 .toggle { position: relative; width: 40px; height: 22px; flex: none; }
