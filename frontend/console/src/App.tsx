@@ -1,7 +1,7 @@
-import { useReducer, useRef, useState } from 'react'
-import { BOARDS } from './fixtures/boards'
+import { useEffect, useReducer, useRef, useState } from 'react'
+import { BOARDS } from './fixtures/devices'
 import { decodeMidi } from './model/midi'
-import type { Rule } from './model/rules'
+import { validateBoards, type Rule } from './model/rules'
 import RuleEditor from './RuleEditor'
 import Monitor from './Monitor'
 
@@ -13,7 +13,7 @@ function triggerSummary(input: Rule['input']): { badge: string; human: string; b
     const d = decodeMidi(input.b0, input.b1, input.b2)
     return { badge: d.short, human: d.human, bytes: `${input.b0} ${input.b1} ${input.b2} · ${d.detail}` }
   }
-  return { badge: 'EV', human: input.code, bytes: `${input.code} · ${input.edge}` }
+  return { badge: input.type.slice(0, 3).toUpperCase(), human: input.code, bytes: `${input.code} · ${input.mode}` }
 }
 
 /** Colored chips summarizing a rule's outputs (and its mode switch), for the list. */
@@ -74,12 +74,11 @@ export default function App() {
     select(devIdx, modeIdx, Math.max(0, ruleIdx - 1))
   }
   const onAddRule = () => {
-    // Trigger kind follows the device engine: MIDI devices fire MIDI, everything
-    // else (joystick/keyboard/mouse) fires evdev.
+    // Trigger type always equals the device type (each board is driven by one engine).
     const input: Rule['input'] =
       device.DEVICE.type === 'midi'
         ? { type: 'midi', b0: 144, b1: 0, b2: 127 }
-        : { type: 'evdev', code: 'BTN_SOUTH', edge: 'press' }
+        : { type: device.DEVICE.type, code: device.DEVICE.type === 'keyboard' ? 'KEY_A' : 'BTN_SOUTH', mode: 'press' }
     mode.actions.push({ input, output: [] })
     select(devIdx, modeIdx, mode.actions.length - 1)
   }
@@ -91,6 +90,12 @@ export default function App() {
     })
     forceRender()
   }
+
+  // Validate the loaded data once: a trigger type must match its device type.
+  useEffect(() => {
+    const problems = validateBoards(BOARDS)
+    if (problems.length) console.warn(`[conboard] ${problems.length} invalid rule(s):\n` + problems.join('\n'))
+  }, [])
 
   const liveMode = device.body.modes.find((m) => m.active)
   const entryCount = mode.mode_header?.actions.length ?? 0

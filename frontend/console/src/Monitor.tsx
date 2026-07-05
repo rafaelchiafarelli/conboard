@@ -3,7 +3,7 @@
 // view works unchanged once a real websocket source lands (see model/events.ts).
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BOARDS } from './fixtures/boards'
+import { BOARDS } from './fixtures/devices'
 import { decodeMidi } from './model/midi'
 import { SimulatedEventSource, matchEvent, type DeviceEvent } from './model/events'
 import type { Rule } from './model/rules'
