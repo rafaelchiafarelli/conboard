@@ -18,7 +18,7 @@ import type {
 import { decodeMidi, MESSAGE_NAMES, isCC, splitStatus, makeStatus } from './model/midi'
 import {
   KEY_TOKEN_GROUPS,
-  EVDEV_CODE_GROUPS,
+  codeGroupsFor,
   MODIFIER_TOKENS,
   keyLabel,
   codeLabel,
@@ -219,7 +219,7 @@ function EvdevTriggerFields({ input, onEdit }: { input: EvdevTrigger; onEdit: ()
     Object.assign(input, p)
     onEdit()
   }
-  const codeGroups = EVDEV_CODE_GROUPS.map((g) => ({ label: g.label, items: g.codes }))
+  const codeGroups = codeGroupsFor(input.type).map((g) => ({ label: g.label, items: g.codes }))
   const edges = edgesFor(input.code)
   return (
     <div className="fields">
