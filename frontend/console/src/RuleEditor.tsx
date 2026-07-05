@@ -15,11 +15,61 @@ import type {
   HoldMode,
   OutputAction,
 } from './model/rules'
-import { decodeMidi, prettyKey, MESSAGE_NAMES, isCC, splitStatus, makeStatus } from './model/midi'
+import { decodeMidi, MESSAGE_NAMES, isCC, splitStatus, makeStatus } from './model/midi'
+import {
+  KEY_TOKEN_GROUPS,
+  EVDEV_CODE_GROUPS,
+  MODIFIER_TOKENS,
+  keyLabel,
+  codeLabel,
+  comboLabel,
+  splitCombo,
+  joinCombo,
+  edgesFor,
+  isAxis,
+  type Edge,
+} from './model/hid'
 
 const KEY_TYPES: KeyType[] = ['text', 'oneKey', 'hotKey']
 const HOLD_MODES: HoldMode[] = ['not_hold', 'hold', 'hold_once']
-const EDGES: EvdevTrigger['edge'][] = ['press', 'release', 'hold', 'hold_once', 'higher', 'lower', 'spot']
+
+const CUSTOM = '__custom__'
+
+/** A grouped <select> over a token/code catalog, with a "— custom —" escape to raw text. */
+function GroupedSelect({
+  value,
+  groups,
+  labelFn,
+  onPick,
+  placeholder,
+}: {
+  value: string
+  groups: { label: string; items: string[] }[]
+  labelFn: (v: string) => string
+  onPick: (v: string) => void
+  placeholder?: string
+}) {
+  const known = groups.some((g) => g.items.includes(value))
+  return (
+    <>
+      <select value={known ? value : CUSTOM} onChange={(e) => onPick(e.target.value === CUSTOM ? '' : e.target.value)}>
+        {groups.map((g) => (
+          <optgroup key={g.label} label={g.label}>
+            {g.items.map((it) => (
+              <option key={it} value={it}>
+                {labelFn(it)}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+        <option value={CUSTOM}>— custom —</option>
+      </select>
+      {!known && (
+        <input type="text" value={value} placeholder={placeholder ?? 'raw token'} onChange={(e) => onPick(e.target.value)} />
+      )}
+    </>
+  )
+}
 
 export default function RuleEditor({
   board,
@@ -183,20 +233,34 @@ function EvdevTriggerFields({ input, onEdit }: { input: EvdevTrigger; onEdit: ()
     Object.assign(input, p)
     onEdit()
   }
+  const codeGroups = EVDEV_CODE_GROUPS.map((g) => ({ label: g.label, items: g.codes }))
+  const edges = edgesFor(input.code)
   return (
     <div className="fields">
       <div className="field">
         <label>Event code</label>
-        <input type="text" value={input.code} placeholder="BTN_A / KEY_ENTER / ABS_X" onChange={(e) => patch({ code: e.target.value })} />
+        <GroupedSelect
+          value={input.code}
+          groups={codeGroups}
+          labelFn={codeLabel}
+          placeholder="BTN_A / KEY_ENTER / ABS_X"
+          onPick={(code) => {
+            const next: Partial<EvdevTrigger> = { code }
+            // Keep the edge valid for the new code's category (buttons vs axes).
+            if (code && !edgesFor(code).includes(input.edge as Edge)) next.edge = edgesFor(code)[0]
+            patch(next)
+          }}
+        />
         <span className="hint">evdev symbolic code</span>
       </div>
       <div className="field">
         <label>Edge</label>
         <select value={input.edge} onChange={(e) => patch({ edge: e.target.value as EvdevTrigger['edge'] })}>
-          {EDGES.map((edge) => (
+          {edges.map((edge) => (
             <option key={edge}>{edge}</option>
           ))}
         </select>
+        <span className="hint">{isAxis(input.code) ? 'axis magnitude' : 'button edge'}</span>
       </div>
     </div>
   )
@@ -311,6 +375,7 @@ function KeyboardFields({ out, onEdit }: { out: KeyboardAction; onEdit: () => vo
     Object.assign(out, p)
     onEdit()
   }
+  const tokenGroups = KEY_TOKEN_GROUPS.map((g) => ({ label: g.label, items: g.tokens }))
   return (
     <>
       <div className="field">
@@ -321,11 +386,24 @@ function KeyboardFields({ out, onEdit }: { out: KeyboardAction; onEdit: () => vo
           ))}
         </select>
       </div>
-      <div className="field" style={{ gridColumn: 'span 2' }}>
-        <label>{out.keyType === 'text' ? 'Text to type' : 'Key token(s)'}</label>
-        <input type="text" value={out.data} onChange={(e) => patch({ data: e.target.value })} />
-        {out.keyType !== 'text' && out.data ? <span className="hint">{prettyKey(out.data)}</span> : null}
-      </div>
+      {out.keyType === 'text' && (
+        <div className="field" style={{ gridColumn: 'span 2' }}>
+          <label>Text to type</label>
+          <input type="text" value={out.data} onChange={(e) => patch({ data: e.target.value })} />
+        </div>
+      )}
+      {out.keyType === 'oneKey' && (
+        <div className="field" style={{ gridColumn: 'span 2' }}>
+          <label>Key</label>
+          <GroupedSelect value={out.data} groups={tokenGroups} labelFn={keyLabel} onPick={(t) => patch({ data: t })} />
+        </div>
+      )}
+      {out.keyType === 'hotKey' && (
+        <div className="field" style={{ gridColumn: '1 / -1' }}>
+          <label>Hotkey combo</label>
+          <HotKeyBuilder data={out.data} onChange={(d) => patch({ data: d })} />
+        </div>
+      )}
       <div className="field">
         <label>Hold</label>
         <select value={out.hold} onChange={(e) => patch({ hold: e.target.value as HoldMode })}>
@@ -335,6 +413,36 @@ function KeyboardFields({ out, onEdit }: { out: KeyboardAction; onEdit: () => vo
         </select>
       </div>
     </>
+  )
+}
+
+/** Modifier toggles + a base-key picker that compose a hotKey token string. */
+function HotKeyBuilder({ data, onChange }: { data: string; onChange: (d: string) => void }) {
+  const { mods, base } = splitCombo(data)
+  const baseGroups = KEY_TOKEN_GROUPS.filter((g) => g.label !== 'Modifiers').map((g) => ({ label: g.label, items: g.tokens }))
+  const toggle = (m: string) => {
+    const next = mods.includes(m) ? mods.filter((x) => x !== m) : [...mods, m]
+    onChange(joinCombo(next, base))
+  }
+  return (
+    <div className="hotkey">
+      <div className="mod-toggles">
+        {MODIFIER_TOKENS.map((m) => (
+          <button key={m} type="button" className={`modtog${mods.includes(m) ? ' on' : ''}`} onClick={() => toggle(m)}>
+            {keyLabel(m)}
+          </button>
+        ))}
+      </div>
+      <div className="hotkey-key">
+        <span className="plus">+</span>
+        <GroupedSelect value={base} groups={baseGroups} labelFn={keyLabel} onPick={(t) => onChange(joinCombo(mods, t))} />
+      </div>
+      {data.trim() && (
+        <span className="hint">
+          {comboLabel(data)} · <code>{data}</code>
+        </span>
+      )}
+    </div>
   )
 }
 
