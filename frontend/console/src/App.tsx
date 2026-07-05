@@ -73,6 +73,17 @@ export default function App() {
     mode.actions.push({ input: { type: 'midi', b0: 144, b1: 0, b2: 127 }, output: [] })
     select(devIdx, modeIdx, mode.actions.length - 1)
   }
+  // Make a mode the device's live operation mode. Exactly one mode is active at a
+  // time; on a real device this maps to a "switch mode" command sent to the backend.
+  const activateMode = (i: number) => {
+    device.body.modes.forEach((m, k) => {
+      m.active = k === i
+    })
+    forceRender()
+  }
+
+  const liveMode = device.body.modes.find((m) => m.active)
+  const entryCount = mode.mode_header?.actions.length ?? 0
 
   return (
     <div className="app">
@@ -122,6 +133,26 @@ export default function App() {
                   {m.active ? ' · live' : ''}
                 </button>
               ))}
+            </div>
+            <div className="mode-ctl">
+              {mode.active ? (
+                <span className="live-pill">
+                  <span className="dot" />
+                  mode {mode.id} is live
+                </span>
+              ) : (
+                <>
+                  <span className="live-note">Live: mode {liveMode ? liveMode.id : '—'}</span>
+                  <button className="activate" onClick={() => activateMode(modeIdx)}>
+                    ⏻ Activate mode {mode.id}
+                  </button>
+                </>
+              )}
+              {entryCount > 0 && (
+                <span className="entry-note">
+                  {entryCount} entry action{entryCount !== 1 ? 's' : ''} on enter
+                </span>
+              )}
             </div>
           </div>
 
