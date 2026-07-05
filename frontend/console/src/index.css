@@ -63,6 +63,10 @@ header .stage { margin-left: auto; font-family: var(--mono); font-size: 10.5px; 
 .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1.6px; color: var(--ink-faint); font-weight: 600; }
 .rail .lbl { margin: 0 0 12px 4px; display: block; }
 
+.rail-group { margin-bottom: 14px; }
+.rail-group-label { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--ink-faint); margin: 4px 4px 7px; }
+.rail-group-n { color: var(--ink-faint); border: 1px solid var(--line); border-radius: 8px; padding: 0 5px; font-size: 9px; }
+
 .dev { display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 10px 11px; margin-bottom: 6px; cursor: pointer; color: inherit; font-family: inherit; }
 .dev:hover { background: var(--panel-2); }
 .dev.active { background: var(--panel-2); border-color: var(--accent-dim); }

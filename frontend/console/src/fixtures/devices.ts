@@ -6,5 +6,6 @@
 import type { Board } from '../model/rules'
 import { BOARDS as REAL_BOARDS } from './boards'
 import { FAKE_KEYBOARDS } from './fakeKeyboards'
+import { FAKE_MICE } from './fakeMice'
 
-export const BOARDS: Board[] = [...REAL_BOARDS, ...FAKE_KEYBOARDS]
+export const BOARDS: Board[] = [...REAL_BOARDS, ...FAKE_KEYBOARDS, ...FAKE_MICE]
