@@ -72,7 +72,10 @@ install -m 644 /conboard/LowLevel/assets/100-usb.rules /etc/udev/rules.d/
 # exact path (the rsync only puts it under LowLevel/assets/). Without this, USB
 # add/remove events never reach the launcher and no device service is created.
 install -m 755 /conboard/LowLevel/assets/event_handler.sh /conboard/event_handler.sh
-udevadm control --reload-rules && udevadm trigger || true
+# Reload rules only here — do NOT trigger yet: a replayed 'add' would spawn
+# handlers before usb-otg + dispatcher are up, so they couldn't register with the
+# dispatcher or reach /dev/hidgN. The coldplug replay happens after those start.
+udevadm control --reload-rules || true
 
 echo "== enabling services (start on boot) =="
 systemctl enable usb-otg.service dispatcher.service launcher.service
@@ -84,11 +87,20 @@ systemctl enable usb-otg.service dispatcher.service launcher.service
 echo "== starting services =="
 systemctl start usb-otg.service       # brings up the USB gadget now
 systemctl start dispatcher.service
-# launcher is a scan-and-exit oneshot; let boot / udev events run it so its
-# internal `systemctl restart` calls never nest inside its own start job.
+
+# Coldplug at install time: handle devices ALREADY attached now, without a reboot.
+# launcher.service does exactly this at boot (replay 'add' uevents once the
+# dispatcher + gadget are up). Replay it here too, now that both are started, so a
+# fresh install picks up an attached controller without a manual unplug/replug.
+# Run the trigger directly (not `systemctl start launcher.service`) to avoid any
+# oneshot-in-transaction nesting; udevd re-runs 100-usb.rules -> event_handler.sh
+# -> launcher, spawning the same identity-named handler as a live hotplug.
+echo "== coldplug: replaying attached USB devices =="
+udevadm trigger --action=add --subsystem-match=usb || true
+udevadm settle || true
 
 echo
-echo "Done. The launcher runs at boot and on device hotplug (udev)."
+echo "Done. Attached devices are handled now; the launcher also runs at boot and on hotplug (udev)."
 echo "Quick checks:"
 echo "  ls /sys/class/udc            # must be non-empty for USB gadget to bind"
 echo "  systemctl status usb-otg.service dispatcher.service launcher.service"
