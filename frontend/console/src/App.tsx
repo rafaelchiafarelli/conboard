@@ -3,6 +3,9 @@ import { BOARDS } from './fixtures/boards'
 import { decodeMidi } from './model/midi'
 import type { Rule } from './model/rules'
 import RuleEditor from './RuleEditor'
+import Monitor from './Monitor'
+
+type View = 'rules' | 'monitor'
 
 /** One-line summary of a rule's trigger, for the list. */
 function triggerSummary(input: Rule['input']): { badge: string; human: string; bytes: string } {
@@ -31,6 +34,7 @@ function OutputSummary({ rule }: { rule: Rule }) {
 }
 
 export default function App() {
+  const [view, setView] = useState<View>('rules')
   const [devIdx, setDevIdx] = useState(0)
   const [modeIdx, setModeIdx] = useState(0)
   const [ruleIdx, setRuleIdx] = useState(0)
@@ -90,10 +94,19 @@ export default function App() {
       <header>
         <span className="mark">conboard</span>
         <span className="sub">console</span>
-        <span className="stage">rule editor · live fixtures</span>
+        <nav className="viewnav" aria-label="Views">
+          <button className={view === 'rules' ? 'on' : ''} onClick={() => setView('rules')}>
+            Rules
+          </button>
+          <button className={view === 'monitor' ? 'on' : ''} onClick={() => setView('monitor')}>
+            Live monitor
+          </button>
+        </nav>
+        <span className="stage">live fixtures</span>
       </header>
 
-      <div className="work">
+      {view === 'monitor' && <Monitor />}
+      <div className="work" hidden={view !== 'rules'}>
         <nav className="rail" aria-label="Devices">
           <span className="lbl">Devices</span>
           {BOARDS.map((d, i) => {
