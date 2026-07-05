@@ -1,0 +1,1 @@
+-- trigger_kind: enum, no table

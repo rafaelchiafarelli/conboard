@@ -1,0 +1,5 @@
+syntax = "proto3";
+enum trigger_kind {
+tk_midi = 0;
+tk_evdev = 1;
+}

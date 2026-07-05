@@ -1,0 +1,1 @@
+-- hold_mode: enum, no table

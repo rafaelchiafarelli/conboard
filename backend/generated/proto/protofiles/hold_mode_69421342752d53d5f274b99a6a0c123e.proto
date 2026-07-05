@@ -1,0 +1,6 @@
+syntax = "proto3";
+enum hold_mode {
+hm_not_hold = 0;
+hm_hold = 1;
+hm_hold_once = 2;
+}

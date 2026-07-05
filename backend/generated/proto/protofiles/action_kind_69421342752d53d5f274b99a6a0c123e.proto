@@ -1,0 +1,6 @@
+syntax = "proto3";
+enum action_kind {
+ak_midi = 0;
+ak_keyboard = 1;
+ak_mouse = 2;
+}
