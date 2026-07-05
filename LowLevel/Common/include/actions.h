@@ -8,6 +8,7 @@
 #include <vector>
 #include <set>
 #include "keyNumber.hpp"
+#include "evTypes.hpp"   // evmatch::evTrigger, for evdev input rules
 #include <chrono>
 /**
  * 
@@ -161,6 +162,10 @@ class devActions{
 
         //midi
         midiActions mAct;
+
+        //evdev input trigger (joystick/keyboard/mouse as INPUT); the evdev
+        //counterpart of mAct. Populated for input rules; unused for outputs.
+        evmatch::evTrigger evtrig;
 
         devActions(){
             index = 0;

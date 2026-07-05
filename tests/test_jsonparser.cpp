@@ -107,6 +107,44 @@ TEST_SUITE("json") {
         CHECK(out.kData.delay == 50);
     }
 
+    TEST_CASE("joystick input: symbolic code + mode resolve into evtrig") {
+        std::vector<ModeType> modes; std::vector<Actions> header;
+        jsonParser jp("", &modes, &header);
+        bool ok = jp.ReloadFromString(R"({
+            "DEVICE": {"type":"joystick","name":"pad"},
+            "body": {"modes":[{"id":0,"active":true,"actions":[
+                {"input":{"type":"joystick","code":"BTN_SOUTH","mode":"press"},
+                 "output":[{"type":"keyboard","data":"letter_a","keyType":"oneKey"}]},
+                {"input":{"type":"joystick","code":"ABS_X","mode":"higher","value":200},"output":[]},
+                {"input":{"type":"joystick","code":"BTN_START","mode":"hold_once","delay":500},"output":[]},
+                {"input":{"type":"joystick","code":"BTN_TL","mode":"hold","interval":100},"output":[]}
+            ]}]}
+        })", &modes, &header);
+
+        REQUIRE(ok);
+        REQUIRE(modes[0].body_actions.size() == 4);
+
+        const devActions &btn = modes[0].body_actions[0].in;
+        CHECK(btn.tp == joystick);
+        CHECK(btn.evtrig.type == evmatch::EV_KEY_);
+        CHECK(btn.evtrig.code == 0x130);             // BTN_SOUTH
+        CHECK(btn.evtrig.mode == evmatch::ev_press);
+
+        const devActions &axis = modes[0].body_actions[1].in;
+        CHECK(axis.evtrig.type == evmatch::EV_ABS_);
+        CHECK(axis.evtrig.code == 0);                // ABS_X
+        CHECK(axis.evtrig.mode == evmatch::ev_higher);
+        CHECK(axis.evtrig.threshold == 200);
+
+        const devActions &once = modes[0].body_actions[2].in;
+        CHECK(once.evtrig.mode == evmatch::ev_hold_once);
+        CHECK(once.evtrig.holdMs == 500);            // from "delay"
+
+        const devActions &rep = modes[0].body_actions[3].in;
+        CHECK(rep.evtrig.mode == evmatch::ev_hold);
+        CHECK(rep.evtrig.holdMs == 100);             // from "interval"
+    }
+
     TEST_CASE("invalid JSON fails gracefully (not loaded)") {
         std::vector<ModeType> modes; std::vector<Actions> header;
         jsonParser jp("", &modes, &header);
