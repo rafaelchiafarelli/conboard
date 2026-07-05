@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <cctype>
 #include <fstream>
 #include <algorithm>
 
@@ -147,9 +148,56 @@ std::vector<UsbInterface> scanUsbInterfaces() {
     return out;
 }
 
+bool nodeUnderUsbPath(const std::string &nodeSysfsPath, const std::string &usbDevpath) {
+    if (nodeSysfsPath.empty() || usbDevpath.empty()) return false;
+    std::string::size_type p = nodeSysfsPath.find(usbDevpath);
+    if (p == std::string::npos) return false;
+    // Require the match to end at a path boundary so a port like "1-1.2" does
+    // NOT match a deeper port "1-1.2.3" (usbDevpath's own leading '/' anchors
+    // the start).
+    std::string::size_type end = p + usbDevpath.size();
+    return end == nodeSysfsPath.size() || nodeSysfsPath[end] == '/';
+}
+
+static std::string sanitizeToken(const std::string &s) {
+    std::string r = s;
+    for (size_t i = 0; i < r.size(); i++)
+        if (!isalnum((unsigned char)r[i]) && r[i] != '-') r[i] = '_';  // keep '-' (port ids, valid in unit names)
+    return r;
+}
+
+bool isTrustworthySerial(const std::string &serial) {
+    if (serial.empty()) return false;
+    // Trustworthy iff it has at least one char that isn't a placeholder 'F'/'0'.
+    for (size_t i = 0; i < serial.size(); i++) {
+        char c = serial[i];
+        if (c != 'F' && c != 'f' && c != '0') return true;
+    }
+    return false;
+}
+
+std::string portToken(const std::string &usbDevpath) {
+    if (usbDevpath.empty()) return "";
+    return sanitizeToken(usbDevpath.substr(usbDevpath.find_last_of('/') + 1));
+}
+
+std::string deviceIdentity(const std::string &serial, const std::string &usbDevpath) {
+    if (isTrustworthySerial(serial)) return "ser-" + sanitizeToken(serial);
+    return "port-" + portToken(usbDevpath);
+}
+
 InputDevice probeInput(const std::string &node) {
     InputDevice dev;
     dev.node = node;
+
+    // Resolve the node's /sys path (symlink target); it embeds the USB DEVPATH,
+    // which lets callers bind a handler to a specific physical port.
+    {
+        std::string base = node.substr(node.find_last_of('/') + 1);
+        std::string classPath = "/sys/class/input/" + base;
+        char resolved[4096];
+        if (realpath(classPath.c_str(), resolved)) dev.sysfsPath = resolved;
+    }
 
     int fd = open(node.c_str(), O_RDONLY | O_NONBLOCK);
     if (fd < 0) return dev;  // name stays empty => caller knows it failed

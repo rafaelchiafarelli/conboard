@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <spawn.h>
 #include <fstream>
+#include <sstream>
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -22,6 +23,15 @@
 using namespace std;
 
 extern char **environ;
+
+
+// Value of a udev variable (e.g. DEVPATH) from the parsed /tmp/temp.vars, or "".
+static std::string udevVar(const std::vector<KeyValue> &vars, const std::string &key)
+{
+	for (std::vector<KeyValue>::const_iterator it = vars.begin(); it != vars.end(); ++it)
+		if (it->key == key) return it->value;
+	return "";
+}
 typedef enum{
 	read_devices,
 	verify_devices,
@@ -173,79 +183,60 @@ int main(int argc, char *argv[])
  */ 
 void stop_device(char *dt_name, char *json_name)
 {
+	// On remove, udev provides only DEVPATH (the rich ID_* vars, incl. the
+	// serial, are absent) -- so we cannot reconstruct a serial-keyed service
+	// name. Instead we find the service whose ExecStart was generated with this
+	// exact "-d <devpath>" and stop it. That handles BOTH port- and serial-keyed
+	// services, and makes a MOVE work: remove(old port) stops the old handler,
+	// add(new port) (re)writes + starts it. dt_name is the /tmp/temp.vars dump.
+	(void)json_name;
 
-	/* Get all directories */
-	vector<dirent> jsonFiles;
-    struct dirent *json_entry;
-    DIR *json_dir = opendir(dt_name);
-	bool hasHandler = false;
-    if (json_dir == NULL) {
-		
-        return;
-    }
-
-    while ((json_entry = readdir(json_dir)) != NULL) {
-		if(string(json_entry->d_name).find(".json") != std::string::npos)
-        	jsonFiles.push_back(*json_entry);
-    }
-    closedir(json_dir);
-	/* Get all services */
-	vector<dirent> serviceFiles;
-	struct dirent *service_entry;
-	char service_folder[] = {"/etc/systemd/system/"};
-	DIR *service_dir = opendir(service_folder);
-	if (service_dir == NULL) {
+	keyParser info(dt_name, '=');
+	std::vector<KeyValue> vars = info.GetParsed();
+	std::string devpath = udevVar(vars, "DEVPATH");
+	if (devpath.empty())
+	{
+		std::cout << "remove: no DEVPATH in event -- nothing to stop" << std::endl;
 		return;
 	}
-	while ((service_entry = readdir(service_dir)) != NULL) {
-		if(string(service_entry->d_name).find(".service") != std::string::npos)
-			serviceFiles.push_back(*service_entry);
+
+	std::string needle = " -d ";
+	needle.append(devpath);   // the exact token written into ExecStart
+
+	const char *service_folder = "/etc/systemd/system/";
+	DIR *service_dir = opendir(service_folder);
+	if (service_dir == NULL)
+		return;
+	struct dirent *service_entry;
+	while ((service_entry = readdir(service_dir)) != NULL)
+	{
+		std::string name = service_entry->d_name;
+		if (name.find(".service") == std::string::npos)
+			continue;
+		std::string path = service_folder;
+		path.append(name);
+		std::ifstream sf(path.c_str());
+		if (!sf.is_open())
+			continue;
+		std::stringstream ss;
+		ss << sf.rdbuf();
+		std::string content = ss.str();
+		std::string::size_type p = content.find(needle);
+		if (p == std::string::npos)
+			continue;
+		// Ensure the devpath ends at a boundary so "1-1.2" != "1-1.2.3".
+		std::string::size_type end = p + needle.size();
+		char after = (end < content.size()) ? content[end] : '\n';
+		if (after == '/' || after == '.' || after == '-' || isalnum((unsigned char)after))
+			continue;
+		char cmd[512];
+		std::cout << "device removed from port -> stopping " << name << std::endl;
+		sprintf(cmd, "systemctl stop %s", name.c_str());
+		system(cmd);
+		sprintf(cmd, "systemctl disable %s", name.c_str());
+		system(cmd);
 	}
 	closedir(service_dir);
-
-	char complete_file_name[1024];
-	memset(complete_file_name,0,1024);
-	std::vector<ModeType> Mode;
-	std::vector<Actions> h;
-	jsonParser header(complete_file_name,&Mode,&h);
-	
-	bool has_service = false;
-	for(vector<dirent>::iterator files_it = jsonFiles.begin();
-		files_it!=jsonFiles.end();
-		files_it++
-		)
-	{
-		//for all the json files present
-		sprintf(complete_file_name, "%s/%s",dt_name,files_it->d_name);
-		header.Reload(complete_file_name,&Mode,&h);
-
-		if(header.GetLoaded())
-		{
-			std::string serviceName = header.DevName;
-			serviceName.append(".service");
-			serviceName.erase(remove_if(serviceName.begin(), serviceName.end(), ::isspace), serviceName.end());
-			for(vector<dirent>::iterator service_it = serviceFiles.begin();
-				service_it!=serviceFiles.end();
-				service_it++)
-			{
-				if(!serviceName.compare(service_it->d_name))
-				{
-					char cmd[512];
-					std::cout<<"found a service of a device: "<<serviceName.c_str()<<std::endl;
-					sprintf(cmd,"systemctl stop %s",service_it->d_name);
-					system(cmd);
-					sprintf(cmd,"systemctl disable %s",service_it->d_name);
-					system(cmd);
-					has_service = true;
-					break;
-				}
-				else
-				{
-					has_service = false;
-				}
-			}
-		}
-	}
 }
 /**
  * This function will read all json files from folder, identify witch of them have executables and services, 
@@ -365,17 +356,16 @@ void create_json(char *devInfo, char *folder)
 	keyParser info(devInfo,'=');
 	vector<KeyValue> info_from_dev = info.GetParsed();
 
-	// Skip devices that expose nothing conboard can handle (e.g. a USB hub) so we
-	// don't spawn a dummy handler for them. Only filter when udev gave a positive,
-	// non-actionable interface list; if ID_USB_INTERFACES is absent, proceed.
+	// A device that MATCHES a known profile is always handled -- even if its
+	// interface class isn't in the generic "actionable" set. (An Xbox pad is USB
+	// class 0xff/vendor-specific, not HID, so an early actionable filter would
+	// wrongly skip it.) So the actionable check below only gates DUMMY generation
+	// for UNMATCHED devices, so we still don't spawn dummy handlers for hubs.
+	// isActionableInterfaces stays the shared, unit-tested rule.
 	std::string ifaces;
 	for (const auto &kv : info_from_dev)
 		if (kv.key == "ID_USB_INTERFACES") { ifaces = kv.value; break; }
-	if (!ifaces.empty() && !condetect::isActionableInterfaces(ifaces))
-	{
-		std::cout << "ignoring non-actionable device (interfaces " << ifaces << ")" << std::endl;
-		return;
-	}
+	bool actionable = ifaces.empty() || condetect::isActionableInterfaces(ifaces);
 
 	std::vector<ModeType> Mode;
 	std::vector<Actions> h;
@@ -399,12 +389,31 @@ void create_json(char *devInfo, char *folder)
 			std::vector<KeyValue> tags = local_json->GetTags();
 			hasHandler = launchmatch::deviceMatchesTags(info_from_dev, tags);
 			bool has_service = false;
+
+			// Per-DEVICE instancing for evdev input devices (joystick / keyboard /
+			// mouse): key the service on a stable identity -- the serial when
+			// trustworthy (so it follows the controller across ports), else the
+			// physical port (so clones with fake serials still separate). MIDI
+			// (ALSA, binds by name) is unaffected and keeps the plain DevName.
+			// execExtra passes the bound port to the handler via -d.
+			std::string serviceName = local_json->DevName;
+			serviceName.erase(remove_if(serviceName.begin(), serviceName.end(), ::isspace), serviceName.end());
+			std::string execExtra;
+			std::string devpath = udevVar(info_from_dev, "DEVPATH");
+			devType dtype = local_json->GetType();
+			bool isEvdev = (dtype == devType::joystick || dtype == devType::keyboard || dtype == devType::mouse);
+			if(isEvdev && !devpath.empty())
+			{
+				std::string serial = udevVar(info_from_dev, "ID_SERIAL_SHORT");
+				serviceName.append("-");
+				serviceName.append(condetect::deviceIdentity(serial, devpath));
+				execExtra = " -d ";
+				execExtra.append(devpath);
+			}
+			serviceName.append(".service");
+
 			if(hasHandler && local_json->GetHasExec())
 			{
-
-				std::string serviceName = local_json->DevName;
-				serviceName.append(".service");
-				serviceName.erase(remove_if(serviceName.begin(), serviceName.end(), ::isspace), serviceName.end());
 
 				for(vector<dirent>::iterator service_it = serviceFiles.begin();
 					service_it!=serviceFiles.end();
@@ -432,14 +441,10 @@ void create_json(char *devInfo, char *folder)
 				ExecLine.append(local_json->Ex.exec);
 				ExecLine.append(" -x ");
 				ExecLine.append(complete_file_name);
+				ExecLine.append(execExtra);
 
-				std::string filename = "";
-				filename.append("/etc/systemd/system/");
-				filename.append(local_json->DevName);
-				
-				filename.append(".service");
-
-				filename.erase(remove_if(filename.begin(), filename.end(), ::isspace), filename.end());
+				std::string filename = "/etc/systemd/system/";
+				filename.append(serviceName);
 
 				std::ofstream serviFileStream(filename, std::ofstream::out);
 				std::cout<<"service file name:"<<filename<<std::endl;
@@ -458,14 +463,15 @@ void create_json(char *devInfo, char *folder)
 				serviFileStream<<service_data;
 				serviFileStream.close();	
 				char cmd[512];
-				std::string servName = local_json->DevName;	
-				servName.append(".service");
-				servName.erase(remove_if(servName.begin(), servName.end(), ::isspace), servName.end());
-				sprintf(cmd,"systemctl restart %s",servName.c_str());
-				system(cmd);				
+				sprintf(cmd,"systemctl restart %s",serviceName.c_str());
+				system(cmd);
 			}
 
-			if(!hasHandler)
+			if(!hasHandler && !actionable)
+			{
+				std::cout<<"no profile matched and device is non-actionable (interfaces "<<ifaces<<") -- skipping dummy"<<std::endl;
+			}
+			else if(!hasHandler)
 			{
 				std::cout<<"no handler! generate the dummy"<<std::endl;
 				std::string dummyjson("{\"DEVICE\":{\"type\":\"\", \"name\":\"\", \"input\":\"\", \"output\":\"\"}, \"header\":{\"identifier\":{\"generics\":{");

@@ -69,6 +69,61 @@ TEST_SUITE("filter") {
     }
 }
 
+TEST_SUITE("port") {
+    // Binding a handler to a specific physical port: an input node's /sys path
+    // sits under the USB device's DEVPATH iff they share the port segment.
+    const std::string node =
+        "/sys/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2/1-1.2:1.0/input/input7/event7";
+
+    TEST_CASE("node under the matching port") {
+        CHECK(nodeUnderUsbPath(node, "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2"));
+    }
+    TEST_CASE("node NOT under a different port") {
+        CHECK_FALSE(nodeUnderUsbPath(node, "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.3"));
+    }
+    TEST_CASE("port prefix is not a deeper port (1-1.2 != 1-1.2.3)") {
+        const std::string deeper =
+            "/sys/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2.3/1-1.2.3:1.0/input/input8/event8";
+        CHECK(nodeUnderUsbPath(deeper, "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2.3"));
+        CHECK_FALSE(nodeUnderUsbPath(deeper, "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2"));
+    }
+    TEST_CASE("empty inputs never match") {
+        CHECK_FALSE(nodeUnderUsbPath(node, ""));
+        CHECK_FALSE(nodeUnderUsbPath("", "/devices/x"));
+    }
+}
+
+TEST_SUITE("identity") {
+    const std::string portA = "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.2";
+    const std::string portB = "/devices/platform/soc/1c1b000.usb/usb1/1-1/1-1.3";
+
+    TEST_CASE("a real serial is trustworthy (genuine MS pad: 25A477C)") {
+        CHECK(isTrustworthySerial("25A477C"));
+        CHECK(isTrustworthySerial("A"));
+    }
+    TEST_CASE("placeholder / empty serials are NOT trustworthy") {
+        CHECK_FALSE(isTrustworthySerial("FFFFFFF"));   // Holtek clone
+        CHECK_FALSE(isTrustworthySerial("00000000"));
+        CHECK_FALSE(isTrustworthySerial("F0F0F0"));     // only F/0 chars
+        CHECK_FALSE(isTrustworthySerial(""));
+    }
+    TEST_CASE("identity uses the serial when trustworthy (follows the device)") {
+        // same controller on two different ports -> SAME identity
+        CHECK(deviceIdentity("25A477C", portA) == "ser-25A477C");
+        CHECK(deviceIdentity("25A477C", portB) == "ser-25A477C");
+    }
+    TEST_CASE("identity falls back to the port for fake/missing serials") {
+        CHECK(deviceIdentity("FFFFFFF", portA) == "port-1-1_2");
+        CHECK(deviceIdentity("",        portB) == "port-1-1_3");
+    }
+    TEST_CASE("two clones on two ports get DISTINCT (port-based) identities") {
+        CHECK(deviceIdentity("FFFFFFF", portA) != deviceIdentity("FFFFFFF", portB));
+    }
+    TEST_CASE("serial token is sanitized") {
+        CHECK(deviceIdentity("AB:CD/EF", portA) == "ser-AB_CD_EF");
+    }
+}
+
 TEST_SUITE("usb") {
     TEST_CASE("Audio/MIDIStreaming is reported as MIDI") {
         CHECK(usbClassName(0x01, 0x03, 0x00) == "Audio / MIDIStreaming (MIDI)");

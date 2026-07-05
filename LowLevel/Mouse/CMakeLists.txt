@@ -13,7 +13,7 @@ target_link_libraries(conMouse ${CMAKE_SOURCE_DIR}/../Common/build/libcommon.so)
 # Find libcommon.so relative to this binary at runtime (see launcher CMakeLists).
 set_target_properties(conMouse PROPERTIES BUILD_RPATH "$ORIGIN/../../Common/build")
 target_link_libraries(conMouse stdc++fs)
-target_link_libraries(conMouse asound)
+# evdev input is plain read()/poll() -- no ALSA needed.
 target_link_libraries(conMouse pthread)
 set_target_properties(conMouse PROPERTIES
                                 CXX_STANDARD 17

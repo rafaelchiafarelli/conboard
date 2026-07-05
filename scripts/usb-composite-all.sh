@@ -36,6 +36,15 @@ echo 0x0104 > idProduct # Multifunction Composite Gadget
 echo 0x0100 > bcdDevice # v1.0.0
 echo 0x0200 > bcdUSB # USB2
 
+# This gadget is composite and includes a CDC-ACM function, which uses an
+# Interface Association Descriptor (IAD). Windows only enumerates such a device
+# if the DEVICE descriptor advertises the "Multi-Interface Function" class
+# (0xEF / 0x02 / 0x01); without it Windows shows an unrecognized device even
+# though Linux hosts (lenient) enumerate fine and the UDC reaches "configured".
+echo 0xEF > bDeviceClass    # Miscellaneous Device
+echo 0x02 > bDeviceSubClass # Common Class
+echo 0x01 > bDeviceProtocol # Interface Association Descriptor
+
 mkdir -p strings/0x409
 # device-tree strings carry a trailing NUL; strip it to avoid the
 # "command substitution: ignored null byte in input" warning.
