@@ -46,7 +46,7 @@ copy 755 tools/devprobe/build/devprobe
 copy 644 LowLevel/assets/usb-otg.service
 copy 644 LowLevel/assets/launcher.service
 copy 644 LowLevel/dispatcher/assets/dispatcher.service
-copy 644 backend/assets/frontend.service
+copy 644 backend/assets/backend.service
 
 # --- udev rule + hotplug handler ---------------------------------------------
 copy 644 LowLevel/assets/100-usb.rules
