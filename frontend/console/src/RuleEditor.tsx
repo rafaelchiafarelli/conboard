@@ -18,7 +18,7 @@ import type {
 import { decodeMidi, MESSAGE_NAMES, isCC, splitStatus, makeStatus } from './model/midi'
 import {
   KEY_TOKEN_GROUPS,
-  EVDEV_CODE_GROUPS,
+  codeGroupsFor,
   MODIFIER_TOKENS,
   keyLabel,
   codeLabel,
@@ -219,7 +219,7 @@ function EvdevTriggerFields({ input, onEdit }: { input: EvdevTrigger; onEdit: ()
     Object.assign(input, p)
     onEdit()
   }
-  const codeGroups = EVDEV_CODE_GROUPS.map((g) => ({ label: g.label, items: g.codes }))
+  const codeGroups = codeGroupsFor(input.type).map((g) => ({ label: g.label, items: g.codes }))
   const edges = edgesFor(input.code)
   return (
     <div className="fields">
@@ -232,8 +232,8 @@ function EvdevTriggerFields({ input, onEdit }: { input: EvdevTrigger; onEdit: ()
           placeholder="BTN_A / KEY_ENTER / ABS_X"
           onPick={(code) => {
             const next: Partial<EvdevTrigger> = { code }
-            // Keep the edge valid for the new code's category (buttons vs axes).
-            if (code && !edgesFor(code).includes(input.edge as Edge)) next.edge = edgesFor(code)[0]
+            // Keep the edge (mode) valid for the new code's category (buttons vs axes).
+            if (code && !edgesFor(code).includes(input.mode as Edge)) next.mode = edgesFor(code)[0]
             patch(next)
           }}
         />
@@ -241,7 +241,7 @@ function EvdevTriggerFields({ input, onEdit }: { input: EvdevTrigger; onEdit: ()
       </div>
       <div className="field">
         <label>Edge</label>
-        <select value={input.edge} onChange={(e) => patch({ edge: e.target.value as EvdevTrigger['edge'] })}>
+        <select value={input.mode} onChange={(e) => patch({ mode: e.target.value as Edge })}>
           {edges.map((edge) => (
             <option key={edge}>{edge}</option>
           ))}

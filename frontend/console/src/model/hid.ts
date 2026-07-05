@@ -1,3 +1,6 @@
+import type { Edge, EvdevKind } from './rules'
+export type { Edge }
+
 // HID vocabulary — the keyboard tokens and evdev codes the device firmware speaks,
 // so the rule editor offers real, valid choices instead of free text.
 //
@@ -93,39 +96,59 @@ export function joinCombo(mods: string[], base: string): string {
 
 export interface CodeGroup {
   label: string
+  kinds: EvdevKind[] // which device kinds this group applies to
   codes: string[]
 }
 
+const KEY_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((c) => `KEY_${c}`)
+const KEY_NUMBERS = ['KEY_1', 'KEY_2', 'KEY_3', 'KEY_4', 'KEY_5', 'KEY_6', 'KEY_7', 'KEY_8', 'KEY_9', 'KEY_0']
+const KEY_FN = Array.from({ length: 12 }, (_, i) => `KEY_F${i + 1}`)
+const KEY_KEYPAD = ['KEY_KP0', 'KEY_KP1', 'KEY_KP2', 'KEY_KP3', 'KEY_KP4', 'KEY_KP5', 'KEY_KP6', 'KEY_KP7', 'KEY_KP8', 'KEY_KP9', 'KEY_KPPLUS', 'KEY_KPMINUS', 'KEY_KPASTERISK', 'KEY_KPSLASH', 'KEY_KPENTER', 'KEY_KPDOT', 'KEY_NUMLOCK']
+
 export const EVDEV_CODE_GROUPS: CodeGroup[] = [
-  { label: 'Gamepad buttons', codes: ['BTN_SOUTH', 'BTN_EAST', 'BTN_WEST', 'BTN_NORTH', 'BTN_TL', 'BTN_TR', 'BTN_TL2', 'BTN_TR2', 'BTN_SELECT', 'BTN_START', 'BTN_MODE', 'BTN_THUMBL', 'BTN_THUMBR', 'BTN_DPAD_UP', 'BTN_DPAD_DOWN', 'BTN_DPAD_LEFT', 'BTN_DPAD_RIGHT'] },
-  { label: 'Joystick buttons', codes: ['BTN_TRIGGER', 'BTN_THUMB', 'BTN_THUMB2', 'BTN_TOP', 'BTN_TOP2', 'BTN_PINKIE', 'BTN_BASE', 'BTN_BASE2'] },
-  { label: 'Mouse buttons', codes: ['BTN_LEFT', 'BTN_RIGHT', 'BTN_MIDDLE', 'BTN_SIDE', 'BTN_EXTRA'] },
-  { label: 'Absolute axes', codes: ['ABS_X', 'ABS_Y', 'ABS_Z', 'ABS_RX', 'ABS_RY', 'ABS_RZ', 'ABS_HAT0X', 'ABS_HAT0Y'] },
-  { label: 'Relative axes', codes: ['REL_X', 'REL_Y', 'REL_WHEEL', 'REL_HWHEEL'] },
-  { label: 'Keyboard keys', codes: ['KEY_ESC', 'KEY_ENTER', 'KEY_SPACE', 'KEY_TAB', 'KEY_UP', 'KEY_DOWN', 'KEY_LEFT', 'KEY_RIGHT', 'KEY_LEFTCTRL', 'KEY_LEFTSHIFT', 'KEY_LEFTALT', 'KEY_A', 'KEY_W', 'KEY_S', 'KEY_D'] },
+  // joystick / gamepad
+  { label: 'Gamepad buttons', kinds: ['joystick'], codes: ['BTN_SOUTH', 'BTN_EAST', 'BTN_WEST', 'BTN_NORTH', 'BTN_TL', 'BTN_TR', 'BTN_TL2', 'BTN_TR2', 'BTN_SELECT', 'BTN_START', 'BTN_MODE', 'BTN_THUMBL', 'BTN_THUMBR', 'BTN_DPAD_UP', 'BTN_DPAD_DOWN', 'BTN_DPAD_LEFT', 'BTN_DPAD_RIGHT'] },
+  { label: 'Joystick buttons', kinds: ['joystick'], codes: ['BTN_TRIGGER', 'BTN_THUMB', 'BTN_THUMB2', 'BTN_TOP', 'BTN_TOP2', 'BTN_PINKIE', 'BTN_BASE', 'BTN_BASE2'] },
+  { label: 'Absolute axes', kinds: ['joystick'], codes: ['ABS_X', 'ABS_Y', 'ABS_Z', 'ABS_RX', 'ABS_RY', 'ABS_RZ', 'ABS_HAT0X', 'ABS_HAT0Y'] },
+  // mouse
+  { label: 'Mouse buttons', kinds: ['mouse'], codes: ['BTN_LEFT', 'BTN_RIGHT', 'BTN_MIDDLE', 'BTN_SIDE', 'BTN_EXTRA'] },
+  { label: 'Relative axes', kinds: ['mouse'], codes: ['REL_X', 'REL_Y', 'REL_WHEEL', 'REL_HWHEEL'] },
+  // keyboard
+  { label: 'Letters', kinds: ['keyboard'], codes: KEY_LETTERS },
+  { label: 'Numbers', kinds: ['keyboard'], codes: KEY_NUMBERS },
+  { label: 'Function', kinds: ['keyboard'], codes: KEY_FN },
+  { label: 'Navigation & editing', kinds: ['keyboard'], codes: ['KEY_ESC', 'KEY_ENTER', 'KEY_SPACE', 'KEY_TAB', 'KEY_BACKSPACE', 'KEY_CAPSLOCK', 'KEY_UP', 'KEY_DOWN', 'KEY_LEFT', 'KEY_RIGHT', 'KEY_HOME', 'KEY_END', 'KEY_PAGEUP', 'KEY_PAGEDOWN', 'KEY_INSERT', 'KEY_DELETE', 'KEY_PRINT', 'KEY_PAUSE', 'KEY_MENU'] },
+  { label: 'Modifiers', kinds: ['keyboard'], codes: ['KEY_LEFTCTRL', 'KEY_RIGHTCTRL', 'KEY_LEFTSHIFT', 'KEY_RIGHTSHIFT', 'KEY_LEFTALT', 'KEY_RIGHTALT', 'KEY_LEFTMETA', 'KEY_RIGHTMETA'] },
+  { label: 'Punctuation', kinds: ['keyboard'], codes: ['KEY_MINUS', 'KEY_EQUAL', 'KEY_LEFTBRACE', 'KEY_RIGHTBRACE', 'KEY_SEMICOLON', 'KEY_APOSTROPHE', 'KEY_GRAVE', 'KEY_BACKSLASH', 'KEY_COMMA', 'KEY_DOT', 'KEY_SLASH'] },
+  { label: 'Keypad', kinds: ['keyboard'], codes: KEY_KEYPAD },
 ]
+
+/** The code groups relevant to a device kind — keyboards get keys, joysticks get buttons/axes, etc. */
+export function codeGroupsFor(kind: EvdevKind): CodeGroup[] {
+  return EVDEV_CODE_GROUPS.filter((g) => g.kinds.includes(kind))
+}
 
 const KNOWN_CODES = new Set<string>(EVDEV_CODE_GROUPS.flatMap((g) => g.codes))
 export const isKnownCode = (c: string) => KNOWN_CODES.has(c)
 
-const GAMEPAD_LABELS: Record<string, string> = {
+const CODE_LABELS: Record<string, string> = {
   BTN_SOUTH: 'A (South)', BTN_EAST: 'B (East)', BTN_WEST: 'X (West)', BTN_NORTH: 'Y (North)',
   BTN_TL: 'Left bumper', BTN_TR: 'Right bumper', BTN_TL2: 'Left trigger', BTN_TR2: 'Right trigger',
   BTN_SELECT: 'Select', BTN_START: 'Start', BTN_MODE: 'Mode', BTN_THUMBL: 'Left stick', BTN_THUMBR: 'Right stick',
   BTN_DPAD_UP: 'D-pad ↑', BTN_DPAD_DOWN: 'D-pad ↓', BTN_DPAD_LEFT: 'D-pad ←', BTN_DPAD_RIGHT: 'D-pad →',
   BTN_LEFT: 'Left click', BTN_RIGHT: 'Right click', BTN_MIDDLE: 'Middle click', BTN_SIDE: 'Side', BTN_EXTRA: 'Extra',
+  KEY_LEFTCTRL: 'Ctrl (L)', KEY_RIGHTCTRL: 'Ctrl (R)', KEY_LEFTSHIFT: 'Shift (L)', KEY_RIGHTSHIFT: 'Shift (R)',
+  KEY_LEFTALT: 'Alt (L)', KEY_RIGHTALT: 'Alt (R)', KEY_LEFTMETA: 'Super (L)', KEY_RIGHTMETA: 'Super (R)',
 }
 
-/** Human label for an evdev code (e.g. "BTN_SOUTH" → "A (South)"). */
+/** Human label for an evdev code (e.g. "BTN_SOUTH" → "BTN_SOUTH · A (South)"). */
 export function codeLabel(code: string): string {
-  if (GAMEPAD_LABELS[code]) return `${code} · ${GAMEPAD_LABELS[code]}`
+  if (CODE_LABELS[code]) return `${code} · ${CODE_LABELS[code]}`
   return code
 }
 
 /** True for continuous axes (ABS_ or REL_ codes), which use magnitude edges, not press/release. */
 export const isAxis = (code: string) => code.startsWith('ABS_') || code.startsWith('REL_')
-
-export type Edge = 'press' | 'release' | 'hold' | 'hold_once' | 'higher' | 'lower' | 'spot'
 
 /** The edges that make sense for a given evdev code: axes get magnitude edges, buttons get press edges. */
 export function edgesFor(code: string): Edge[] {
