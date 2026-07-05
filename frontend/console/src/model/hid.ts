@@ -1,3 +1,6 @@
+import type { Edge } from './rules'
+export type { Edge }
+
 // HID vocabulary — the keyboard tokens and evdev codes the device firmware speaks,
 // so the rule editor offers real, valid choices instead of free text.
 //
@@ -124,8 +127,6 @@ export function codeLabel(code: string): string {
 
 /** True for continuous axes (ABS_ or REL_ codes), which use magnitude edges, not press/release. */
 export const isAxis = (code: string) => code.startsWith('ABS_') || code.startsWith('REL_')
-
-export type Edge = 'press' | 'release' | 'hold' | 'hold_once' | 'higher' | 'lower' | 'spot'
 
 /** The edges that make sense for a given evdev code: axes get magnitude edges, buttons get press edges. */
 export function edgesFor(code: string): Edge[] {

@@ -6,7 +6,7 @@
 // realtime stream (INTERFACE.md) implements the same two methods and the Monitor UI
 // is unchanged.
 
-import type { Board, Rule, MidiTrigger } from './rules'
+import type { Board, Rule, MidiTrigger, EvdevTrigger } from './rules'
 
 /** One incoming device event — a raw trigger the device reported. */
 export interface DeviceEvent {
@@ -38,7 +38,7 @@ export function matchEvent(board: Board, e: DeviceEvent): Rule | undefined {
   return mode.actions.find((r) => {
     const t = r.input
     if (e.kind === 'midi' && t.type === 'midi') return t.b0 === e.b0 && t.b1 === e.b1
-    if (e.kind === 'evdev' && t.type === 'evdev') return t.code === e.code && t.edge === e.edge
+    if (e.kind === 'evdev' && t.type !== 'midi') return t.code === e.code && t.mode === e.edge
     return false
   })
 }
@@ -70,16 +70,27 @@ export class SimulatedEventSource implements EventSource {
   private next(): DeviceEvent {
     const board = this.boards[Math.floor(Math.random() * this.boards.length)]
     const mode = board.body.modes.find((m) => m.active) ?? board.body.modes[0]
-    const midiRules = mode ? mode.actions.filter((r) => r.input.type === 'midi') : []
-    const base = { id: ++this.seq, ts: Date.now(), device: board.DEVICE.name, kind: 'midi' as const }
+    const base = { id: ++this.seq, ts: Date.now(), device: board.DEVICE.name }
 
-    // 70%: replay a mapped trigger so the feed shows real matches.
-    if (midiRules.length && Math.random() < 0.7) {
-      const t = midiRules[Math.floor(Math.random() * midiRules.length)].input as MidiTrigger
-      const cc = (t.b0 & 0xf0) === 0xb0
-      return { ...base, b0: t.b0, b1: t.b1, b2: cc ? Math.floor(Math.random() * 128) : t.b2 || 100 }
+    if (board.DEVICE.type === 'midi') {
+      const midiRules = mode ? mode.actions.filter((r) => r.input.type === 'midi') : []
+      // 70%: replay a mapped trigger so the feed shows real matches.
+      if (midiRules.length && Math.random() < 0.7) {
+        const t = midiRules[Math.floor(Math.random() * midiRules.length)].input as MidiTrigger
+        const cc = (t.b0 & 0xf0) === 0xb0
+        return { ...base, kind: 'midi', b0: t.b0, b1: t.b1, b2: cc ? Math.floor(Math.random() * 128) : t.b2 || 100 }
+      }
+      // 30%: unmapped note on channel 1.
+      return { ...base, kind: 'midi', b0: 144, b1: Math.floor(Math.random() * 128), b2: Math.floor(Math.random() * 127) + 1 }
     }
-    // 30%: unmapped note on channel 1.
-    return { ...base, b0: 144, b1: Math.floor(Math.random() * 128), b2: Math.floor(Math.random() * 127) + 1 }
+
+    // evdev device (joystick/keyboard/mouse): replay a mapped code, or unmapped noise.
+    const evRules = mode ? mode.actions.filter((r) => r.input.type !== 'midi') : []
+    if (evRules.length && Math.random() < 0.75) {
+      const t = evRules[Math.floor(Math.random() * evRules.length)].input as EvdevTrigger
+      return { ...base, kind: 'evdev', code: t.code, edge: t.mode }
+    }
+    const noise = ['KEY_Q', 'KEY_Z', 'KEY_M', 'KEY_P', 'KEY_TAB']
+    return { ...base, kind: 'evdev', code: noise[Math.floor(Math.random() * noise.length)], edge: 'press' }
   }
 }

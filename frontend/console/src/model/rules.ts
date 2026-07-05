@@ -23,11 +23,21 @@ export interface MidiTrigger {
   delay?: number
 }
 
-/** Symbolic evdev trigger — not on this branch yet, modeled so it slots in later. */
+/** Evdev trigger edge (the firmware calls this field `mode` on the trigger). */
+export type Edge = 'press' | 'release' | 'hold' | 'hold_once' | 'higher' | 'lower' | 'spot'
+
+/** The non-MIDI device kinds, each driven by an evdev engine. */
+export type EvdevKind = Exclude<DeviceType, 'midi'> // 'joystick' | 'keyboard' | 'mouse'
+
+/**
+ * Symbolic evdev trigger. Mirrors the real board files (e.g. boards/Xbox360.json):
+ * the trigger `type` equals the device's DEVICE.type, and the edge is the `mode`
+ * field — `{ "type": "joystick", "code": "BTN_SOUTH", "mode": "press" }`.
+ */
 export interface EvdevTrigger {
-  type: 'evdev'
-  code: string // e.g. "BTN_A", "KEY_ENTER", "ABS_X", "REL_WHEEL"
-  edge: 'press' | 'release' | 'hold' | 'hold_once' | 'higher' | 'lower' | 'spot'
+  type: EvdevKind
+  code: string // e.g. "BTN_SOUTH", "KEY_ENTER", "ABS_X", "REL_WHEEL"
+  mode: Edge
   delay?: number
 }
 
@@ -111,4 +121,28 @@ export interface Board {
     actions: OutputAction[] // device-init/handshake actions
   }
   body: { modes: Mode[] }
+}
+
+// ---- validation -------------------------------------------------------------
+
+/**
+ * A rule's trigger type must equal its device's DEVICE.type — a MIDI device fires
+ * only MIDI triggers, a keyboard only keyboard triggers, etc. (each board is driven
+ * by one engine). Returns a human-readable problem per mismatch; empty when clean.
+ * Run this when data arrives (fixtures today, the backend API later).
+ */
+export function validateBoards(boards: Board[]): string[] {
+  const problems: string[] = []
+  for (const b of boards) {
+    for (const m of b.body.modes) {
+      m.actions.forEach((r, i) => {
+        if (r.input.type !== b.DEVICE.type) {
+          problems.push(
+            `${b.DEVICE.name} · mode ${m.id} · rule ${i + 1}: trigger type "${r.input.type}" ≠ device type "${b.DEVICE.type}"`,
+          )
+        }
+      })
+    }
+  }
+  return problems
 }
