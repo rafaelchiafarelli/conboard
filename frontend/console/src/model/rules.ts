@@ -38,7 +38,9 @@ export interface EvdevTrigger {
   type: EvdevKind
   code: string // e.g. "BTN_SOUTH", "KEY_ENTER", "ABS_X", "REL_WHEEL"
   mode: Edge
-  delay?: number
+  value?: number // magnitude threshold for axis modes (higher/lower/spot on REL_*/ABS_*)
+  interval?: number // repeat interval (ms) for mode 'hold'
+  delay?: number // long-press delay (ms) for mode 'hold_once' (also a generic pre-delay)
 }
 
 export type Trigger = MidiTrigger | EvdevTrigger

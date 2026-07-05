@@ -11,7 +11,7 @@ export const FAKE_KEYBOARDS: Board[] = [
     header: {
       identifier: {
         tags: { ID_BUS: 'usb', ID_VENDOR_ID: '1d50', ID_MODEL_ID: '6161', ID_MODEL: 'conboard_macro_pad' },
-        executable: { exec: '/conboard/LowLevel/Keyboard/build/conKeeb' },
+        executable: { exec: '/conboard/LowLevel/KeyBoard/build/conKeyB' },
       },
       actions: [],
     },
@@ -45,7 +45,7 @@ export const FAKE_KEYBOARDS: Board[] = [
     header: {
       identifier: {
         tags: { ID_BUS: 'usb', ID_VENDOR_ID: '1d50', ID_MODEL_ID: '6162', ID_MODEL: 'conboard_tkl_tester' },
-        executable: { exec: '/conboard/LowLevel/Keyboard/build/conKeeb' },
+        executable: { exec: '/conboard/LowLevel/KeyBoard/build/conKeyB' },
       },
       actions: [],
     },
