@@ -1,5 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
-import { BOARDS } from './fixtures/devices'
+import { BOARDS as FIXTURE_BOARDS } from './fixtures/devices'
+import { listBoards, ping } from './api/client'
+import type { Board } from './model/rules'
 import { decodeMidi } from './model/midi'
 import { validateBoards, type Rule, type DeviceType } from './model/rules'
 import RuleEditor from './RuleEditor'
@@ -50,7 +52,12 @@ export default function App() {
   const snapshot = useRef<string | null>(null)
   const [, forceRender] = useReducer((n: number) => n + 1, 0)
 
-  const device = BOARDS[devIdx]
+  // Data source: start on the bundled fixtures, then try the backend rules-library
+  // (harpia REST). Fall back to fixtures if the backend is down or empty.
+  const [boards, setBoards] = useState<Board[]>(FIXTURE_BOARDS)
+  const [source, setSource] = useState<'loading' | 'backend' | 'fixtures'>('loading')
+
+  const device = boards[devIdx]
   const mode = device.body.modes[modeIdx]
   const rule = mode.actions[ruleIdx] as Rule | undefined
 
@@ -59,7 +66,7 @@ export default function App() {
     setDevIdx(di)
     setModeIdx(mi)
     setRuleIdx(ri)
-    const r = BOARDS[di].body.modes[mi].actions[ri]
+    const r = boards[di].body.modes[mi].actions[ri]
     snapshot.current = r ? JSON.stringify(r) : null
     setDirty(false)
   }
@@ -99,11 +106,33 @@ export default function App() {
     forceRender()
   }
 
-  // Validate the loaded data once: a trigger type must match its device type.
+  // Load boards from the backend rules-library once, falling back to fixtures.
   useEffect(() => {
-    const problems = validateBoards(BOARDS)
-    if (problems.length) console.warn(`[conboard] ${problems.length} invalid rule(s):\n` + problems.join('\n'))
+    let cancelled = false
+    ;(async () => {
+      try {
+        if (await ping()) {
+          const loaded = await listBoards()
+          if (!cancelled && loaded.length) {
+            setBoards(loaded)
+            setDevIdx(0); setModeIdx(0); setRuleIdx(0)
+            setSource('backend')
+            return
+          }
+        }
+      } catch (e) {
+        console.warn('[conboard] backend load failed, using fixtures', e)
+      }
+      if (!cancelled) setSource('fixtures')
+    })()
+    return () => { cancelled = true }
   }, [])
+
+  // Validate whatever is loaded: a trigger type must match its device type.
+  useEffect(() => {
+    const problems = validateBoards(boards)
+    if (problems.length) console.warn(`[conboard] ${problems.length} invalid rule(s):\n` + problems.join('\n'))
+  }, [boards])
 
   const liveMode = device.body.modes.find((m) => m.active)
   const entryCount = mode.mode_header?.actions.length ?? 0
@@ -121,7 +150,9 @@ export default function App() {
             Live monitor
           </button>
         </nav>
-        <span className="stage">live fixtures</span>
+        <span className="stage">
+          {source === 'loading' ? 'connecting…' : source === 'backend' ? 'live · backend' : 'live fixtures'}
+        </span>
       </header>
 
       {view === 'monitor' && <Monitor />}
@@ -129,7 +160,7 @@ export default function App() {
         <nav className="rail" aria-label="Devices">
           <span className="lbl">Devices</span>
           {DEVICE_GROUPS.map((g) => {
-            const items = BOARDS.map((b, i) => ({ b, i })).filter((x) => x.b.DEVICE.type === g.type)
+            const items = boards.map((b, i) => ({ b, i })).filter((x) => x.b.DEVICE.type === g.type)
             if (!items.length) return null
             return (
               <div className="rail-group" key={g.type}>
