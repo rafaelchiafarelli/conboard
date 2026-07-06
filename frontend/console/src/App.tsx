@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { BOARDS as FIXTURE_BOARDS } from './fixtures/devices'
-import { listBoards, ping } from './api/client'
+import { fetchBoards, saveBoard, ping } from './api/client'
 import type { Board } from './model/rules'
 import { decodeMidi } from './model/midi'
 import { validateBoards, type Rule, type DeviceType } from './model/rules'
@@ -56,6 +56,9 @@ export default function App() {
   // (harpia REST). Fall back to fixtures if the backend is down or empty.
   const [boards, setBoards] = useState<Board[]>(FIXTURE_BOARDS)
   const [source, setSource] = useState<'loading' | 'backend' | 'fixtures'>('loading')
+  // Backend id per board (parallel to `boards`); null = not yet persisted.
+  const [boardIds, setBoardIds] = useState<(number | null)[]>(() => FIXTURE_BOARDS.map(() => null))
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   const device = boards[devIdx]
   const mode = device.body.modes[modeIdx]
@@ -71,13 +74,31 @@ export default function App() {
     setDirty(false)
   }
 
+  // Persist the WHOLE current board to the backend. A rule cannot be saved on its own
+  // (it lives inside the board aggregate), so any Save/Delete writes the whole profile;
+  // saveBoard() does a delete+recreate, keeping the board's id stable. Returns silently
+  // (status shown in the header) so callers can fire-and-forget.
+  const persistDevice = async () => {
+    setSaveState('saving')
+    try {
+      const id = await saveBoard(boards[devIdx], boardIds[devIdx])
+      setBoardIds((ids) => { const n = ids.slice(); n[devIdx] = id; return n })
+      setSaveState('saved')
+    } catch (e) {
+      console.error('[conboard] save failed', e)
+      setSaveState('error')
+    }
+  }
+
   const onEdit = () => {
     setDirty(true)
+    setSaveState('idle')
     forceRender()
   }
   const onSave = () => {
     if (rule) snapshot.current = JSON.stringify(rule)
     setDirty(false)
+    void persistDevice()
   }
   const onRevert = () => {
     if (snapshot.current) mode.actions[ruleIdx] = JSON.parse(snapshot.current)
@@ -87,6 +108,7 @@ export default function App() {
   const onDelete = () => {
     mode.actions.splice(ruleIdx, 1)
     select(devIdx, modeIdx, Math.max(0, ruleIdx - 1))
+    void persistDevice()   // deletion is explicit; persist the board immediately
   }
   const onAddRule = () => {
     // Trigger type always equals the device type (each board is driven by one engine).
@@ -96,6 +118,7 @@ export default function App() {
         : { type: device.DEVICE.type, code: device.DEVICE.type === 'keyboard' ? 'KEY_A' : 'BTN_SOUTH', mode: 'press' }
     mode.actions.push({ input, output: [] })
     select(devIdx, modeIdx, mode.actions.length - 1)
+    setDirty(true)   // enable Save so the new rule can be persisted after editing
   }
   // Make a mode the device's live operation mode. Exactly one mode is active at a
   // time; on a real device this maps to a "switch mode" command sent to the backend.
@@ -112,9 +135,10 @@ export default function App() {
     ;(async () => {
       try {
         if (await ping()) {
-          const loaded = await listBoards()
+          const loaded = await fetchBoards()
           if (!cancelled && loaded.length) {
-            setBoards(loaded)
+            setBoards(loaded.map((l) => l.board))
+            setBoardIds(loaded.map((l) => l.id))
             setDevIdx(0); setModeIdx(0); setRuleIdx(0)
             setSource('backend')
             return
@@ -152,6 +176,9 @@ export default function App() {
         </nav>
         <span className="stage">
           {source === 'loading' ? 'connecting…' : source === 'backend' ? 'live · backend' : 'live fixtures'}
+          {saveState === 'saving' && ' · saving…'}
+          {saveState === 'saved' && ' · saved ✓'}
+          {saveState === 'error' && ' · save failed ✕'}
         </span>
       </header>
 
