@@ -70,6 +70,24 @@ install -m 755 /conboard/LowLevel/assets/event_handler.sh /conboard/event_handle
 # dispatcher or reach /dev/hidgN. The coldplug replay happens after those start.
 udevadm control --reload-rules || true
 
+echo "== installing nginx site (serves the console UI, proxies API + websockets) =="
+# The console SPA lives at /conboard/frontend (from the artifact); nginx serves it
+# and proxies /api/v1 + /ws to the backend. We do NOT apt-install nginx (see header);
+# if it's absent, warn and continue -- the backend still runs headless.
+if command -v nginx >/dev/null 2>&1; then
+    install -m 644 /conboard/backend/assets/interface.conf /etc/nginx/conf.d/conboard.conf
+    # Drop the distro default site if it owns :80 (Debian/Armbian layout).
+    rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+    if nginx -t 2>/dev/null; then
+        systemctl reload nginx 2>/dev/null || systemctl restart nginx 2>/dev/null || true
+        systemctl enable nginx 2>/dev/null || true
+    else
+        echo "  WARNING: 'nginx -t' failed -- left nginx untouched. Check /etc/nginx/conf.d/conboard.conf." >&2
+    fi
+else
+    echo "  WARNING: nginx not found -- console UI won't be served. Install nginx and re-run this script." >&2
+fi
+
 echo "== enabling services (start on boot) =="
 systemctl enable usb-otg.service dispatcher.service launcher.service backend.service
 
@@ -95,4 +113,6 @@ echo "Done. Attached devices are handled now; the launcher also runs at boot and
 echo "Quick checks:"
 echo "  ls /sys/class/udc            # must be non-empty for USB gadget to bind"
 echo "  systemctl status usb-otg.service dispatcher.service launcher.service backend.service"
-echo "  curl -s localhost:8080/healthz   # backend management API"
+echo "  curl -s localhost:8080/healthz   # backend management API (direct)"
+echo "  curl -s localhost/healthz        # via nginx (same origin as the UI)"
+echo "  open http://<board-ip>/          # the conboard console UI"

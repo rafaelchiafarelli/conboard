@@ -64,6 +64,18 @@ mkdir -p "$STAGE/scripts" "$STAGE/boards"
 cp "$SRC"/scripts/*.sh "$STAGE/scripts/"
 cp "$SRC"/boards/*.json "$STAGE/boards/" 2>/dev/null || true
 
+# --- console UI: built SPA bundle + nginx site -------------------------------
+# nginx serves the static bundle from /conboard/frontend and proxies the API/WS
+# (see backend/assets/interface.conf). The bundle is built by the Dockerfile's
+# `frontend` stage and copied to frontend/console/dist before this runs.
+if [ -d "$SRC/frontend/console/dist" ]; then
+    mkdir -p "$STAGE/frontend"
+    cp -r "$SRC/frontend/console/dist/." "$STAGE/frontend/"
+else
+    echo "WARN: frontend/console/dist missing -- console UI will NOT be packaged" >&2
+fi
+copy 644 backend/assets/interface.conf
+
 # --- bundle the runtime shared-library closure -------------------------------
 # So the board needs NO `apt install`: gather every non-core .so that the shipped
 # binaries depend on (transitively, via ldd) into /conboard/lib, then stamp an

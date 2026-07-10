@@ -38,6 +38,12 @@ echo "== removing udev rule + reloading =="
 rm -f /etc/udev/rules.d/100-usb.rules
 udevadm control --reload-rules 2>/dev/null || true
 
+echo "== removing nginx site + reloading =="
+if [ -f /etc/nginx/conf.d/conboard.conf ]; then
+    rm -f /etc/nginx/conf.d/conboard.conf
+    command -v nginx >/dev/null 2>&1 && { nginx -t 2>/dev/null && systemctl reload nginx 2>/dev/null || true; }
+fi
+
 # Remove a stale global libcommon entry from older installs (pre-bundled-lib scheme),
 # which used to install libcommon.so into /usr/local/lib + ldconfig.
 if [ -f /usr/local/lib/libcommon.so ]; then

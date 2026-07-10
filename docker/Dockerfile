@@ -10,6 +10,17 @@
 # Build with: ./build-cross.sh   (handles QEMU + buildx + artifact extraction)
 
 ARG DEBIAN_VERSION=bookworm
+ARG NODE_VERSION=22
+
+# ---- frontend: build the console SPA (arch-independent) ----------------------
+# The Vite bundle is static and platform-agnostic, so build it on the BUILD host
+# (no QEMU) and copy the output into the artifact for nginx to serve on-device.
+FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-alpine AS frontend
+WORKDIR /app
+COPY frontend/console/package.json frontend/console/package-lock.json ./
+RUN npm ci
+COPY frontend/console/ ./
+RUN npm run build            # -> /app/dist (index.html + hashed assets)
 
 # ---- builder: one instance per --platform, emulated via QEMU ----------------
 FROM --platform=$TARGETPLATFORM debian:${DEBIAN_VERSION}-slim AS builder
@@ -99,6 +110,10 @@ RUN --mount=type=cache,target=/ccache \
     cmake -S backend -B backend/build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build backend/build -j "$(nproc)" \
     && echo "==== backend ccache stats ====" && ccache -s
+
+# Built console SPA (from the native frontend stage) — package.sh copies it into
+# the artifact at /conboard/frontend, where the bundled nginx site serves it.
+COPY --from=frontend /app/dist /src/frontend/console/dist
 
 # Assemble the installable artifact tree + tarball under /out.
 RUN BOARD_ID="${BOARD_ID}" BOARD_DESC="${BOARD_DESC}" BOARD_OTG="${BOARD_OTG}" \
