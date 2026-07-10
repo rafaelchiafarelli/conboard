@@ -3,15 +3,13 @@
 # Install a prebuilt conboard artifact ON the Orange Pi (run this on the board,
 # as root, from inside the unpacked artifact directory).
 #
-# Unlike scripts/install.sh this does NOT compile anything -- the binaries in
-# this tree were already cross-built for this board's architecture. It only
-# installs the runtime shared libraries, drops the tree at /conboard, and wires
-# up the systemd units.
+# Unlike scripts/install.sh this does NOT compile anything AND does NOT apt-install
+# anything -- the binaries were cross-built for this board's architecture and every
+# runtime shared library they need is bundled under ./lib (resolved via an absolute
+# RUNPATH=/conboard/lib stamped at build time). It just drops the tree at /conboard
+# and wires up the systemd units.
 #
 #   sudo ./install-on-device.sh
-#
-# The python frontend (backend/) still needs its venv set up separately; see
-# scripts/install.sh install_frontend. This script handles the C++/USB layer.
 set -euo pipefail
 
 if [ "$EUID" -ne 0 ]; then
@@ -31,39 +29,34 @@ case "$TARGET_ARCH:$BIN_ARCH" in
     *) echo "WARNING: artifact arch may not match this board -- continuing anyway." >&2 ;;
 esac
 
-echo "== installing runtime shared libraries =="
-export DEBIAN_FRONTEND=noninteractive
-apt-get update
-# Runtime counterparts of the build-time -dev packages (see docker/Dockerfile).
-# Boost is installed via -dev to dodge version-suffixed runtime package names.
-apt-get install -y --no-install-recommends \
-    libzmq5 libasound2 libuuid1 \
-    libboost-system-dev libboost-date-time-dev
-
 echo "== stopping any running conboard services =="
-for unit in usb-otg launcher dispatcher frontend; do
+# Includes retired units (frontend, old backend) so a re-install cleans them up.
+for unit in usb-otg launcher dispatcher backend frontend; do
     systemctl stop "${unit}.service" 2>/dev/null || true
 done
 
 echo "== copying program tree to /conboard =="
 mkdir -p /conboard
-# Copy everything except this installer and the manifest.
+# Copy everything except the installer/uninstaller and the manifest. Preserve the
+# rules-library data dir if it already exists (do not --delete it).
 rsync -a --delete \
-    --exclude install-on-device.sh --exclude MANIFEST.txt \
+    --exclude install-on-device.sh --exclude uninstall-on-device.sh \
+    --exclude MANIFEST.txt --exclude backend/data \
     "$HERE"/ /conboard/
+mkdir -p /conboard/backend/data
 
-echo "== registering libcommon.so with the dynamic linker =="
-# The conboard binaries link libcommon.so (which lives next to them under
-# LowLevel/Common/build). The binaries also carry an $ORIGIN-relative RUNPATH,
-# but install it into a standard lib dir + ldconfig as well, so resolution never
-# depends on RUNPATH or on how/where the binary is launched.
-install -m 644 /conboard/LowLevel/Common/build/libcommon.so /usr/local/lib/
-ldconfig
+echo "== runtime libraries: bundled under /conboard/lib (no apt install) =="
+# Nothing to install: the binaries carry RUNPATH=/conboard/lib and ./lib holds the
+# full non-core .so closure (libstdc++, libzmq, libasound, libuuid, boost, soci,
+# protobuf, grpc, sqlite, ...). libcommon.so is in there too. We deliberately do NOT
+# add /conboard/lib to the global ld.so path, so these never shadow the system libs.
+ls /conboard/lib >/dev/null 2>&1 || echo "  WARNING: /conboard/lib missing from artifact!"
 
 echo "== installing systemd units =="
-install -m 644 /conboard/LowLevel/assets/usb-otg.service            /etc/systemd/system/
-install -m 644 /conboard/LowLevel/assets/launcher.service           /etc/systemd/system/
+install -m 644 /conboard/LowLevel/assets/usb-otg.service               /etc/systemd/system/
+install -m 644 /conboard/LowLevel/assets/launcher.service              /etc/systemd/system/
 install -m 644 /conboard/LowLevel/dispatcher/assets/dispatcher.service /etc/systemd/system/
+install -m 644 /conboard/backend/assets/backend.service                /etc/systemd/system/
 systemctl daemon-reload
 
 echo "== installing udev rule + event handler =="
@@ -78,7 +71,7 @@ install -m 755 /conboard/LowLevel/assets/event_handler.sh /conboard/event_handle
 udevadm control --reload-rules || true
 
 echo "== enabling services (start on boot) =="
-systemctl enable usb-otg.service dispatcher.service launcher.service
+systemctl enable usb-otg.service dispatcher.service launcher.service backend.service
 
 # Start now — but NOT with `enable --now`. launcher.service is a Type=oneshot
 # that scans devices and can call `systemctl restart` for a matched device;
@@ -87,14 +80,12 @@ systemctl enable usb-otg.service dispatcher.service launcher.service
 echo "== starting services =="
 systemctl start usb-otg.service       # brings up the USB gadget now
 systemctl start dispatcher.service
+systemctl start backend.service       # management API (REST/gRPC) over SQLite
 
 # Coldplug at install time: handle devices ALREADY attached now, without a reboot.
 # launcher.service does exactly this at boot (replay 'add' uevents once the
 # dispatcher + gadget are up). Replay it here too, now that both are started, so a
 # fresh install picks up an attached controller without a manual unplug/replug.
-# Run the trigger directly (not `systemctl start launcher.service`) to avoid any
-# oneshot-in-transaction nesting; udevd re-runs 100-usb.rules -> event_handler.sh
-# -> launcher, spawning the same identity-named handler as a live hotplug.
 echo "== coldplug: replaying attached USB devices =="
 udevadm trigger --action=add --subsystem-match=usb || true
 udevadm settle || true
@@ -103,4 +94,5 @@ echo
 echo "Done. Attached devices are handled now; the launcher also runs at boot and on hotplug (udev)."
 echo "Quick checks:"
 echo "  ls /sys/class/udc            # must be non-empty for USB gadget to bind"
-echo "  systemctl status usb-otg.service dispatcher.service launcher.service"
+echo "  systemctl status usb-otg.service dispatcher.service launcher.service backend.service"
+echo "  curl -s localhost:8080/healthz   # backend management API"

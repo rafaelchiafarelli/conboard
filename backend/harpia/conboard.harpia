@@ -1,0 +1,118 @@
+// conboard rules-library domain. Hand this to harpia to generate the C++ structs,
+// JSON, SOCI-backed CRUDL DAO, REST (Crow) and gRPC. See README.md in this folder
+// for the full rationale and the harpia authoring constraints. Mirrors
+// frontend/console/src/model/rules.ts. Comments here stay punctuation-plain because
+// the harpia lexer is fragile about comment content.
+
+import "types.harpia";
+
+// enums. one enumerator MUST be 0.
+
+enum device_type {
+    dt_midi = 0;
+    dt_joystick;
+    dt_keyboard;
+    dt_mouse;
+}
+
+enum trigger_kind {
+    tk_midi = 0;
+    tk_evdev;
+}
+
+enum trigger_edge {
+    edge_press = 0;
+    edge_release;
+    edge_hold;
+    edge_hold_once;
+    edge_higher;
+    edge_lower;
+    edge_spot;
+}
+
+enum action_kind {
+    ak_midi = 0;
+    ak_keyboard;
+    ak_mouse;
+}
+
+enum key_type {
+    kt_text = 0;
+    kt_one_key;
+    kt_hot_key;
+}
+
+enum hold_mode {
+    hm_not_hold = 0;
+    hm_hold;
+    hm_hold_once;
+}
+
+// trigger. rule input, flattened MidiTrigger or EvdevTrigger.
+
+stream pull push event message trigger {
+    trigger_kind kind;
+    optional int b0;
+    optional int b1;
+    optional int b2;
+    optional string code;
+    optional trigger_edge edge;
+    optional int value;
+    optional int interval;
+    optional int delay;
+} trigger_table;
+
+// output_action. flattened MidiAction or KeyboardAction or MouseAction.
+// mouse fields are strings to preserve board-file fidelity.
+
+stream pull push event message output_action {
+    action_kind kind;
+    optional int delay;
+    optional int b0;
+    optional int b1;
+    optional int b2;
+    optional string data;
+    optional key_type key_type;
+    optional hold_mode hold;
+    optional string dx;
+    optional string dy;
+    optional string wheel_move;
+    optional string gotox;
+    optional string gotoy;
+    optional string click;
+    optional string right_click;
+} output_action_table;
+
+// rule. trigger to output list, plus optional ChangeMode.
+
+stream pull push event message rule {
+    trigger input;
+    repeteable output_action outputs;
+    optional int change_mode_enable;
+    optional int change_mode_to;
+} rule_table;
+
+// mode. id, active, header actions, and the rules.
+
+stream pull push event message mode {
+    int mode_id;
+    int active;
+    repeteable output_action mode_header;
+    repeteable rule rules;
+} mode_table;
+
+// board. the top-level device profile.
+
+stream pull push event message board {
+    string name;
+    device_type type;
+    int timeout;
+    string input;
+    string output;
+    optional string exec;
+    optional string port;
+    optional map<string,string> generics;
+    optional map<string,string> tags;
+    repeteable output_action header_actions;
+    repeteable mode modes;
+} board_table;

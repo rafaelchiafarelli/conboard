@@ -1,0 +1,21 @@
+syntax = "proto3";
+import "protofiles/device_type_69421342752d53d5f274b99a6a0c123e.proto";
+import "protofiles/output_action_69421342752d53d5f274b99a6a0c123e.proto";
+import "protofiles/mode_69421342752d53d5f274b99a6a0c123e.proto";
+message board {
+int32 ID_69421342752d53d5f274b99a6a0c123e = 1;
+string name = 2;
+device_type type = 3;
+int32 timeout = 4;
+string input = 5;
+string output = 6;
+string exec = 7;
+string port = 8;
+map<string, string> generics = 9;
+map<string, string> tags = 10;
+repeated output_action header_actions = 11;
+repeated mode modes = 12;
+string STATUS_69421342752d53d5f274b99a6a0c123e = 13;
+string ERROR_69421342752d53d5f274b99a6a0c123e = 14;
+string ORIGINATOR_69421342752d53d5f274b99a6a0c123e = 15;
+}

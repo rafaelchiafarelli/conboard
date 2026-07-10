@@ -1,0 +1,7 @@
+syntax = "proto3";
+enum device_type {
+dt_midi = 0;
+dt_joystick = 1;
+dt_keyboard = 2;
+dt_mouse = 3;
+}
