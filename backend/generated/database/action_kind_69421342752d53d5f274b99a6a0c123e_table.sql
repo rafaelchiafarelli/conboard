@@ -1,0 +1,1 @@
+-- action_kind: enum, no table

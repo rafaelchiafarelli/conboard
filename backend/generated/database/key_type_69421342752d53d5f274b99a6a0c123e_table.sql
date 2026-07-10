@@ -1,0 +1,1 @@
+-- key_type: enum, no table

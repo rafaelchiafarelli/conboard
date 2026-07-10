@@ -1,0 +1,11 @@
+// harpia requires the root file to import at least one Include module, or its
+// pipeline crashes on an empty include set. This module exists to satisfy that.
+// It declares a plain (non-persisted) message, no trailing table name, so it
+// creates NO database table. It is only serialized.
+//
+// NOTE. enums and all persisted messages live in the root conboard.harpia, because
+// cross-module enum references fail to resolve in harpia. Keep this module minimal.
+
+message conboard_meta {
+    string schema_version;
+}

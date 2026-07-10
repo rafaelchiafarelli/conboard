@@ -30,10 +30,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 #   file                 -> manifest only (records ELF arch per binary)
 # (libusb dropped: device detection now uses kernel sysfs/evdev, not libusb.)
 #   ccache               -> caches compiled objects across builds (see below)
+# backend/ (harpia-generated management API) additionally needs:
+#   protobuf-compiler + libprotobuf-dev            -> message structs (.pb.cc)
+#   protobuf-compiler-grpc + libgrpc++-dev         -> the generated gRPC services
+#   libsoci-dev + libsoci-sqlite3-4.0 + libsqlite3-dev -> SOCI DAO on SQLite
+#   patchelf             -> stamp an absolute RUNPATH so the bundled runtime .so's
+#                           resolve on the board with NO apt install (see package.sh)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential cmake git pkg-config ca-certificates file ccache \
+        build-essential cmake git pkg-config ca-certificates file ccache patchelf \
         libzmq3-dev libasound2-dev uuid-dev \
         libboost-dev libboost-system-dev libboost-date-time-dev \
+        protobuf-compiler libprotobuf-dev protobuf-compiler-grpc libgrpc++-dev \
+        libsoci-dev libsoci-sqlite3-4.0 libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Make the compiler go through ccache so a *second* build only recompiles the
@@ -82,6 +90,15 @@ RUN --mount=type=cache,target=/ccache \
              docker/package.sh \
     && LowLevel/scripts/compiler.sh \
     && echo "==== ccache stats ====" && ccache -s
+
+# Build the C++ backend (Crow REST + gRPC over the harpia-generated SOCI/SQLite
+# DAOs). Consumes backend/generated/ (committed); no protoc-at-build needed as long
+# as the image's protobuf matches the committed .pb.cc (bookworm 3.21.x == the
+# generator image). package.sh bundles its runtime .so closure into the artifact.
+RUN --mount=type=cache,target=/ccache \
+    cmake -S backend -B backend/build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build backend/build -j "$(nproc)" \
+    && echo "==== backend ccache stats ====" && ccache -s
 
 # Assemble the installable artifact tree + tarball under /out.
 RUN BOARD_ID="${BOARD_ID}" BOARD_DESC="${BOARD_DESC}" BOARD_OTG="${BOARD_OTG}" \

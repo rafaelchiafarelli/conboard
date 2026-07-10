@@ -1,0 +1,10 @@
+syntax = "proto3";
+enum trigger_edge {
+edge_press = 0;
+edge_release = 1;
+edge_hold = 2;
+edge_hold_once = 3;
+edge_higher = 4;
+edge_lower = 5;
+edge_spot = 6;
+}

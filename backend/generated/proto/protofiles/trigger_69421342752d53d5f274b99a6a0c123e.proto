@@ -1,0 +1,18 @@
+syntax = "proto3";
+import "protofiles/trigger_kind_69421342752d53d5f274b99a6a0c123e.proto";
+import "protofiles/trigger_edge_69421342752d53d5f274b99a6a0c123e.proto";
+message trigger {
+int32 ID_69421342752d53d5f274b99a6a0c123e = 1;
+trigger_kind kind = 2;
+int32 b0 = 3;
+int32 b1 = 4;
+int32 b2 = 5;
+string code = 6;
+trigger_edge edge = 7;
+int32 value = 8;
+int32 erval = 9;
+int32 delay = 10;
+string STATUS_69421342752d53d5f274b99a6a0c123e = 11;
+string ERROR_69421342752d53d5f274b99a6a0c123e = 12;
+string ORIGINATOR_69421342752d53d5f274b99a6a0c123e = 13;
+}
