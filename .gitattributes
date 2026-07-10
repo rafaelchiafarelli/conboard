@@ -1,0 +1,29 @@
+# conboard builds and runs on Linux. CRLF line endings break shell-script shebangs
+# ("#!/bin/bash\r" -> kernel reports 'No such file or directory'), which is what bit a
+# Windows/WSL checkout (core.autocrlf=true) at LowLevel/scripts/compiler.sh. Normalise
+# every text file to LF in the repo AND on checkout, on every platform.
+#
+# `text=auto` lets git auto-detect binary files (by NUL bytes) and leave them untouched;
+# `eol=lf` forces LF for everything it treats as text.
+* text=auto eol=lf
+
+# Be explicit for the file kinds that MUST stay LF to be executable / correct.
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.py    text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+
+# Common binary assets: never convert.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
+*.gz   binary
+*.tgz  binary
+*.tar  binary
+*.zip  binary
+*.pdf  binary
