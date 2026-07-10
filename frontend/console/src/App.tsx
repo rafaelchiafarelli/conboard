@@ -60,16 +60,19 @@ export default function App() {
   const [boardIds, setBoardIds] = useState<(number | null)[]>(() => FIXTURE_BOARDS.map(() => null))
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
-  const device = boards[devIdx]
-  const mode = device.body.modes[modeIdx]
-  const rule = mode.actions[ruleIdx] as Rule | undefined
+  // Index safely: backend-loaded boards may have fewer devices/modes/rules than the
+  // current selection (or a board with no modes), so never assume a slot exists.
+  const device = boards[devIdx] ?? boards[0]
+  const modes = device?.body.modes ?? []
+  const mode = modes[modeIdx] ?? modes[0]
+  const rule = mode?.actions[ruleIdx] as Rule | undefined
 
   // Snapshot the rule as selected so Revert can restore it.
   const select = (di: number, mi: number, ri: number) => {
     setDevIdx(di)
     setModeIdx(mi)
     setRuleIdx(ri)
-    const r = boards[di].body.modes[mi].actions[ri]
+    const r = boards[di]?.body.modes[mi]?.actions[ri]
     snapshot.current = r ? JSON.stringify(r) : null
     setDirty(false)
   }
@@ -101,16 +104,18 @@ export default function App() {
     void persistDevice()
   }
   const onRevert = () => {
-    if (snapshot.current) mode.actions[ruleIdx] = JSON.parse(snapshot.current)
+    if (snapshot.current && mode) mode.actions[ruleIdx] = JSON.parse(snapshot.current)
     setDirty(false)
     forceRender()
   }
   const onDelete = () => {
+    if (!mode) return
     mode.actions.splice(ruleIdx, 1)
     select(devIdx, modeIdx, Math.max(0, ruleIdx - 1))
     void persistDevice()   // deletion is explicit; persist the board immediately
   }
   const onAddRule = () => {
+    if (!device || !mode) return
     // Trigger type always equals the device type (each board is driven by one engine).
     const input: Rule['input'] =
       device.DEVICE.type === 'midi'
@@ -123,6 +128,7 @@ export default function App() {
   // Make a mode the device's live operation mode. Exactly one mode is active at a
   // time; on a real device this maps to a "switch mode" command sent to the backend.
   const activateMode = (i: number) => {
+    if (!device) return
     device.body.modes.forEach((m, k) => {
       m.active = k === i
     })
@@ -158,8 +164,8 @@ export default function App() {
     if (problems.length) console.warn(`[conboard] ${problems.length} invalid rule(s):\n` + problems.join('\n'))
   }, [boards])
 
-  const liveMode = device.body.modes.find((m) => m.active)
-  const entryCount = mode.mode_header?.actions.length ?? 0
+  const liveMode = device?.body.modes.find((m) => m.active)
+  const entryCount = mode?.mode_header?.actions.length ?? 0
 
   return (
     <div className="app">
@@ -235,35 +241,37 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <div className="mode-ctl">
-              {mode.active ? (
-                <span className="live-pill">
-                  <span className="dot" />
-                  mode {mode.id} is live
-                </span>
-              ) : (
-                <>
-                  <span className="live-note">Live: mode {liveMode ? liveMode.id : '—'}</span>
-                  <button className="activate" onClick={() => activateMode(modeIdx)}>
-                    ⏻ Activate mode {mode.id}
-                  </button>
-                </>
-              )}
-              {entryCount > 0 && (
-                <span className="entry-note">
-                  {entryCount} entry action{entryCount !== 1 ? 's' : ''} on enter
-                </span>
-              )}
-            </div>
+            {mode && (
+              <div className="mode-ctl">
+                {mode.active ? (
+                  <span className="live-pill">
+                    <span className="dot" />
+                    mode {mode.id} is live
+                  </span>
+                ) : (
+                  <>
+                    <span className="live-note">Live: mode {liveMode ? liveMode.id : '—'}</span>
+                    <button className="activate" onClick={() => activateMode(modeIdx)}>
+                      ⏻ Activate mode {mode.id}
+                    </button>
+                  </>
+                )}
+                {entryCount > 0 && (
+                  <span className="entry-note">
+                    {entryCount} entry action{entryCount !== 1 ? 's' : ''} on enter
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="list-scroll">
             <div className="list-count">
               <span>
-                {mode.actions.length} rule{mode.actions.length !== 1 ? 's' : ''} · trigger → output
+                {(mode?.actions.length ?? 0)} rule{(mode?.actions.length ?? 0) !== 1 ? 's' : ''} · trigger → output
               </span>
             </div>
-            {mode.actions.map((r, ri) => {
+            {(mode?.actions ?? []).map((r, ri) => {
               const t = triggerSummary(r.input)
               return (
                 <button
@@ -289,7 +297,7 @@ export default function App() {
         </section>
 
         <main className="editor" aria-label="Rule editor">
-          {rule ? (
+          {rule && mode ? (
             <RuleEditor
               board={device}
               modeId={mode.id}
@@ -305,8 +313,8 @@ export default function App() {
           ) : (
             <div className="empty-editor">
               <div>
-                <div className="big">No rules in mode {mode.id}</div>
-                Add a rule from the list to start mapping a trigger.
+                <div className="big">{mode ? `No rules in mode ${mode.id}` : 'This device has no modes'}</div>
+                {mode ? 'Add a rule from the list to start mapping a trigger.' : 'Nothing to edit for this device yet.'}
               </div>
             </div>
           )}
