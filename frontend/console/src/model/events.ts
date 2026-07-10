@@ -12,8 +12,8 @@ import type { Board, Rule, MidiTrigger, EvdevTrigger } from './rules'
 export interface DeviceEvent {
   id: number
   ts: number // epoch ms
-  device: string // DEVICE.name
-  kind: 'midi' | 'evdev'
+  device: string // DEVICE.name (simulated) or the sender uuid (live)
+  kind: 'midi' | 'evdev' | 'raw'
   // midi
   b0?: number
   b1?: number
@@ -21,6 +21,9 @@ export interface DeviceEvent {
   // evdev
   code?: string
   edge?: string
+  // live dispatcher stream (kind === 'raw'): opaque per INTERFACE.md O3
+  uuid?: string
+  raw?: string
 }
 
 export interface EventSource {
@@ -39,8 +42,87 @@ export function matchEvent(board: Board, e: DeviceEvent): Rule | undefined {
     const t = r.input
     if (e.kind === 'midi' && t.type === 'midi') return t.b0 === e.b0 && t.b1 === e.b1
     if (e.kind === 'evdev' && t.type !== 'midi') return t.code === e.code && t.mode === e.edge
-    return false
+    return false // 'raw' live frames are opaque (O3) — no structured match
   })
+}
+
+/** Connection state of a live event source, for the monitor's status indicator. */
+export type LiveStatus = 'connecting' | 'open' | 'closed'
+
+/** Same-origin dispatcher websocket URL (nginx maps /websocket → dispatcher /ws). */
+export function defaultWsUrl(): string {
+  const env = (import.meta as { env?: Record<string, string> }).env?.VITE_CONBOARD_WS
+  if (env) return env
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${proto}//${location.host}/websocket`
+}
+
+/**
+ * Real event stream from the dispatcher's live user-action websocket. Frames are
+ * `<uuid>,<action>` text (a CSV `UUID,UserAction` header arrives first on connect);
+ * the action is an opaque device string (INTERFACE.md O3), so events are emitted as
+ * kind 'raw' and shown verbatim rather than matched against rules. Auto-reconnects.
+ */
+export class WebSocketEventSource implements EventSource {
+  private ws: WebSocket | null = null
+  private seq = 0
+  private stopped = false
+  private retry: ReturnType<typeof setTimeout> | null = null
+
+  constructor(private url: string, private onStatus?: (s: LiveStatus) => void) {}
+
+  start(onEvent: (e: DeviceEvent) => void): void {
+    this.open(onEvent)
+  }
+
+  private open(onEvent: (e: DeviceEvent) => void): void {
+    if (this.stopped) return
+    this.onStatus?.('connecting')
+    let ws: WebSocket
+    try {
+      ws = new WebSocket(this.url)
+    } catch {
+      this.scheduleRetry(onEvent)
+      return
+    }
+    this.ws = ws
+    ws.onopen = () => this.onStatus?.('open')
+    ws.onmessage = (ev) => {
+      if (typeof ev.data !== 'string') return
+      for (const line of ev.data.split(/\r?\n/)) {
+        const row = line.trim()
+        if (!row || row.startsWith('UUID,')) continue // skip the CSV header row
+        const comma = row.indexOf(',')
+        const uuid = comma >= 0 ? row.slice(0, comma) : ''
+        const action = comma >= 0 ? row.slice(comma + 1) : row
+        onEvent({ id: ++this.seq, ts: Date.now(), device: uuid || 'device', kind: 'raw', uuid, raw: action })
+      }
+    }
+    ws.onclose = () => {
+      this.onStatus?.('closed')
+      this.scheduleRetry(onEvent)
+    }
+    ws.onerror = () => ws.close()
+  }
+
+  private scheduleRetry(onEvent: (e: DeviceEvent) => void): void {
+    if (this.stopped || this.retry) return
+    this.retry = setTimeout(() => {
+      this.retry = null
+      this.open(onEvent)
+    }, 3000)
+  }
+
+  stop(): void {
+    this.stopped = true
+    if (this.retry) clearTimeout(this.retry)
+    this.retry = null
+    if (this.ws) {
+      this.ws.onclose = null // don't retry on an intentional close
+      this.ws.close()
+    }
+    this.ws = null
+  }
 }
 
 /**

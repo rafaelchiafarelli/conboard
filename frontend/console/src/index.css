@@ -228,6 +228,12 @@ input:focus, select:focus { outline: none; border-color: var(--accent-dim); box-
 .mon-status .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok); animation: pulse 1.4s ease-in-out infinite; }
 .mon-status.paused { color: var(--ink-faint); }
 .mon-status.paused .pulse { background: var(--ink-faint); box-shadow: none; animation: none; }
+.mon-status.connecting { color: var(--accent); }
+.mon-status.connecting .pulse { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.mon-status.closed { color: var(--danger); }
+.mon-status.closed .pulse { background: var(--danger); box-shadow: none; animation: none; }
+.mon-status.sim { color: var(--ink-faint); }
+.mon-status.sim .pulse { background: var(--ink-faint); box-shadow: none; animation: none; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { .mon-status .pulse { animation: none; } }
 
