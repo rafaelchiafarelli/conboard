@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { BOARDS as FIXTURE_BOARDS } from './fixtures/devices'
+import { BOARDS as REAL_BOARDS } from './fixtures/boards'
 import { fetchBoards, saveBoard, ping } from './api/client'
 import type { Board } from './model/rules'
 import { decodeMidi } from './model/midi'
@@ -55,7 +56,7 @@ export default function App() {
   // Data source: start on the bundled fixtures, then try the backend rules-library
   // (harpia REST). Fall back to fixtures if the backend is down or empty.
   const [boards, setBoards] = useState<Board[]>(FIXTURE_BOARDS)
-  const [source, setSource] = useState<'loading' | 'backend' | 'fixtures'>('loading')
+  const [source, setSource] = useState<'loading' | 'seeding' | 'backend' | 'fixtures'>('loading')
   // Backend id per board (parallel to `boards`); null = not yet persisted.
   const [boardIds, setBoardIds] = useState<(number | null)[]>(() => FIXTURE_BOARDS.map(() => null))
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -135,13 +136,30 @@ export default function App() {
     forceRender()
   }
 
-  // Load boards from the backend rules-library once, falling back to fixtures.
+  // Load boards from the backend rules-library once. If the backend is up but missing
+  // an installed profile, SEED it from the bundled real boards using the same saveBoard
+  // path the editor uses — the library starts empty (no backend seeding), so without
+  // this the console would only show boards that were manually saved. Falls back to the
+  // bundled fixtures when the backend is unreachable.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
         if (await ping()) {
-          const loaded = await fetchBoards()
+          let loaded = await fetchBoards()
+          const have = new Set(loaded.map((l) => l.board.DEVICE.name))
+          const missing = REAL_BOARDS.filter((b) => !have.has(b.DEVICE.name))
+          if (missing.length && !cancelled) {
+            setSource('seeding')
+            for (const b of missing) {
+              try {
+                await saveBoard(b, null)
+              } catch (e) {
+                console.warn('[conboard] seed failed for', b.DEVICE.name, e)
+              }
+            }
+            loaded = await fetchBoards() // re-read canonical rows + backend ids
+          }
           if (!cancelled && loaded.length) {
             setBoards(loaded.map((l) => l.board))
             setBoardIds(loaded.map((l) => l.id))
@@ -181,7 +199,7 @@ export default function App() {
           </button>
         </nav>
         <span className="stage">
-          {source === 'loading' ? 'connecting…' : source === 'backend' ? 'live · backend' : 'live fixtures'}
+          {source === 'loading' ? 'connecting…' : source === 'seeding' ? 'seeding library…' : source === 'backend' ? 'live · backend' : 'live fixtures'}
           {saveState === 'saving' && ' · saving…'}
           {saveState === 'saved' && ' · saved ✓'}
           {saveState === 'error' && ' · save failed ✕'}
