@@ -321,6 +321,29 @@ input.dim { opacity: .5; }
 .livedock-note { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); line-height: 1.6; padding: 10px 14px; border-top: 1px dashed var(--line); margin: 0; }
 .livedock-note b { color: var(--ink-dim); }
 
+/* ---------- header live-monitor toggle (item 6) ---------- */
+.monitor-toggle { margin-left: 8px; display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11.5px; padding: 5px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--ground); color: var(--ink-dim); cursor: pointer; }
+.monitor-toggle:hover { color: var(--ink); }
+.monitor-toggle.on { background: var(--raise); color: var(--accent); border-color: var(--accent-dim); }
+.monitor-overlay { position: fixed; inset: 0; z-index: 40; background: var(--ground); display: flex; flex-direction: column; }
+
+/* small connection dot on rail device names */
+.led.sm { width: 6px; height: 6px; }
+.dev-name { display: inline-flex; align-items: center; gap: 7px; }
+
+/* per-device live button in the rules header (items 2/5) */
+.list-title-row { display: flex; align-items: center; gap: 10px; }
+.list-title-row .dev-title { flex: 1; min-width: 0; }
+.live-btn { flex: none; display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 12px; padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink-dim); cursor: pointer; text-transform: uppercase; letter-spacing: .5px; }
+.live-btn:hover:not(:disabled) { color: var(--ink); border-color: var(--ink-faint); }
+.live-btn:disabled { opacity: .4; cursor: default; }
+.live-btn.on { border-color: var(--ok); color: var(--ok); background: #16241f; }
+
+/* larger sender chips with name + type (item 4) */
+.sender-chip.big { padding: 7px 12px; font-size: 12px; gap: 8px; }
+.sender-chip .sender-name { font-weight: 600; }
+.sender-chip.big .type-badge { font-size: 9px; }
+
 /* ---------- crash screen (ErrorBoundary) ---------- */
 .crash { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--ground); }
 .crash-card { width: min(760px, 100%); background: var(--panel); border: 1px solid var(--danger); border-radius: 12px; padding: 22px 24px; box-shadow: 0 0 0 1px var(--danger), 0 20px 60px rgba(0,0,0,.4); }

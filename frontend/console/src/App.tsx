@@ -19,7 +19,6 @@ function boardConnected(b: Board, devs: AttachedDevice[]): boolean {
   return devs.some((d) => Object.entries(tags).every(([k, v]) => d.tags[k] === v))
 }
 
-type View = 'rules' | 'monitor'
 
 // Device rail grouping — one section per device kind, in a stable order.
 const DEVICE_GROUPS: { type: DeviceType; label: string }[] = [
@@ -57,7 +56,7 @@ function OutputSummary({ rule }: { rule: Rule }) {
 }
 
 export default function App() {
-  const [view, setView] = useState<View>('rules')
+  const [showMonitor, setShowMonitor] = useState(false) // full live monitor overlay (item 6)
   const [addOpen, setAddOpen] = useState(false) // add-device dialog (item 7)
   const [removeOpen, setRemoveOpen] = useState(false) // remove-device dialog (item 4)
   const [liveDevIdx, setLiveDevIdx] = useState<number | null>(null) // per-device live dock (item 2)
@@ -345,14 +344,10 @@ export default function App() {
       <header>
         <span className="mark">conboard</span>
         <span className="sub">console</span>
-        <nav className="viewnav" aria-label="Views">
-          <button className={view === 'rules' ? 'on' : ''} onClick={() => setView('rules')}>
-            Rules
-          </button>
-          <button className={view === 'monitor' ? 'on' : ''} onClick={() => setView('monitor')}>
-            Live monitor
-          </button>
-        </nav>
+        <button className={`monitor-toggle${showMonitor ? ' on' : ''}`} onClick={() => setShowMonitor((s) => !s)}
+                title="Show the full live monitor (all devices)">
+          <span className={`led${showMonitor ? ' on' : ''}`} /> Live monitor
+        </button>
         <span className="stage">
           {source === 'loading' ? 'connecting…' : source === 'seeding' ? 'seeding library…' : source === 'backend' ? 'live · backend' : 'live fixtures'}
           {saveState === 'saving' && ' · saving…'}
@@ -361,8 +356,7 @@ export default function App() {
         </span>
       </header>
 
-      {view === 'monitor' && <Monitor />}
-      <div className="work" hidden={view !== 'rules'}>
+      <div className="work">
         <nav className="rail" aria-label="Devices">
           <span className="lbl">Devices</span>
           <div className="dev-tools">
@@ -380,32 +374,22 @@ export default function App() {
                 </span>
                 {items.map(({ b: d, i }) => {
                   const live = d.body.modes.find((m) => m.active)
-                  // Prefer the dispatcher heartbeat (O5); fall back to USB inventory.
                   const isConn = liveBus.isLive(d.DEVICE.name) || boardConnected(d, attached)
-                  const watching = liveDevIdx === i
                   return (
-                    <div className={`dev-row${i === devIdx ? ' active' : ''}`} key={d.DEVICE.name}>
-                      <button className={`dev${i === devIdx ? ' active' : ''}`} onClick={() => select(i, 0, 0)}>
-                        <span className="dev-name">{d.DEVICE.name}</span>
-                        <span className="dev-meta">
-                          <span className="type-badge">{d.DEVICE.type}</span>
-                          mode {live ? live.id : '-'} live
-                        </span>
-                      </button>
-                      {/* Per-device live button (item 2): enabled only when the hardware
-                          is detected as attached; the LED lights when it's being watched. */}
-                      <button
-                        className={`dev-live${watching ? ' on' : ''}`}
-                        disabled={!isConn}
-                        title={isConn
-                          ? (watching ? 'Stop watching live events' : 'Watch live events from this device')
-                          : 'Device not detected as connected'}
-                        onClick={() => setLiveDevIdx(watching ? null : i)}
-                      >
-                        <span className={`led${watching ? ' on' : ''}`} />
-                        live
-                      </button>
-                    </div>
+                    <button
+                      key={d.DEVICE.name}
+                      className={`dev${i === devIdx ? ' active' : ''}`}
+                      onClick={() => select(i, 0, 0)}
+                    >
+                      <span className="dev-name">
+                        {/* connection dot from the dispatcher heartbeat (O5), USB fallback */}
+                        <span className={`led sm${isConn ? ' on' : ''}`} /> {d.DEVICE.name}
+                      </span>
+                      <span className="dev-meta">
+                        <span className="type-badge">{d.DEVICE.type}</span>
+                        mode {live ? live.id : '-'} live
+                      </span>
+                    </button>
                   )
                 })}
               </div>
@@ -424,7 +408,28 @@ export default function App() {
         <>
         <section className="list" aria-label="Rules">
           <div className="list-head">
-            <div className="dev-title">{device.DEVICE.name}</div>
+            <div className="list-title-row">
+              <div className="dev-title">{device.DEVICE.name}</div>
+              {/* Per-device live toggle (items 2/5): enabled when the device is
+                  connected (heartbeat O5, USB fallback); opens the live panel left of
+                  the editor. LED lights while watching. */}
+              {(() => {
+                const conn = liveBus.isLive(device.DEVICE.name) || boardConnected(device, attached)
+                const watching = liveDevIdx === devIdx
+                return (
+                  <button
+                    className={`live-btn${watching ? ' on' : ''}`}
+                    disabled={!conn}
+                    title={conn ? (watching ? 'Stop watching live events' : 'Watch live events from this device')
+                                : 'Device not detected as connected'}
+                    onClick={() => setLiveDevIdx(watching ? null : devIdx)}
+                  >
+                    <span className={`led${watching ? ' on' : ''}`} />
+                    live · {device.DEVICE.type}
+                  </button>
+                )
+              })()}
+            </div>
             <div className="dev-exec">
               {device.header.identifier.executable?.exec}
               {device.header.identifier.executable?.port ? ` · ${device.header.identifier.executable.port}` : ''}
@@ -548,6 +553,15 @@ export default function App() {
           </div>
         </section>
 
+        {/* Per-device live events open to the LEFT of the editor (item 5). */}
+        {liveDevIdx != null && boards[liveDevIdx] && (
+          <LiveDock
+            deviceName={boards[liveDevIdx].DEVICE.name}
+            connected={liveBus.isLive(boards[liveDevIdx].DEVICE.name) || boardConnected(boards[liveDevIdx], attached)}
+            onClose={() => setLiveDevIdx(null)}
+          />
+        )}
+
         <main className="editor" aria-label="Rule editor">
           {rule && mode ? (
             <RuleEditor
@@ -571,17 +585,16 @@ export default function App() {
             </div>
           )}
         </main>
-
-        {liveDevIdx != null && boards[liveDevIdx] && (
-          <LiveDock
-            deviceName={boards[liveDevIdx].DEVICE.name}
-            connected={liveBus.isLive(boards[liveDevIdx].DEVICE.name) || boardConnected(boards[liveDevIdx], attached)}
-            onClose={() => setLiveDevIdx(null)}
-          />
-        )}
         </>
         )}
       </div>
+
+      {/* Full live monitor (all devices) — the single toggle "on top" (item 6). */}
+      {showMonitor && (
+        <div className="monitor-overlay">
+          <Monitor boards={boards} onClose={() => setShowMonitor(false)} />
+        </div>
+      )}
 
       {addOpen && (
         <AddDeviceDialog
