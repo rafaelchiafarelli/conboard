@@ -57,7 +57,6 @@ export default function AddDeviceDialog({
   const [pick, setPick] = useState<AttachedDevice | 'manual' | null>(null)
   const [name, setName] = useState('')
   const [type, setType] = useState<DeviceType | ''>(presetType ?? '')
-  const [deploy, setDeploy] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -92,8 +91,10 @@ export default function AddDeviceDialog({
 
   const submit = () => {
     if (!canCreate) return // canCreate implies type !== '' -> type narrows to DeviceType
-    const tags = pick && pick !== 'manual' ? pick.tags : {}
-    onCreate(buildBoard(name.trim(), type, tags), deploy)
+    const isReal = pick !== null && pick !== 'manual'
+    // Auto-deploy only when the picked device is actually attached; a manual entry is
+    // just a library template with no hardware to deploy to.
+    onCreate(buildBoard(name.trim(), type, isReal ? pick.tags : {}), isReal)
   }
 
   return (
@@ -162,10 +163,9 @@ export default function AddDeviceDialog({
                   {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
-              <label className="ad-deploy">
-                <input type="checkbox" checked={deploy} onChange={(e) => setDeploy(e.target.checked)} />
-                Deploy to device now (write the profile + reload the handler)
-              </label>
+              {pick !== null && pick !== 'manual' && (
+                <span className="hint">This device is attached — it'll be deployed to the board automatically.</span>
+              )}
             </div>
           )}
         </div>
