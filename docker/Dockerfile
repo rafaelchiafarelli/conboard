@@ -106,10 +106,18 @@ RUN --mount=type=cache,target=/ccache \
 # DAOs). Consumes backend/generated/ (committed); no protoc-at-build needed as long
 # as the image's protobuf matches the committed .pb.cc (bookworm 3.21.x == the
 # generator image). package.sh bundles its runtime .so closure into the artifact.
+#
+# CAP PARALLELISM (do NOT use -j $(nproc)): the ~38 generated protobuf/gRPC TUs are
+# large, and under QEMU emulation each g++ is very RAM-hungry. On a high-core host,
+# -j $(nproc) launches dozens at once, exhausts memory, and emulated exec() starts
+# failing with exit code 126 (observed on a many-core builder; an 8-core/32G box is
+# fine). 4 concurrent is plenty under emulation, where per-file speed dominates.
 RUN --mount=type=cache,target=/ccache \
+    JOBS="$(nproc)"; if [ "$JOBS" -gt 4 ]; then JOBS=4; fi; \
+    echo "backend build with -j $JOBS (capped for QEMU memory safety)"; \
     cmake -S backend -B backend/build -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build backend/build -j "$(nproc)" \
-    && echo "==== backend ccache stats ====" && ccache -s
+    && cmake --build backend/build -j "$JOBS" \
+    && echo "==== backend ccache stats (-j $JOBS) ====" && ccache -s
 
 # Built console SPA (from the native frontend stage) — package.sh copies it into
 # the artifact at /conboard/frontend, where the bundled nginx site serves it.
