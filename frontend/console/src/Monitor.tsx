@@ -16,12 +16,7 @@
 // the dispatcher adds the device name to the payload (a churn to O3).
 
 import { useEffect, useReducer, useRef, useState } from 'react'
-import {
-  WebSocketEventSource,
-  defaultWsUrl,
-  type DeviceEvent,
-  type LiveStatus,
-} from './model/events'
+import { liveBus, type DeviceEvent, type LiveStatus } from './model/events'
 
 const MAX_ROWS = 250
 const CONNECTED_MS = 4000    // LED lit if a frame arrived within this window
@@ -57,19 +52,23 @@ export default function Monitor() {
   const [, bump] = useReducer((n: number) => n + 1, 0)
 
   useEffect(() => {
-    const src = new WebSocketEventSource(defaultWsUrl(), setStatus)
-    src.start((e) => {
-      if (pausedRef.current) return
-      const reg = sendersRef.current
-      const s = reg.find((x) => x.id === e.device)
-      if (s) s.lastSeen = e.ts
-      else { reg.push({ id: e.device, lastSeen: e.ts }); bump() }  // new sender -> render its row
-      setEvents((prev) => {
-        const next = [e, ...prev]
-        return next.length > MAX_ROWS ? next.slice(0, MAX_ROWS) : next
-      })
+    // One shared socket for the whole app (liveBus); the feed is a single stream we
+    // group by sender here. e.device is the devname when the dispatcher tags it (O5),
+    // else the uuid.
+    return liveBus.subscribe({
+      onStatus: setStatus,
+      onEvent: (e) => {
+        if (pausedRef.current) return
+        const reg = sendersRef.current
+        const s = reg.find((x) => x.id === e.device)
+        if (s) s.lastSeen = e.ts
+        else { reg.push({ id: e.device, lastSeen: e.ts }); bump() } // new sender -> render its row
+        setEvents((prev) => {
+          const next = [e, ...prev]
+          return next.length > MAX_ROWS ? next.slice(0, MAX_ROWS) : next
+        })
+      },
     })
-    return () => src.stop()
   }, [])
 
   // Re-render once a second so the connection LEDs reflect the CONNECTED_MS window.
