@@ -4,12 +4,13 @@
 // the UI edits, and unfold it for writes.
 import type {
   Board, Mode, Rule, Trigger, OutputAction, DeviceType, EvdevKind,
-  MidiAction, KeyboardAction, MouseAction, Edge, KeyType, HoldMode,
+  MidiAction, KeyboardAction, MouseAction, Edge, KeyType, HoldMode, MidiMode,
 } from '../model/rules'
 import {
   ID_KEY,
   DEVICE_TYPE, DEVICE_TYPE_R, TRIGGER_EDGE, TRIGGER_EDGE_R,
   ACTION_KIND, ACTION_KIND_R, KEY_TYPE, KEY_TYPE_R, HOLD_MODE, HOLD_MODE_R,
+  MIDI_MODE, MIDI_MODE_R,
   type HBoard, type HMode, type HRule, type HTrigger, type HOutputAction,
 } from './harpia'
 
@@ -45,6 +46,8 @@ function triggerFromH(h: HTrigger, deviceType: DeviceType): Trigger {
   const kind = h.kind ?? 'tk_midi'  // omitted => 0-value tk_midi
   if (kind === 'tk_midi') {
     const t: Trigger = { type: 'midi', b0: h.b0 ?? 0, b1: h.b1 ?? 0, b2: h.b2 ?? 0 }
+    // midiMode omitted on the wire => 0-value mm_normal; only set when non-normal.
+    if (h.midiMode && MIDI_MODE[h.midiMode] !== 'normal') t.mode = MIDI_MODE[h.midiMode] as MidiMode
     if (h.delay != null) t.delay = h.delay
     return t
   }
@@ -135,6 +138,8 @@ function actionToH(a: OutputAction, id: number): HOutputAction {
 function triggerToH(t: Trigger, id: number): HTrigger {
   if (t.type === 'midi') {
     const h: HTrigger = { [ID_KEY]: id, kind: 'tk_midi', b0: t.b0, b1: t.b1, b2: t.b2 }
+    // Only emit midiMode when non-normal (mm_normal is the omitted 0-value).
+    if (t.mode && t.mode !== 'normal') h.midiMode = MIDI_MODE_R[t.mode]
     if (t.delay != null) h.delay = t.delay
     return h
   }

@@ -10,8 +10,8 @@
 
 #include <zmq.hpp>
 
-#include "json/trigger_69421342752d53d5f274b99a6a0c123e_json.h"
-#include "zmq/trigger_69421342752d53d5f274b99a6a0c123e_zmq.h"
+#include "json/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_json.h"
+#include "zmq/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_zmq.h"
 
 int main(int argc, char* argv[]) {
     const std::string endpoint = (argc > 1) ? argv[1] : "tcp://localhost:5599";

@@ -71,7 +71,8 @@ sudo journalctl -u backend -f    # NOTE: needs sudo (backend runs as root)
 `/api/v1/{board,mode,rule,trigger,output_action}[/<id>]` · `POST /api/v1/deploy` ·
 `GET /healthz` · `GET /ws` (backend relay seam, unused) · nginx serves the console at `/`
 and proxies `/websocket` → dispatcher `:40080`. REST is credential-gated
-(`X-User: <entity>`, `X-Pswd: <hash>`); hash = `69421342752d53d5f274b99a6a0c123e`.
+(`X-User: <entity>`, `X-Pswd: <hash>`); hash = `1bf812ac18b80d4a5ea4d51e6bfb7f58`
+(bumped when `midi_mode` was added to the trigger message; regen via `backend/generate.sh`).
 
 ## Don't-relearn facts
 - **harpia is a black box.** Regenerate: `backend/generate.sh` (SQLite default;

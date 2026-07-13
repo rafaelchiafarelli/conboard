@@ -1,0 +1,14 @@
+delay:[('OPTIONAL', 'optional ', 82, 4)];
+b0:[('OPTIONAL', 'optional ', 83, 4)];
+b1:[('OPTIONAL', 'optional ', 84, 4)];
+b2:[('OPTIONAL', 'optional ', 85, 4)];
+data:[('OPTIONAL', 'optional ', 86, 4)];
+key_type:[('OPTIONAL', 'optional ', 87, 4)];
+hold:[('OPTIONAL', 'optional ', 88, 4)];
+dx:[('OPTIONAL', 'optional ', 89, 4)];
+dy:[('OPTIONAL', 'optional ', 90, 4)];
+wheel_move:[('OPTIONAL', 'optional ', 91, 4)];
+gotox:[('OPTIONAL', 'optional ', 92, 4)];
+gotoy:[('OPTIONAL', 'optional ', 93, 4)];
+click:[('OPTIONAL', 'optional ', 94, 4)];
+right_click:[('OPTIONAL', 'optional ', 95, 4)];

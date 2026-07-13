@@ -14,7 +14,7 @@ add_library(harpia_tinyxml2 STATIC
 target_include_directories(harpia_tinyxml2 PUBLIC
     ${CMAKE_SOURCE_DIR}/third_party/tinyxml2)
 
-add_executable(trigger_test trigger_69421342752d53d5f274b99a6a0c123e_test.cpp)
+add_executable(trigger_test trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
 target_include_directories(trigger_test PRIVATE
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -23,7 +23,7 @@ target_include_directories(trigger_test PRIVATE
 target_link_libraries(trigger_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
 add_test(NAME trigger_test COMMAND trigger_test)
 
-add_executable(output_action_test output_action_69421342752d53d5f274b99a6a0c123e_test.cpp)
+add_executable(output_action_test output_action_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
 target_include_directories(output_action_test PRIVATE
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -32,7 +32,7 @@ target_include_directories(output_action_test PRIVATE
 target_link_libraries(output_action_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
 add_test(NAME output_action_test COMMAND output_action_test)
 
-add_executable(rule_test rule_69421342752d53d5f274b99a6a0c123e_test.cpp)
+add_executable(rule_test rule_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
 target_include_directories(rule_test PRIVATE
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -41,7 +41,7 @@ target_include_directories(rule_test PRIVATE
 target_link_libraries(rule_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
 add_test(NAME rule_test COMMAND rule_test)
 
-add_executable(mode_test mode_69421342752d53d5f274b99a6a0c123e_test.cpp)
+add_executable(mode_test mode_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
 target_include_directories(mode_test PRIVATE
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -50,7 +50,7 @@ target_include_directories(mode_test PRIVATE
 target_link_libraries(mode_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
 add_test(NAME mode_test COMMAND mode_test)
 
-add_executable(board_test board_69421342752d53d5f274b99a6a0c123e_test.cpp)
+add_executable(board_test board_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
 target_include_directories(board_test PRIVATE
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -59,7 +59,7 @@ target_include_directories(board_test PRIVATE
 target_link_libraries(board_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
 add_test(NAME board_test COMMAND board_test)
 
-add_executable(app_test app_69421342752d53d5f274b99a6a0c123e_test.cpp)
+add_executable(app_test app_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
 target_include_directories(app_test PRIVATE
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}

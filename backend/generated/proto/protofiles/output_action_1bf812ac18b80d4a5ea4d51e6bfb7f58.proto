@@ -1,0 +1,25 @@
+syntax = "proto3";
+import "protofiles/action_kind_1bf812ac18b80d4a5ea4d51e6bfb7f58.proto";
+import "protofiles/key_type_1bf812ac18b80d4a5ea4d51e6bfb7f58.proto";
+import "protofiles/hold_mode_1bf812ac18b80d4a5ea4d51e6bfb7f58.proto";
+message output_action {
+int32 ID_1bf812ac18b80d4a5ea4d51e6bfb7f58 = 1;
+action_kind kind = 2;
+int32 delay = 3;
+int32 b0 = 4;
+int32 b1 = 5;
+int32 b2 = 6;
+string data = 7;
+key_type key_type = 8;
+hold_mode hold = 9;
+string dx = 10;
+string dy = 11;
+string wheel_move = 12;
+string gotox = 13;
+string gotoy = 14;
+string click = 15;
+string right_click = 16;
+string STATUS_1bf812ac18b80d4a5ea4d51e6bfb7f58 = 17;
+string ERROR_1bf812ac18b80d4a5ea4d51e6bfb7f58 = 18;
+string ORIGINATOR_1bf812ac18b80d4a5ea4d51e6bfb7f58 = 19;
+}
