@@ -55,6 +55,12 @@ class MIDI : public DeviceEngine {
         // Stop the reader, then tear down the engine. Idempotent.
         void Stop();
 
+        // Ready only once the ALSA rawmidi port opened (the reader thread runs).
+        // A one-shot open failure (e.g. the port momentarily busy right after a
+        // deploy reload restarts this handler) leaves input == nullptr; runDevice
+        // uses this to retry rather than sit inert forever.
+        bool isReady() const override { return input != nullptr; }
+
     protected:
         // Device-native feedback: only MIDI-typed outputs are emitted here (raw
         // MIDI to the sender); keyboard/mouse HID are handled generically by the

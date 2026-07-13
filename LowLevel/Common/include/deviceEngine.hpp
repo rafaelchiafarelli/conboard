@@ -42,6 +42,14 @@ public:
     bool outFile(const std::string &name);
     void outStop();
 
+    // Is the device's hardware actually open and usable? Base handlers are ready
+    // as soon as they are constructed; a subclass whose hardware open can fail
+    // transiently (MIDI's ALSA port) overrides this so the runner (runDevice) can
+    // retry a failed open instead of leaving the process alive but inert. This is
+    // what lets a handler recover on its own after a deploy reload restarts it
+    // while the port is briefly still held by the exiting instance.
+    virtual bool isReady() const { return true; }
+
 protected:
     // ---- lifecycle (the subclass ctor/dtor drives these) ----
     // Activate the initial mode, run the header, then start the output + coms

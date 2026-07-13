@@ -162,6 +162,11 @@ static void device_list(void)
 {
 	int card, err;
 
+	// Re-enumeration is idempotent: clear any ports from a previous pass so a
+	// runDevice open-retry (which re-invokes this) does not accumulate stale/
+	// duplicate entries in the global list.
+	hw_ports.clear();
+
 	card = -1;
 	if ((err = snd_card_next(&card)) < 0) {
 		std::cout<<"No device found"<<endl;

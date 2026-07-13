@@ -47,6 +47,23 @@ int runDevice(MakeFn make) {
     if (!dev)
         return 1;
 
+    // A transient hardware-open failure used to leave the process alive but inert
+    // forever (e.g. conMIDI's ALSA port briefly held by the exiting instance when
+    // a deploy reload `systemctl restart`s this handler -- the symptom being "the
+    // device stopped sending events after deploy"). Retry discovery+construction a
+    // bounded number of times so the handler recovers on its own; if it never
+    // becomes ready (device genuinely absent), fall through to the spin loop with
+    // the last (inert) instance, preserving the previous behaviour.
+    constexpr int  kOpenRetries    = 20;    // ~10s total with the delay below
+    constexpr int  kOpenRetryDelay = 500;   // ms between attempts
+    for (int attempt = 0; !dev->isReady() && !g_stop && attempt < kOpenRetries; ++attempt) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(kOpenRetryDelay));
+        delete dev;                          // ~DeviceEngine tears down safely
+        dev = make();
+        if (!dev)
+            return 1;
+    }
+
     while (!g_stop)
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
