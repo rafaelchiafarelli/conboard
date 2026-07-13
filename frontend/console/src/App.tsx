@@ -1,13 +1,21 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { BOARDS as FIXTURE_BOARDS } from './fixtures/devices'
 import { BOARDS as REAL_BOARDS } from './fixtures/boards'
-import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, deployBoard, ping } from './api/client'
+import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, deployBoard, fetchDevices, ping, type AttachedDevice } from './api/client'
 import type { Board } from './model/rules'
 import { decodeMidi, splitStatus } from './model/midi'
 import { validateBoards, type Rule, type DeviceType } from './model/rules'
 import RuleEditor from './RuleEditor'
 import Monitor from './Monitor'
 import AddDeviceDialog from './AddDeviceDialog'
+import LiveDock from './LiveDock'
+
+/** A board is "connected" when an attached device carries all of its match tags. */
+function boardConnected(b: Board, devs: AttachedDevice[]): boolean {
+  const tags = b.header.identifier.tags
+  if (!tags || Object.keys(tags).length === 0) return false
+  return devs.some((d) => Object.entries(tags).every(([k, v]) => d.tags[k] === v))
+}
 
 type View = 'rules' | 'monitor'
 
@@ -49,6 +57,8 @@ function OutputSummary({ rule }: { rule: Rule }) {
 export default function App() {
   const [view, setView] = useState<View>('rules')
   const [addOpen, setAddOpen] = useState(false) // add-device dialog (item 7)
+  const [liveDevIdx, setLiveDevIdx] = useState<number | null>(null) // per-device live dock (item 2)
+  const [attached, setAttached] = useState<AttachedDevice[]>([])    // attached hw, for connection LEDs
   const [devIdx, setDevIdx] = useState(0)
   const [modeIdx, setModeIdx] = useState(0)
   const [ruleIdx, setRuleIdx] = useState(0)
@@ -255,6 +265,20 @@ export default function App() {
     if (problems.length) console.warn(`[conboard] ${problems.length} invalid rule(s):\n` + problems.join('\n'))
   }, [boards])
 
+  // Poll the device inventory so each rail device can show whether its hardware is
+  // actually attached (the "live" button is enabled only then). No-op off-device
+  // (the endpoint 404s -> empty list -> buttons disabled).
+  useEffect(() => {
+    let stop = false
+    const poll = async () => {
+      try { const d = await fetchDevices(); if (!stop) setAttached(d) }
+      catch { if (!stop) setAttached([]) }
+    }
+    void poll()
+    const t = setInterval(() => void poll(), 4000)
+    return () => { stop = true; clearInterval(t) }
+  }, [])
+
   const liveMode = device?.body.modes.find((m) => m.active)
   const entryCount = mode?.mode_header?.actions.length ?? 0
 
@@ -328,18 +352,31 @@ export default function App() {
                 </span>
                 {items.map(({ b: d, i }) => {
                   const live = d.body.modes.find((m) => m.active)
+                  const isConn = boardConnected(d, attached)
+                  const watching = liveDevIdx === i
                   return (
-                    <button
-                      key={d.DEVICE.name}
-                      className={`dev${i === devIdx ? ' active' : ''}`}
-                      onClick={() => select(i, 0, 0)}
-                    >
-                      <span className="dev-name">{d.DEVICE.name}</span>
-                      <span className="dev-meta">
-                        <span className="type-badge">{d.DEVICE.type}</span>
-                        mode {live ? live.id : '-'} live
-                      </span>
-                    </button>
+                    <div className={`dev-row${i === devIdx ? ' active' : ''}`} key={d.DEVICE.name}>
+                      <button className={`dev${i === devIdx ? ' active' : ''}`} onClick={() => select(i, 0, 0)}>
+                        <span className="dev-name">{d.DEVICE.name}</span>
+                        <span className="dev-meta">
+                          <span className="type-badge">{d.DEVICE.type}</span>
+                          mode {live ? live.id : '-'} live
+                        </span>
+                      </button>
+                      {/* Per-device live button (item 2): enabled only when the hardware
+                          is detected as attached; the LED lights when it's being watched. */}
+                      <button
+                        className={`dev-live${watching ? ' on' : ''}`}
+                        disabled={!isConn}
+                        title={isConn
+                          ? (watching ? 'Stop watching live events' : 'Watch live events from this device')
+                          : 'Device not detected as connected'}
+                        onClick={() => setLiveDevIdx(watching ? null : i)}
+                      >
+                        <span className={`led${watching ? ' on' : ''}`} />
+                        live
+                      </button>
+                    </div>
                   )
                 })}
               </div>
@@ -496,6 +533,14 @@ export default function App() {
             </div>
           )}
         </main>
+
+        {liveDevIdx != null && boards[liveDevIdx] && (
+          <LiveDock
+            deviceName={boards[liveDevIdx].DEVICE.name}
+            connected={boardConnected(boards[liveDevIdx], attached)}
+            onClose={() => setLiveDevIdx(null)}
+          />
+        )}
       </div>
 
       {addOpen && (
