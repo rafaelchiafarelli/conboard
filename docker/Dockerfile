@@ -110,11 +110,14 @@ RUN --mount=type=cache,target=/ccache \
 # CAP PARALLELISM (do NOT use -j $(nproc)): the ~38 generated protobuf/gRPC TUs are
 # large, and under QEMU emulation each g++ is very RAM-hungry. On a high-core host,
 # -j $(nproc) launches dozens at once, exhausts memory, and emulated exec() starts
-# failing with exit code 126 (observed on a many-core builder; an 8-core/32G box is
-# fine). 4 concurrent is plenty under emulation, where per-file speed dominates.
+# failing with exit code 126 (observed on a many-core builder). BACKEND_JOBS caps
+# it: 8 suits an 8-core/32G+ builder; lower it (--build-arg BACKEND_JOBS=4) if the
+# emulated backend build OOMs on a leaner host. Note per-file emulation overhead
+# dominates, so higher -j mainly helps throughput when RAM allows.
+ARG BACKEND_JOBS=8
 RUN --mount=type=cache,target=/ccache \
-    JOBS="$(nproc)"; if [ "$JOBS" -gt 4 ]; then JOBS=4; fi; \
-    echo "backend build with -j $JOBS (capped for QEMU memory safety)"; \
+    JOBS="$(nproc)"; if [ "$JOBS" -gt "${BACKEND_JOBS}" ]; then JOBS="${BACKEND_JOBS}"; fi; \
+    echo "backend build with -j $JOBS (cap ${BACKEND_JOBS}, QEMU memory safety)"; \
     cmake -S backend -B backend/build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build backend/build -j "$JOBS" \
     && echo "==== backend ccache stats (-j $JOBS) ====" && ccache -s
