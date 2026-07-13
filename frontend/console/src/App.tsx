@@ -1,5 +1,4 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
-import { BOARDS as FIXTURE_BOARDS } from './fixtures/devices'
 import { BOARDS as REAL_BOARDS } from './fixtures/boards'
 import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, deployBoard, undeployBoard, fetchDevices, ping, type AttachedDevice } from './api/client'
 import type { Board } from './model/rules'
@@ -11,6 +10,21 @@ import Monitor from './Monitor'
 import AddDeviceDialog from './AddDeviceDialog'
 import RemoveDeviceDialog from './RemoveDeviceDialog'
 import LiveDock from './LiveDock'
+
+// Deletion tombstone: names the user explicitly removed. Seeding tops up the bundled
+// real boards that are MISSING and NOT tombstoned — so real devices appear on a fresh
+// (or partly-populated) library, while a device the user deleted stays gone instead of
+// being resurrected on the next load (the old "delete doesn't stick" bug).
+const TOMB_KEY = 'conboard.deleted'
+function tombstoned(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(TOMB_KEY) || '[]')) } catch { return new Set() }
+}
+function tombstone(name: string) {
+  try { const s = tombstoned(); s.add(name); localStorage.setItem(TOMB_KEY, JSON.stringify([...s])) } catch { /* ignore */ }
+}
+function untombstone(name: string) {
+  try { const s = tombstoned(); s.delete(name); localStorage.setItem(TOMB_KEY, JSON.stringify([...s])) } catch { /* ignore */ }
+}
 
 /** A board is "connected" when an attached device carries all of its match tags. */
 function boardConnected(b: Board, devs: AttachedDevice[]): boolean {
@@ -72,12 +86,13 @@ export default function App() {
   const snapshot = useRef<string | null>(null)
   const [, forceRender] = useReducer((n: number) => n + 1, 0)
 
-  // Data source: start on the bundled fixtures, then try the backend rules-library
-  // (harpia REST). Fall back to fixtures if the backend is down or empty.
-  const [boards, setBoards] = useState<Board[]>(FIXTURE_BOARDS)
+  // Data source: start EMPTY (a brief "connecting…"), then load the backend rules
+  // library (harpia REST). Only the real bundled boards are ever shown — no fake test
+  // devices — so nothing spurious flashes before the backend answers.
+  const [boards, setBoards] = useState<Board[]>([])
   const [source, setSource] = useState<'loading' | 'seeding' | 'backend' | 'fixtures'>('loading')
   // Backend id per board (parallel to `boards`); null = not yet persisted.
-  const [boardIds, setBoardIds] = useState<(number | null)[]>(() => FIXTURE_BOARDS.map(() => null))
+  const [boardIds, setBoardIds] = useState<(number | null)[]>([])
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [deployState, setDeployState] = useState<'idle' | 'deploying' | 'deployed' | 'error'>('idle')
 
@@ -170,6 +185,7 @@ export default function App() {
   // and builds the Board; here we persist it and optionally deploy it right away.
   const createFromDialog = async (b: Board, deploy: boolean) => {
     setAddOpen(false)
+    untombstone(b.DEVICE.name) // re-adding a previously deleted device clears its tombstone
     setSaveState('saving')
     try {
       const id = await createBoard(b)
@@ -213,6 +229,7 @@ export default function App() {
     const b = boards[idx]
     if (!b) return
     const id = boardIds[idx]
+    tombstone(b.DEVICE.name) // remember the deletion so seeding won't resurrect it
     setSaveState('saving')
     try {
       if (id != null) await deleteBoard(id)
@@ -236,28 +253,23 @@ export default function App() {
     }
   }
 
-  // Load boards from the backend rules-library once. If the backend is up but missing
-  // an installed profile, SEED it from the bundled real boards using the same saveBoard
-  // path the editor uses — the library starts empty (no backend seeding), so without
-  // this the console would only show boards that were manually saved. Falls back to the
-  // bundled fixtures when the backend is unreachable.
+  // Load the backend rules-library once, then top up any bundled real board that is
+  // MISSING and NOT tombstoned (so real devices show, but ones the user deleted stay
+  // deleted). Falls back to the bundled real boards (never the fake test devices) if
+  // the backend is unreachable.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
         if (await ping()) {
           let loaded = await fetchBoards()
-          // Seed the library from the bundled boards ONLY when it is empty (first run).
-          // Topping up "missing" boards on every load would resurrect ones the user
-          // deleted — which is exactly why a deleted device used to reappear on reload.
-          if (loaded.length === 0 && !cancelled) {
+          const have = new Set(loaded.map((l) => l.board.DEVICE.name))
+          const dead = tombstoned()
+          const missing = REAL_BOARDS.filter((b) => !have.has(b.DEVICE.name) && !dead.has(b.DEVICE.name))
+          if (missing.length && !cancelled) {
             setSource('seeding')
-            for (const b of REAL_BOARDS) {
-              try {
-                await saveBoard(b, null)
-              } catch (e) {
-                console.warn('[conboard] seed failed for', b.DEVICE.name, e)
-              }
+            for (const b of missing) {
+              try { await saveBoard(b, null) } catch (e) { console.warn('[conboard] seed failed for', b.DEVICE.name, e) }
             }
             loaded = await fetchBoards() // re-read canonical rows + backend ids
           }
@@ -270,9 +282,16 @@ export default function App() {
           }
         }
       } catch (e) {
-        console.warn('[conboard] backend load failed, using fixtures', e)
+        console.warn('[conboard] backend load failed, using bundled boards', e)
       }
-      if (!cancelled) setSource('fixtures')
+      if (!cancelled) {
+        // Offline fallback: the real bundled boards minus any the user tombstoned.
+        const dead = tombstoned()
+        const fb = REAL_BOARDS.filter((b) => !dead.has(b.DEVICE.name))
+        setBoards(fb)
+        setBoardIds(fb.map(() => null))
+        setSource('fixtures')
+      }
     })()
     return () => { cancelled = true }
   }, [])
@@ -344,10 +363,31 @@ export default function App() {
       <header>
         <span className="mark">conboard</span>
         <span className="sub">console</span>
-        <button className={`monitor-toggle${showMonitor ? ' on' : ''}`} onClick={() => setShowMonitor((s) => !s)}
-                title="Show the full live monitor (all devices)">
-          <span className={`led${showMonitor ? ' on' : ''}`} /> Live monitor
-        </button>
+        <span className="head-live">
+          {/* Per-device live toggle for the SELECTED device (items 2/5), on the right
+              of the page. Enabled only when it's connected (heartbeat O5, USB fallback);
+              opens the live-events panel on the right of the working area. */}
+          {device && (() => {
+            const conn = liveBus.isLive(device.DEVICE.name) || boardConnected(device, attached)
+            const watching = liveDevIdx === devIdx
+            return (
+              <button
+                className={`live-btn${watching ? ' on' : ''}`}
+                disabled={!conn}
+                title={conn ? (watching ? 'Stop watching this device’s live events' : 'Watch this device’s live events')
+                            : 'Device not detected as connected'}
+                onClick={() => setLiveDevIdx(watching ? null : devIdx)}
+              >
+                <span className={`led${watching ? ' on' : ''}`} />
+                live · {device.DEVICE.name}
+              </button>
+            )
+          })()}
+          <button className={`monitor-toggle${showMonitor ? ' on' : ''}`} onClick={() => setShowMonitor((s) => !s)}
+                  title="Show the full live monitor (all devices)">
+            <span className={`led${showMonitor ? ' on' : ''}`} /> Live monitor
+          </button>
+        </span>
         <span className="stage">
           {source === 'loading' ? 'connecting…' : source === 'seeding' ? 'seeding library…' : source === 'backend' ? 'live · backend' : 'live fixtures'}
           {saveState === 'saving' && ' · saving…'}
@@ -408,28 +448,7 @@ export default function App() {
         <>
         <section className="list" aria-label="Rules">
           <div className="list-head">
-            <div className="list-title-row">
-              <div className="dev-title">{device.DEVICE.name}</div>
-              {/* Per-device live toggle (items 2/5): enabled when the device is
-                  connected (heartbeat O5, USB fallback); opens the live panel left of
-                  the editor. LED lights while watching. */}
-              {(() => {
-                const conn = liveBus.isLive(device.DEVICE.name) || boardConnected(device, attached)
-                const watching = liveDevIdx === devIdx
-                return (
-                  <button
-                    className={`live-btn${watching ? ' on' : ''}`}
-                    disabled={!conn}
-                    title={conn ? (watching ? 'Stop watching live events' : 'Watch live events from this device')
-                                : 'Device not detected as connected'}
-                    onClick={() => setLiveDevIdx(watching ? null : devIdx)}
-                  >
-                    <span className={`led${watching ? ' on' : ''}`} />
-                    live · {device.DEVICE.type}
-                  </button>
-                )
-              })()}
-            </div>
+            <div className="dev-title">{device.DEVICE.name}</div>
             <div className="dev-exec">
               {device.header.identifier.executable?.exec}
               {device.header.identifier.executable?.port ? ` · ${device.header.identifier.executable.port}` : ''}
@@ -553,15 +572,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Per-device live events open to the LEFT of the editor (item 5). */}
-        {liveDevIdx != null && boards[liveDevIdx] && (
-          <LiveDock
-            deviceName={boards[liveDevIdx].DEVICE.name}
-            connected={liveBus.isLive(boards[liveDevIdx].DEVICE.name) || boardConnected(boards[liveDevIdx], attached)}
-            onClose={() => setLiveDevIdx(null)}
-          />
-        )}
-
         <main className="editor" aria-label="Rule editor">
           {rule && mode ? (
             <RuleEditor
@@ -585,6 +595,16 @@ export default function App() {
             </div>
           )}
         </main>
+
+        {/* Per-device live events open on the RIGHT of the working area, beside the
+            editor — they don't replace it (items 2/5). */}
+        {liveDevIdx != null && boards[liveDevIdx] && (
+          <LiveDock
+            deviceName={boards[liveDevIdx].DEVICE.name}
+            connected={liveBus.isLive(boards[liveDevIdx].DEVICE.name) || boardConnected(boards[liveDevIdx], attached)}
+            onClose={() => setLiveDevIdx(null)}
+          />
+        )}
         </>
         )}
       </div>
