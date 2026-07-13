@@ -105,3 +105,19 @@ export function copyBoard(source: Board, overrides: Partial<Board['DEVICE']> = {
   const clone: Board = { ...source, DEVICE: { ...source.DEVICE, ...overrides } }
   return createBoard(clone)
 }
+
+/**
+ * Axis C: deploy a board profile to the device's realtime path. The frontend Board is
+ * already the on-device boards/*.json shape, so we POST it verbatim; the backend writes
+ * it (overwriting the profile whose tags match) and reloads the handler. Returns the
+ * written path and whether the reload ran.
+ */
+export async function deployBoard(board: Board): Promise<{ written: string; reloaded: boolean }> {
+  const res = await fetch(`${BASE}/deploy`, {
+    method: 'POST',
+    headers: { 'X-User': 'deploy', 'X-Pswd': HASH, 'Content-Type': 'application/json' },
+    body: JSON.stringify(board),
+  })
+  if (!res.ok) throw new Error(`deploy -> ${res.status}`)
+  return res.json()
+}

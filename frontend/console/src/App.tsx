@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { BOARDS as FIXTURE_BOARDS } from './fixtures/devices'
 import { BOARDS as REAL_BOARDS } from './fixtures/boards'
-import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, ping } from './api/client'
+import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, deployBoard, ping } from './api/client'
 import type { Board } from './model/rules'
 import { decodeMidi } from './model/midi'
 import { validateBoards, type Rule, type DeviceType } from './model/rules'
@@ -60,6 +60,7 @@ export default function App() {
   // Backend id per board (parallel to `boards`); null = not yet persisted.
   const [boardIds, setBoardIds] = useState<(number | null)[]>(() => FIXTURE_BOARDS.map(() => null))
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [deployState, setDeployState] = useState<'idle' | 'deploying' | 'deployed' | 'error'>('idle')
 
   // Index safely: backend-loaded boards may have fewer devices/modes/rules than the
   // current selection (or a board with no modes), so never assume a slot exists.
@@ -163,6 +164,20 @@ export default function App() {
     setSaveState('saving')
     try { addBoardLocal(clone, await copyBoard(device, { name })); setSaveState('saved') }
     catch (e) { console.error('[conboard] copy board failed', e); setSaveState('error') }
+  }
+  // Axis C: push this device's saved profile to the realtime path (writes boards/*.json
+  // on the device + reloads the handler). The Board model IS the boards/*.json shape.
+  const deployDevice = async () => {
+    if (!device) return
+    setDeployState('deploying')
+    try {
+      const r = await deployBoard(device)
+      console.info('[conboard] deployed', r)
+      setDeployState('deployed')
+    } catch (e) {
+      console.error('[conboard] deploy failed', e)
+      setDeployState('error')
+    }
   }
   const deleteDevice = async () => {
     if (!device) return
@@ -294,6 +309,17 @@ export default function App() {
             <div className="dev-exec">
               {device.header.identifier.executable?.exec}
               {device.header.identifier.executable?.port ? ` · ${device.header.identifier.executable.port}` : ''}
+            </div>
+            <div className="deploy-ctl">
+              <button className="btn primary" onClick={deployDevice} disabled={deployState === 'deploying'}
+                      title="Write this profile to the device and reload its handler">
+                ⇧ Deploy to device
+              </button>
+              <span className="deploy-status">
+                {deployState === 'deploying' && 'deploying…'}
+                {deployState === 'deployed' && 'deployed ✓ (handler reloaded)'}
+                {deployState === 'error' && 'deploy failed ✕'}
+              </span>
             </div>
             <div className="modes">
               {device.body.modes.map((m, i) => (
