@@ -5,12 +5,17 @@
 // opaque device action string (INTERFACE.md O3). We show them verbatim. There is no
 // simulated source — this is the real device feed only.
 //
-// KNOWN GAP: events are keyed by the dispatcher UUID, and the console has no
-// UUID -> device-name mapping yet (the dispatcher does not expose it; the ws payload
-// is uuid+action). So the "sender" column shows the UUID. Mapping it to a device name
-// needs a dispatcher-side addition to the /ws payload (a churn to O3).
+// SENDER LIST (worklist item 3): senders are shown in a STABLE, never-reordered list
+// so the user can track one — each with a connection LED (lit = a frame arrived within
+// CONNECTED_MS, unlit = gone quiet). A sender that goes quiet is NOT yanked out from
+// under the cursor: it is pruned only later, and only when the user selects a
+// different, still-connected sender (so the list never churns mid-read).
+//
+// KNOWN GAP: events are keyed by the dispatcher UUID; the console has no UUID -> device
+// name mapping yet (the /ws payload is uuid+action). So a sender shows its UUID until
+// the dispatcher adds the device name to the payload (a churn to O3).
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import {
   WebSocketEventSource,
   defaultWsUrl,
@@ -19,6 +24,8 @@ import {
 } from './model/events'
 
 const MAX_ROWS = 250
+const CONNECTED_MS = 4000    // LED lit if a frame arrived within this window
+const STALE_PRUNE_MS = 8000  // a quiet sender is eligible for pruning after this long
 
 const STATUS_LABEL: Record<LiveStatus, string> = {
   connecting: 'connecting…',
@@ -34,18 +41,29 @@ function fmtTime(ts: number): string {
 
 const short = (id: string) => (id.length > 10 ? id.slice(0, 8) + '…' : id)
 
+interface Sender { id: string; lastSeen: number }
+
 export default function Monitor() {
   const [events, setEvents] = useState<DeviceEvent[]>([])
   const [paused, setPaused] = useState(false)
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState('all')  // 'all' or a sender id
   const [status, setStatus] = useState<LiveStatus>('connecting')
   const pausedRef = useRef(paused)
   pausedRef.current = paused
+
+  // Sender registry: insertion-ordered, mutated in place so it NEVER reorders. Held in
+  // a ref (identity stable across renders); a 1s tick + a bump() re-render the LEDs.
+  const sendersRef = useRef<Sender[]>([])
+  const [, bump] = useReducer((n: number) => n + 1, 0)
 
   useEffect(() => {
     const src = new WebSocketEventSource(defaultWsUrl(), setStatus)
     src.start((e) => {
       if (pausedRef.current) return
+      const reg = sendersRef.current
+      const s = reg.find((x) => x.id === e.device)
+      if (s) s.lastSeen = e.ts
+      else { reg.push({ id: e.device, lastSeen: e.ts }); bump() }  // new sender -> render its row
       setEvents((prev) => {
         const next = [e, ...prev]
         return next.length > MAX_ROWS ? next.slice(0, MAX_ROWS) : next
@@ -54,13 +72,34 @@ export default function Monitor() {
     return () => src.stop()
   }, [])
 
-  // Filter by the senders actually seen in the stream (uuids), not a static board list
-  // — live events are keyed by uuid, so a board-name filter would never match.
-  const senders = useMemo(
-    () => Array.from(new Set(events.map((e) => e.device).filter(Boolean))),
-    [events],
-  )
+  // Re-render once a second so the connection LEDs reflect the CONNECTED_MS window.
+  useEffect(() => {
+    const t = setInterval(() => bump(), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const now = Date.now()
+  const connected = (s: Sender) => now - s.lastSeen < CONNECTED_MS
+
+  // Selecting a sender filters the feed. Pruning of quiet senders happens ONLY here and
+  // ONLY when the newly-selected sender is itself connected (lit) — so the list stays
+  // stable while you read it, and stale rows are cleaned up on your next deliberate move.
+  const selectSender = (id: string) => {
+    setFilter(id)
+    if (id !== 'all') {
+      const sel = sendersRef.current.find((s) => s.id === id)
+      if (sel && connected(sel)) {
+        sendersRef.current = sendersRef.current.filter(
+          (s) => s.id === id || now - s.lastSeen < STALE_PRUNE_MS,
+        )
+      }
+    }
+    bump()
+  }
+
+  const senders = sendersRef.current
   const shown = filter === 'all' ? events : events.filter((e) => e.device === filter)
+  const liveCount = senders.filter(connected).length
 
   return (
     <div className="monitor">
@@ -73,29 +112,40 @@ export default function Monitor() {
           </span>
         </div>
         <div className="mon-stats">
-          <span>
-            <b>{shown.length}</b> events
-          </span>
-          <span>
-            <b className="dim">{senders.length}</b> sender{senders.length !== 1 ? 's' : ''}
-          </span>
+          <span><b>{shown.length}</b> events</span>
+          <span><b className="ok">{liveCount}</b> live</span>
+          <span><b className="dim">{senders.length}</b> sender{senders.length !== 1 ? 's' : ''}</span>
         </div>
         <div className="mon-controls">
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter by sender">
-            <option value="all">All senders</option>
-            {senders.map((s) => (
-              <option key={s} value={s}>
-                {short(s)}
-              </option>
-            ))}
-          </select>
           <button className="btn" onClick={() => setPaused((p) => !p)}>
             {paused ? '▶ Resume' : '⏸ Pause'}
           </button>
-          <button className="btn ghost" onClick={() => setEvents([])} disabled={!events.length}>
+          <button className="btn ghost" onClick={() => { setEvents([]); sendersRef.current = []; setFilter('all'); bump() }}
+                  disabled={!events.length && !senders.length}>
             Clear
           </button>
         </div>
+      </div>
+
+      {/* Stable sender list (item 3): fixed order, connection LED per sender. */}
+      <div className="senders" role="tablist" aria-label="Senders">
+        <button className={`sender-chip${filter === 'all' ? ' sel' : ''}`} onClick={() => selectSender('all')}>
+          <span className="led all" /> all senders
+        </button>
+        {senders.map((s) => {
+          const on = connected(s)
+          return (
+            <button
+              key={s.id}
+              className={`sender-chip${filter === s.id ? ' sel' : ''}${on ? '' : ' off'}`}
+              onClick={() => selectSender(s.id)}
+              title={`${s.id} — ${on ? 'connected' : 'no recent activity'}`}
+            >
+              <span className={`led${on ? ' on' : ''}`} />
+              {short(s.id)}
+            </button>
+          )
+        })}
       </div>
 
       <div className="feed">
@@ -135,11 +185,11 @@ export default function Monitor() {
       </div>
 
       <p className="footnote">
-        Real device feed from the dispatcher websocket (<b>/websocket</b> → dispatcher <b>/ws</b>). Each row is a
-        <b> sender UUID</b> + an opaque action string (INTERFACE.md O3), shown verbatim — the console has no UUID→device
-        name mapping yet, and the action isn't decoded, so the <b>fires</b> column stays blank until the dispatcher
-        emits typed reports. If the status reads <b>listening</b> but pressing a control adds no rows, the device
-        handler isn't reporting to the dispatcher's io channel.
+        Real device feed from the dispatcher websocket (<b>/websocket</b> → dispatcher <b>/ws</b>). Senders are listed in
+        a <b>stable order</b> with a connection <b>LED</b> (lit = active within {CONNECTED_MS / 1000}s); a quiet sender is
+        pruned only after you pick another live one, so the list never reshuffles under you. Each row is a
+        <b> sender UUID</b> + an opaque action string (INTERFACE.md O3) — the console has no UUID→device-name map yet, so
+        the <b>fires</b> column stays blank until the dispatcher emits typed reports.
       </p>
     </div>
   )
