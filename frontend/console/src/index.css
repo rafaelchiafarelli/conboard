@@ -56,7 +56,11 @@ header .stage { margin-left: auto; font-family: var(--mono); font-size: 10.5px; 
 .viewnav button:hover { color: var(--ink); }
 .viewnav button.on { background: var(--raise); color: var(--accent); box-shadow: inset 0 0 0 1px var(--line); }
 
-.work { display: grid; grid-template-columns: 220px 340px 1fr; flex: 1; min-height: 0; }
+.work { display: flex; flex: 1; min-height: 0; }
+/* Rail + rule-list are drag-resizable (grab the bottom-right handle). */
+.work > .rail { flex: none; width: 220px; min-width: 150px; max-width: 50vw; resize: horizontal; overflow: auto; }
+.work > .list { flex: none; width: 340px; min-width: 240px; max-width: 60vw; resize: horizontal; overflow: hidden; }
+.work > .editor { flex: 1; }
 
 /* ---------- device rail ---------- */
 .rail { border-right: 1px solid var(--line); background: var(--panel); padding: 16px 12px; overflow-y: auto; }
@@ -277,9 +281,9 @@ input:focus, select:focus { outline: none; border-color: var(--accent-dim); box-
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 @media (max-width: 980px) {
-  .work { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
-  .rail { display: flex; gap: 8px; overflow-x: auto; }
+  .work { flex-direction: column; }
+  .work > .rail { width: auto; resize: none; display: flex; gap: 8px; overflow-x: auto; }
+  .work > .list { width: auto; resize: none; max-height: 40vh; overflow: hidden; }
   .rail .lbl { display: none; }
   .dev { min-width: 180px; margin-bottom: 0; }
-  .list { max-height: 40vh; }
 }
