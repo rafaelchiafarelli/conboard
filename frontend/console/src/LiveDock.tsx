@@ -1,14 +1,14 @@
 // Per-device live-events dock (worklist item 2). Opens beside the rule list when a
-// device's "live" button is toggled on in the rail. Shows the dispatcher's realtime
-// feed so you can watch a control fire while editing its rules.
+// device's "live" button is toggled on in the rail. It subscribes to the shared
+// liveBus (one dispatcher socket) and FILTERS the single stream to this device.
 //
-// GAP (same as the full Live monitor): the /ws payload is <uuid>,<action> with no
-// device name, so the feed cannot yet be filtered to THIS device — it shows every
-// sender, with a note. When the dispatcher adds the device name to the payload
-// (INTERFACE.md O3), this dock filters to the selected device with no UI change.
+// Filtering needs the dispatcher to tag each frame with a device name, which it does
+// via the HB roster frame (INTERFACE.md O5): once any frame resolves a devname, the
+// dock shows only this device's events. Until then (legacy dispatcher) it shows all
+// senders with a note — no UI change when the dispatcher starts emitting HB.
 
-import { useEffect, useRef, useState } from 'react'
-import { WebSocketEventSource, defaultWsUrl, type DeviceEvent, type LiveStatus } from './model/events'
+import { useEffect, useState } from 'react'
+import { liveBus, type DeviceEvent, type LiveStatus } from './model/events'
 
 const MAX_ROWS = 120
 
@@ -26,19 +26,20 @@ export default function LiveDock({ deviceName, connected, onClose }: {
 }) {
   const [events, setEvents] = useState<DeviceEvent[]>([])
   const [status, setStatus] = useState<LiveStatus>('connecting')
-  const seenRef = useRef(0)
 
   useEffect(() => {
-    const src = new WebSocketEventSource(defaultWsUrl(), setStatus)
-    src.start((e) => {
-      seenRef.current++
-      setEvents((prev) => {
+    return liveBus.subscribe({
+      onStatus: setStatus,
+      onEvent: (e) => setEvents((prev) => {
         const next = [e, ...prev]
         return next.length > MAX_ROWS ? next.slice(0, MAX_ROWS) : next
-      })
+      }),
     })
-    return () => src.stop()
   }, [])
+
+  // Filter to this device once the dispatcher tags frames with a devname (O5).
+  const tagged = events.some((e) => e.devname)
+  const shown = tagged ? events.filter((e) => e.devname === deviceName) : events
 
   return (
     <aside className="livedock" aria-label={`Live events — ${deviceName}`}>
@@ -52,12 +53,14 @@ export default function LiveDock({ deviceName, connected, onClose }: {
       </div>
 
       <div className="livedock-feed">
-        {events.length === 0 ? (
+        {shown.length === 0 ? (
           <div className="feed-empty">
-            {status === 'open' ? 'Waiting for actions — press a control.' : 'Connecting to the dispatcher…'}
+            {status === 'open'
+              ? (tagged ? `No events from ${deviceName} yet — press a control.` : 'Waiting for actions — press a control.')
+              : 'Connecting to the dispatcher…'}
           </div>
         ) : (
-          events.map((e) => (
+          shown.map((e) => (
             <div className="ld-row" key={e.id}>
               <span className="ev-time">{fmtTime(e.ts)}</span>
               <span className="ev-dev" title={e.device}>{short(e.device)}</span>
@@ -68,8 +71,10 @@ export default function LiveDock({ deviceName, connected, onClose }: {
       </div>
 
       <p className="livedock-note">
-        Showing <b>all senders</b> — the dispatcher feed isn't tagged with a device name yet (INTERFACE.md O3),
-        so this can't filter to {deviceName} alone. It will once the dispatcher adds the name to the payload.
+        {tagged
+          ? <>Filtered to <b>{deviceName}</b> from the shared dispatcher feed.</>
+          : <>Showing <b>all senders</b> — the dispatcher feed isn't tagged with a device name yet (INTERFACE.md O5),
+             so it can't filter to {deviceName} alone. It will, with no UI change, once the dispatcher emits heartbeat frames.</>}
       </p>
     </aside>
   )

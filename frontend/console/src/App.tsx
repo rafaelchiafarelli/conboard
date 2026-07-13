@@ -5,6 +5,7 @@ import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, deployBoar
 import type { Board } from './model/rules'
 import { decodeMidi, splitStatus } from './model/midi'
 import { validateBoards, type Rule, type DeviceType } from './model/rules'
+import { liveBus } from './model/events'
 import RuleEditor from './RuleEditor'
 import Monitor from './Monitor'
 import AddDeviceDialog from './AddDeviceDialog'
@@ -281,8 +282,8 @@ export default function App() {
   }, [boards])
 
   // Poll the device inventory so each rail device can show whether its hardware is
-  // actually attached (the "live" button is enabled only then). No-op off-device
-  // (the endpoint 404s -> empty list -> buttons disabled).
+  // attached (fallback connection signal + the add-device flow). No-op off-device
+  // (the endpoint 404s -> empty list).
   useEffect(() => {
     let stop = false
     const poll = async () => {
@@ -292,6 +293,15 @@ export default function App() {
     void poll()
     const t = setInterval(() => void poll(), 4000)
     return () => { stop = true; clearInterval(t) }
+  }, [])
+
+  // Keep the shared live socket open app-wide so the rail's per-device LEDs reflect
+  // the dispatcher HEARTBEAT (O5). onTick re-renders when a heartbeat lands; the 1s
+  // interval expires a LED that stopped heartbeating.
+  useEffect(() => {
+    const unsub = liveBus.subscribe({ onTick: () => forceRender() })
+    const t = setInterval(() => forceRender(), 1000)
+    return () => { unsub(); clearInterval(t) }
   }, [])
 
   const liveMode = device?.body.modes.find((m) => m.active)
@@ -367,7 +377,8 @@ export default function App() {
                 </span>
                 {items.map(({ b: d, i }) => {
                   const live = d.body.modes.find((m) => m.active)
-                  const isConn = boardConnected(d, attached)
+                  // Prefer the dispatcher heartbeat (O5); fall back to USB inventory.
+                  const isConn = liveBus.isLive(d.DEVICE.name) || boardConnected(d, attached)
                   const watching = liveDevIdx === i
                   return (
                     <div className={`dev-row${i === devIdx ? ' active' : ''}`} key={d.DEVICE.name}>
@@ -561,7 +572,7 @@ export default function App() {
         {liveDevIdx != null && boards[liveDevIdx] && (
           <LiveDock
             deviceName={boards[liveDevIdx].DEVICE.name}
-            connected={boardConnected(boards[liveDevIdx], attached)}
+            connected={liveBus.isLive(boards[liveDevIdx].DEVICE.name) || boardConnected(boards[liveDevIdx], attached)}
             onClose={() => setLiveDevIdx(null)}
           />
         )}

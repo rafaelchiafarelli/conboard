@@ -126,6 +126,23 @@ then streams each new action as a single `<uuid>,<action>` text frame. (It curre
 also rebroadcasts any inbound WS frame to all clients — assume that is incidental and
 subject to change.)
 
+**Proposed heartbeat/roster frame (`NEEDS ACK`, O5).** Action frames stay exactly as
+above — their `<action>` payload already contains commas (e.g. conMIDI's `[b0,b1,b2]`),
+so we do **not** add fields to them. Instead the dispatcher additionally emits, about
+once a second, one **heartbeat frame per live sender**, distinguished by a literal `HB`
+first token:
+```
+HB,<uuid>,<devname>\r\n
+```
+`<devname>` is the sender's registered `DevName` (§2.1), which contains no comma. This
+one additive frame gives the console two things it can't derive today: the
+**uuid → devname map** (so it can filter the single action stream per configured
+device — items 2/3 of the console worklist) and **liveness** (a device is "connected"
+iff an `HB` for it arrived within a few seconds → drives the per-device LED). The
+console already parses defensively: a line whose first token is `HB` is a heartbeat, any
+other line is a legacy/action frame, so shipping this is backward-compatible on the
+console side.
+
 **Deployment note.** `backend/assets/interface.conf` (nginx) proxies
 `/websocket → localhost:40080` and `/ → localhost:8080`. The `:8080` upstream is the
 **backend management API** (owned by the sibling session — CRUD over the Postgres rules
@@ -173,10 +190,23 @@ scope for this ledger except as context.
   path only. Revisit when building MIDI→keystroke/text rules. See memory
   `conboard-dispatch-overflow`.
 
+- **O5 — Heartbeat/roster frame on `/ws`. `NEEDS ACK` (dispatcher side).**
+  The console's live view is **one stream keyed by uuid** with no device name and no
+  liveness, so it cannot (a) split the stream across the configured devices or (b) show
+  a per-device "connected" LED from the actual heartbeat. **Proposal (additive, §3):**
+  the dispatcher emits one `HB,<uuid>,<devname>` frame per live sender ~1/s (see §3).
+  That single frame supplies the uuid→devname map *and* liveness. The console side is
+  **built and merged** (backend/UI session) to consume this with graceful fallback (it
+  shows all senders + a note until the frames arrive); it needs the dispatcher to start
+  emitting them. Requested by the console worklist items 2/3.
+
 ---
 
 ## 6. Changelog
 
-- **v0 (this commit)** — HW/dispatcher session. Initial as-built snapshot of both wire
-  surfaces (§2 ZMQ, §3 Crow HTTP/WS), the framing agreement (§4), and open items
-  O1–O4. Nothing acked by the backend/UI session yet.
+- **v0** — HW/dispatcher session. Initial as-built snapshot of both wire surfaces
+  (§2 ZMQ, §3 Crow HTTP/WS), the framing agreement (§4), and open items O1–O4. Nothing
+  acked by the backend/UI session yet.
+- **v0.1** — backend/UI session. Added **O5**: proposed the additive `HB,<uuid>,<devname>`
+  heartbeat/roster frame on `/ws` (§3) so the console can do device-centric live
+  filtering + heartbeat LEDs. Console consumes it with fallback; awaiting dispatcher ack.
