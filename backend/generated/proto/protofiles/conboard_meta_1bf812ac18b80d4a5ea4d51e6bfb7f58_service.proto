@@ -1,0 +1,31 @@
+syntax = "proto3";
+package frameworkProtos;
+//standard protofile with error code and standard heartBeat messages
+import "protofiles/errorCode.proto";
+import "protofiles/heartBeat.proto";
+
+//user imports from harpia process
+import "protofiles/conboard_meta_1bf812ac18b80d4a5ea4d51e6bfb7f58.proto";
+
+message conboard_meta_Message {
+    conboard_meta msg = 1;
+}
+//message for the standard functions 
+message conboard_meta_HeartBeat {
+    heartBeat hb = 1;
+}
+
+//message for the pullByID function
+message conboard_meta_ID {
+    int32 id = 1;
+}
+message conboard_meta_Stream {
+    int32 id = 1;
+    string name = 2;
+}
+service conboard_meta_Service {
+    rpc heartBeat(conboard_meta_HeartBeat) returns (conboard_meta_HeartBeat) {}
+    rpc streamSrc(conboard_meta_Stream ) returns (stream conboard_meta_Message) {}
+    rpc pullByID(conboard_meta_ID) returns (conboard_meta_Message) {}
+    rpc push(conboard_meta_Message) returns (errorCode) {}
+}

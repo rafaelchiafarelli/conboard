@@ -1,8 +1,0 @@
-syntax = "proto3";
-message conboard_meta {
-int32 ID_69421342752d53d5f274b99a6a0c123e = 1;
-string schema_version = 2;
-string STATUS_69421342752d53d5f274b99a6a0c123e = 3;
-string ERROR_69421342752d53d5f274b99a6a0c123e = 4;
-string ORIGINATOR = 5;
-}

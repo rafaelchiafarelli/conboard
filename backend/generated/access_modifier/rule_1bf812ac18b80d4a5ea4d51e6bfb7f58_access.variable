@@ -1,0 +1,3 @@
+outputs:[('REPETEABLE', 'repeteable', 102, 4)];
+change_mode_enable:[('OPTIONAL', 'optional ', 103, 4)];
+change_mode_to:[('OPTIONAL', 'optional ', 104, 4)];

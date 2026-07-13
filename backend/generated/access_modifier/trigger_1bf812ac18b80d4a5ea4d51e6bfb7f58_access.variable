@@ -1,0 +1,9 @@
+b0:[('OPTIONAL', 'optional ', 66, 4)];
+b1:[('OPTIONAL', 'optional ', 67, 4)];
+b2:[('OPTIONAL', 'optional ', 68, 4)];
+midi_mode:[('OPTIONAL', 'optional ', 69, 4)];
+code:[('OPTIONAL', 'optional ', 70, 4)];
+edge:[('OPTIONAL', 'optional ', 71, 4)];
+value:[('OPTIONAL', 'optional ', 72, 4)];
+erval:[('OPTIONAL', 'optional ', 73, 4)];
+delay:[('OPTIONAL', 'optional ', 74, 4)];

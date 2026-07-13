@@ -48,6 +48,17 @@ enum hold_mode {
     hm_hold_once;
 }
 
+// midi_mode. MIDI-specific operation mode on a trigger, mirrors the firmware
+// midi_action_mode. mm_normal is the default matched exactly. see rules.ts MidiMode.
+
+enum midi_mode {
+    mm_normal = 0;
+    mm_trigger_higher;
+    mm_trigger_lower;
+    mm_spot;
+    mm_blink;
+}
+
 // trigger. rule input, flattened MidiTrigger or EvdevTrigger.
 
 stream pull push event message trigger {
@@ -55,6 +66,7 @@ stream pull push event message trigger {
     optional int b0;
     optional int b1;
     optional int b2;
+    optional midi_mode midi_mode;
     optional string code;
     optional trigger_edge edge;
     optional int value;

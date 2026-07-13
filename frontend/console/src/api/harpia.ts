@@ -13,7 +13,7 @@
 // The HASH is the md5 of backend/harpia/conboard.harpia; it changes if the domain
 // changes. Keep it in sync with backend/generated (a single source of truth here).
 
-export const HASH = '69421342752d53d5f274b99a6a0c123e'
+export const HASH = '1bf812ac18b80d4a5ea4d51e6bfb7f58'
 export const ID_KEY = `ID${HASH}` as const
 
 export type Entity = 'board' | 'mode' | 'rule' | 'trigger' | 'output_action'
@@ -32,6 +32,10 @@ export const TRIGGER_EDGE = {
 export const ACTION_KIND = { ak_midi: 'midi', ak_keyboard: 'keyboard', ak_mouse: 'mouse' } as const
 export const KEY_TYPE = { kt_text: 'text', kt_one_key: 'oneKey', kt_hot_key: 'hotKey' } as const
 export const HOLD_MODE = { hm_not_hold: 'not_hold', hm_hold: 'hold', hm_hold_once: 'hold_once' } as const
+export const MIDI_MODE = {
+  mm_normal: 'normal', mm_trigger_higher: 'trigger_higher', mm_trigger_lower: 'trigger_lower',
+  mm_spot: 'spot', mm_blink: 'blink',
+} as const
 
 // invert a {harpiaName: literal} map into {literal: harpiaName}
 function invert<T extends Record<string, string>>(m: T): Record<string, keyof T & string> {
@@ -45,6 +49,7 @@ export const TRIGGER_EDGE_R = invert(TRIGGER_EDGE)
 export const ACTION_KIND_R = invert(ACTION_KIND)
 export const KEY_TYPE_R = invert(KEY_TYPE)
 export const HOLD_MODE_R = invert(HOLD_MODE)
+export const MIDI_MODE_R = invert(MIDI_MODE)
 
 // ---- raw harpia record shapes (what the REST API sends/accepts) ------------
 // All fields optional: zero-valued ones are omitted on the wire.
@@ -53,6 +58,7 @@ export interface HarpiaId { [ID_KEY]?: number }
 export interface HTrigger extends HarpiaId {
   kind?: keyof typeof TRIGGER_KIND
   b0?: number; b1?: number; b2?: number
+  midiMode?: keyof typeof MIDI_MODE
   code?: string
   edge?: keyof typeof TRIGGER_EDGE
   value?: number; interval?: number; delay?: number
