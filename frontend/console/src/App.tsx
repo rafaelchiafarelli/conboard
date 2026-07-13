@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { BOARDS as FIXTURE_BOARDS } from './fixtures/devices'
 import { BOARDS as REAL_BOARDS } from './fixtures/boards'
-import { fetchBoards, saveBoard, ping } from './api/client'
+import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, ping } from './api/client'
 import type { Board } from './model/rules'
 import { decodeMidi } from './model/midi'
 import { validateBoards, type Rule, type DeviceType } from './model/rules'
@@ -127,13 +127,57 @@ export default function App() {
     setDirty(true)   // enable Save so the new rule can be persisted after editing
   }
   // Make a mode the device's live operation mode. Exactly one mode is active at a
-  // time; on a real device this maps to a "switch mode" command sent to the backend.
+  // time. This is a board edit (mode.active), so persist the whole board.
   const activateMode = (i: number) => {
     if (!device) return
     device.body.modes.forEach((m, k) => {
       m.active = k === i
     })
     forceRender()
+    void persistDevice()
+  }
+
+  // ---- board-level library operations (create / copy A->B / delete) ---------
+  const addBoardLocal = (b: Board, id: number | null) => {
+    setBoards((bs) => [...bs, b])
+    setBoardIds((ids) => [...ids, id])
+    select(boards.length, 0, 0) // the appended board's index
+  }
+  const newBoard = async () => {
+    const name = window.prompt('New device name?')?.trim()
+    if (!name) return
+    const b: Board = {
+      DEVICE: { timeout: 0, type: 'midi', name, input: name, output: name },
+      header: { identifier: {}, actions: [] },
+      body: { modes: [{ id: 0, active: true, actions: [] }] },
+    }
+    setSaveState('saving')
+    try { addBoardLocal(b, await createBoard(b)); setSaveState('saved') }
+    catch (e) { console.error('[conboard] create board failed', e); setSaveState('error') }
+  }
+  const copyDevice = async () => {
+    if (!device) return
+    const name = window.prompt(`Copy "${device.DEVICE.name}" to new device name?`, `${device.DEVICE.name} copy`)?.trim()
+    if (!name) return
+    const clone: Board = { ...structuredClone(device), DEVICE: { ...device.DEVICE, name } }
+    setSaveState('saving')
+    try { addBoardLocal(clone, await copyBoard(device, { name })); setSaveState('saved') }
+    catch (e) { console.error('[conboard] copy board failed', e); setSaveState('error') }
+  }
+  const deleteDevice = async () => {
+    if (!device) return
+    if (boards.length <= 1) { window.alert('Cannot delete the last device.'); return }
+    if (!window.confirm(`Delete device "${device.DEVICE.name}" and all its rules?`)) return
+    const id = boardIds[devIdx]
+    const di = devIdx
+    setSaveState('saving')
+    try {
+      if (id != null) await deleteBoard(id)
+      setBoards((bs) => bs.filter((_, k) => k !== di))
+      setBoardIds((ids) => ids.filter((_, k) => k !== di))
+      select(Math.max(0, di - 1), 0, 0)
+      setSaveState('saved')
+    } catch (e) { console.error('[conboard] delete board failed', e); setSaveState('error') }
   }
 
   // Load boards from the backend rules-library once. If the backend is up but missing
@@ -210,6 +254,11 @@ export default function App() {
       <div className="work" hidden={view !== 'rules'}>
         <nav className="rail" aria-label="Devices">
           <span className="lbl">Devices</span>
+          <div className="dev-tools">
+            <button className="btn ghost" onClick={newBoard} title="Create a new device profile">＋ New</button>
+            <button className="btn ghost" onClick={copyDevice} title="Copy this device's rule set to a new device (A→B)">⧉ Copy</button>
+            <button className="btn danger-ghost" onClick={deleteDevice} title="Delete this device and its rules">🗑 Delete</button>
+          </div>
           {DEVICE_GROUPS.map((g) => {
             const items = boards.map((b, i) => ({ b, i })).filter((x) => x.b.DEVICE.type === g.type)
             if (!items.length) return null
