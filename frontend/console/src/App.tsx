@@ -3,7 +3,7 @@ import { BOARDS as FIXTURE_BOARDS } from './fixtures/devices'
 import { BOARDS as REAL_BOARDS } from './fixtures/boards'
 import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, deployBoard, ping } from './api/client'
 import type { Board } from './model/rules'
-import { decodeMidi } from './model/midi'
+import { decodeMidi, splitStatus } from './model/midi'
 import { validateBoards, type Rule, type DeviceType } from './model/rules'
 import RuleEditor from './RuleEditor'
 import Monitor from './Monitor'
@@ -22,7 +22,8 @@ const DEVICE_GROUPS: { type: DeviceType; label: string }[] = [
 function triggerSummary(input: Rule['input']): { badge: string; human: string; bytes: string } {
   if (input.type === 'midi') {
     const d = decodeMidi(input.b0, input.b1, input.b2)
-    return { badge: d.short, human: d.human, bytes: `${input.b0} ${input.b1} ${input.b2} · ${d.detail}` }
+    const mode = input.mode && input.mode !== 'normal' ? ` · ${input.mode}` : ''
+    return { badge: d.short, human: d.human, bytes: `${input.b0} ${input.b1} ${input.b2} · ${d.detail}${mode}` }
   }
   return { badge: input.type.slice(0, 3).toUpperCase(), human: input.code, bytes: `${input.code} · ${input.mode}` }
 }
@@ -49,6 +50,10 @@ export default function App() {
   const [devIdx, setDevIdx] = useState(0)
   const [modeIdx, setModeIdx] = useState(0)
   const [ruleIdx, setRuleIdx] = useState(0)
+  // MIDI rule-list sort + filter (a device can have hundreds of MIDI rules).
+  type MidiSort = 'authored' | 'channel' | 'note' | 'velocity'
+  const [midiSort, setMidiSort] = useState<MidiSort>('authored')
+  const [midiFilter, setMidiFilter] = useState({ channel: '', note: '', velocity: '' })
   const [dirty, setDirty] = useState(false)
   const snapshot = useRef<string | null>(null)
   const [, forceRender] = useReducer((n: number) => n + 1, 0)
@@ -124,6 +129,9 @@ export default function App() {
         ? { type: 'midi', b0: 144, b1: 0, b2: 127 }
         : { type: device.DEVICE.type, code: device.DEVICE.type === 'keyboard' ? 'KEY_A' : 'BTN_SOUTH', mode: 'press' }
     mode.actions.push({ input, output: [] })
+    // Clear any active MIDI filter so the freshly-added rule is actually visible
+    // in the list (its default trigger likely wouldn't match the current filter).
+    setMidiFilter({ channel: '', note: '', velocity: '' })
     select(devIdx, modeIdx, mode.actions.length - 1)
     setDirty(true)   // enable Save so the new rule can be persisted after editing
   }
@@ -252,6 +260,36 @@ export default function App() {
   const liveMode = device?.body.modes.find((m) => m.active)
   const entryCount = mode?.mode_header?.actions.length ?? 0
 
+  // Build the rule-list view. Rows carry their ORIGINAL index (`ri`) so selection,
+  // edit and delete always target the real slot in mode.actions regardless of how
+  // the view is filtered or sorted. MIDI sort/filter only applies to MIDI devices.
+  const isMidi = device?.DEVICE.type === 'midi'
+  const allRules = (mode?.actions ?? []).map((r, ri) => ({ r, ri }))
+  const midiFilterActive = isMidi && (midiFilter.channel !== '' || midiFilter.note !== '' || midiFilter.velocity !== '')
+  let ruleRows = allRules
+  if (isMidi) {
+    if (midiFilterActive) {
+      ruleRows = ruleRows.filter(({ r }) => {
+        if (r.input.type !== 'midi') return true
+        const { channel } = splitStatus(r.input.b0)
+        if (midiFilter.channel !== '' && channel !== Number(midiFilter.channel)) return false
+        if (midiFilter.note !== '' && r.input.b1 !== Number(midiFilter.note)) return false
+        if (midiFilter.velocity !== '' && r.input.b2 !== Number(midiFilter.velocity)) return false
+        return true
+      })
+    }
+    if (midiSort !== 'authored') {
+      const key = ({ r }: { r: Rule }) => {
+        if (r.input.type !== 'midi') return 0
+        if (midiSort === 'channel') return splitStatus(r.input.b0).channel
+        if (midiSort === 'note') return r.input.b1
+        return r.input.b2 // velocity
+      }
+      // stable sort: fall back to original index to keep equal keys authored-ordered
+      ruleRows = ruleRows.slice().sort((a, b) => key(a) - key(b) || a.ri - b.ri)
+    }
+  }
+
   return (
     <div className="app">
       <header>
@@ -369,10 +407,50 @@ export default function App() {
           <div className="list-scroll">
             <div className="list-count">
               <span>
-                {(mode?.actions.length ?? 0)} rule{(mode?.actions.length ?? 0) !== 1 ? 's' : ''} · trigger → output
+                {midiFilterActive
+                  ? `${ruleRows.length} of ${allRules.length} rules`
+                  : `${allRules.length} rule${allRules.length !== 1 ? 's' : ''} · trigger → output`}
               </span>
             </div>
-            {(mode?.actions ?? []).map((r, ri) => {
+
+            {isMidi && (
+              // MIDI boards can carry hundreds of rules — sort/filter by the MIDI
+              // fields (channel / note / velocity) to find the pertinent one.
+              <div className="midi-tools">
+                <div className="mt-row">
+                  <label>Sort</label>
+                  <select value={midiSort} onChange={(e) => setMidiSort(e.target.value as MidiSort)}>
+                    <option value="authored">As authored</option>
+                    <option value="channel">Channel</option>
+                    <option value="note">Note (data 1)</option>
+                    <option value="velocity">Velocity (data 2)</option>
+                  </select>
+                </div>
+                <div className="mt-row filter">
+                  <label>Filter</label>
+                  <select value={midiFilter.channel} onChange={(e) => setMidiFilter((f) => ({ ...f, channel: e.target.value }))} title="Channel">
+                    <option value="">ch: any</option>
+                    {Array.from({ length: 16 }, (_, i) => (
+                      <option key={i} value={i + 1}>ch {i + 1}</option>
+                    ))}
+                  </select>
+                  <input type="number" min={0} max={127} placeholder="note" value={midiFilter.note}
+                         onChange={(e) => setMidiFilter((f) => ({ ...f, note: e.target.value }))} />
+                  <input type="number" min={0} max={127} placeholder="vel" value={midiFilter.velocity}
+                         onChange={(e) => setMidiFilter((f) => ({ ...f, velocity: e.target.value }))} />
+                  {midiFilterActive && (
+                    <button className="mt-clear" onClick={() => setMidiFilter({ channel: '', note: '', velocity: '' })} title="Clear filter">✕</button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Add-rule lives at the top of the list so it stays reachable on long
+                MIDI boards (hundreds of rules) without scrolling to the bottom. */}
+            <button className="add-rule top" onClick={onAddRule}>
+              ＋  Add rule
+            </button>
+            {ruleRows.map(({ r, ri }) => {
               const t = triggerSummary(r.input)
               return (
                 <button
@@ -391,9 +469,9 @@ export default function App() {
                 </button>
               )
             })}
-            <button className="add-rule" onClick={onAddRule}>
-              ＋  Add rule
-            </button>
+            {midiFilterActive && ruleRows.length === 0 && (
+              <div className="list-empty">No rules match this filter.</div>
+            )}
           </div>
         </section>
 

@@ -14,12 +14,26 @@ export type DeviceType = 'midi' | 'joystick' | 'keyboard' | 'mouse'
 
 // ---- triggers (rule input) --------------------------------------------------
 
+/**
+ * MIDI trigger operation mode — mirrors the firmware's `midi_action_mode`
+ * (LowLevel/Common/include/actions.h; matcher LowLevel/Common/src/midiMap.cpp) and
+ * is serialized as the per-input `"mode"` string the conMIDI parser reads
+ * (LowLevel/Common/src/jsonParser.cpp). It changes how b2 is interpreted on a match:
+ *  - normal          — b0/b1/b2 all matched exactly (the default; `mode` omitted)
+ *  - trigger_higher  — b0/b1 match; fires when the incoming b2 is ABOVE the b2 threshold
+ *  - trigger_lower    — b0/b1 match; fires when the incoming b2 is BELOW the b2 threshold
+ *  - spot            — b0/b1 match; b2 is NOT matched — the live value is carried to outputs
+ *  - blink           — matched like normal; paired with an LED on/off output for blink feedback
+ */
+export type MidiMode = 'normal' | 'trigger_higher' | 'trigger_lower' | 'spot' | 'blink'
+
 /** A raw MIDI message: status byte + two data bytes. */
 export interface MidiTrigger {
   type: 'midi'
   b0: number // status byte (message type in the high nibble, channel in the low)
   b1: number // data 1 — note number or CC number
-  b2: number // data 2 — velocity or CC value
+  b2: number // data 2 — velocity/CC value, or a threshold (trigger_higher/lower), or ignored (spot)
+  mode?: MidiMode // operation mode; absent = normal
   delay?: number
 }
 
