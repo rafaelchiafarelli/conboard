@@ -145,11 +145,19 @@ export default function App() {
     select(boards.length, 0, 0) // the appended board's index
   }
   const newBoard = async () => {
+    const TYPES: DeviceType[] = ['midi', 'joystick', 'keyboard', 'mouse']
+    const EXEC: Record<DeviceType, string> = {
+      midi: 'conMIDI', joystick: 'conJoyS', keyboard: 'conKeyB', mouse: 'conMouse',
+    }
+    const t = window.prompt(`Device type? (${TYPES.join(' / ')})`, 'midi')?.trim().toLowerCase()
+    if (!t) return
+    if (!TYPES.includes(t as DeviceType)) { window.alert(`Unknown type "${t}". Use: ${TYPES.join(', ')}`); return }
+    const type = t as DeviceType
     const name = window.prompt('New device name?')?.trim()
     if (!name) return
     const b: Board = {
-      DEVICE: { timeout: 0, type: 'midi', name, input: name, output: name },
-      header: { identifier: {}, actions: [] },
+      DEVICE: { timeout: 0, type, name, input: name, output: name },
+      header: { identifier: { executable: { exec: EXEC[type] } }, actions: [] },
       body: { modes: [{ id: 0, active: true, actions: [] }] },
     }
     setSaveState('saving')
