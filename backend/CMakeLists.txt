@@ -23,6 +23,9 @@ find_package(Threads REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GRPCPP REQUIRED grpc++)
+# libudev: the device-inventory endpoint (src/devices.cpp) enumerates attached
+# devices and reads their udev ID_* properties (the same tags boards match on).
+pkg_check_modules(UDEV REQUIRED libudev)
 
 # SOCI + the sqlite3 backend + libsqlite3 (system libs; no reliable CMake config).
 find_library(SOCI_CORE    NAMES soci_core    REQUIRED)
@@ -41,9 +44,14 @@ target_include_directories(conboard_tinyxml2 PUBLIC "${GEN}/third_party/tinyxml2
 # main.cpp + one TU per entity (src/entity_*.cpp); see include/conboard_entities.h.
 file(GLOB APP_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
+# The device classifier is the SAME code the launcher/devprobe use, compiled in
+# directly so the inventory endpoint can never disagree with the runtime.
+set(CONDETECT_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../LowLevel/Common/src/deviceDetect.cpp")
+
 add_executable(conboard_backend
     ${APP_SRCS}
     ${PB_SRCS}
+    ${CONDETECT_SRC}
 )
 target_include_directories(conboard_backend PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -53,12 +61,14 @@ target_include_directories(conboard_backend PRIVATE
     ${GEN}/third_party/asio         # standalone asio (Crow transport)
     ${Protobuf_INCLUDE_DIRS}
     ${GRPCPP_INCLUDE_DIRS}
+    ${UDEV_INCLUDE_DIRS}
 )
-target_link_directories(conboard_backend PRIVATE ${GRPCPP_LIBRARY_DIRS})
+target_link_directories(conboard_backend PRIVATE ${GRPCPP_LIBRARY_DIRS} ${UDEV_LIBRARY_DIRS})
 target_link_libraries(conboard_backend PRIVATE
     conboard_tinyxml2
     ${SOCI_CORE} ${SOCI_SQLITE3} ${SQLITE3}
     protobuf::libprotobuf
     ${GRPCPP_LIBRARIES}
+    ${UDEV_LIBRARIES}
     Threads::Threads ${CMAKE_DL_LIBS}
 )

@@ -7,6 +7,7 @@ import { decodeMidi, splitStatus } from './model/midi'
 import { validateBoards, type Rule, type DeviceType } from './model/rules'
 import RuleEditor from './RuleEditor'
 import Monitor from './Monitor'
+import AddDeviceDialog from './AddDeviceDialog'
 
 type View = 'rules' | 'monitor'
 
@@ -47,6 +48,7 @@ function OutputSummary({ rule }: { rule: Rule }) {
 
 export default function App() {
   const [view, setView] = useState<View>('rules')
+  const [addOpen, setAddOpen] = useState(false) // add-device dialog (item 7)
   const [devIdx, setDevIdx] = useState(0)
   const [modeIdx, setModeIdx] = useState(0)
   const [ruleIdx, setRuleIdx] = useState(0)
@@ -152,25 +154,21 @@ export default function App() {
     setBoardIds((ids) => [...ids, id])
     select(boards.length, 0, 0) // the appended board's index
   }
-  const newBoard = async () => {
-    const TYPES: DeviceType[] = ['midi', 'joystick', 'keyboard', 'mouse']
-    const EXEC: Record<DeviceType, string> = {
-      midi: 'conMIDI', joystick: 'conJoyS', keyboard: 'conKeyB', mouse: 'conMouse',
-    }
-    const t = window.prompt(`Device type? (${TYPES.join(' / ')})`, 'midi')?.trim().toLowerCase()
-    if (!t) return
-    if (!TYPES.includes(t as DeviceType)) { window.alert(`Unknown type "${t}". Use: ${TYPES.join(', ')}`); return }
-    const type = t as DeviceType
-    const name = window.prompt('New device name?')?.trim()
-    if (!name) return
-    const b: Board = {
-      DEVICE: { timeout: 0, type, name, input: name, output: name },
-      header: { identifier: { executable: { exec: EXEC[type] } }, actions: [] },
-      body: { modes: [{ id: 0, active: true, actions: [] }] },
-    }
+  // Add-device flow (item 7): the dialog shows attached devices without a profile
+  // and builds the Board; here we persist it and optionally deploy it right away.
+  const createFromDialog = async (b: Board, deploy: boolean) => {
+    setAddOpen(false)
     setSaveState('saving')
-    try { addBoardLocal(b, await createBoard(b)); setSaveState('saved') }
-    catch (e) { console.error('[conboard] create board failed', e); setSaveState('error') }
+    try {
+      const id = await createBoard(b)
+      addBoardLocal(b, id)
+      setSaveState('saved')
+      if (deploy) {
+        setDeployState('deploying')
+        try { await deployBoard(b); setDeployState('deployed') }
+        catch (e) { console.error('[conboard] deploy failed', e); setDeployState('error') }
+      }
+    } catch (e) { console.error('[conboard] create board failed', e); setSaveState('error') }
   }
   const copyDevice = async () => {
     if (!device) return
@@ -316,7 +314,7 @@ export default function App() {
         <nav className="rail" aria-label="Devices">
           <span className="lbl">Devices</span>
           <div className="dev-tools">
-            <button className="btn ghost" onClick={newBoard} title="Create a new device profile">＋ New</button>
+            <button className="btn ghost" onClick={() => setAddOpen(true)} title="Add a device (pick an attached one or enter manually)">＋ New</button>
             <button className="btn ghost" onClick={copyDevice} title="Copy this device's rule set to a new device (A→B)">⧉ Copy</button>
             <button className="btn danger-ghost" onClick={deleteDevice} title="Delete this device and its rules">🗑 Delete</button>
           </div>
@@ -499,6 +497,15 @@ export default function App() {
           )}
         </main>
       </div>
+
+      {addOpen && (
+        <AddDeviceDialog
+          presetType={device?.DEVICE.type}
+          existingNames={boards.map((b) => b.DEVICE.name)}
+          onCancel={() => setAddOpen(false)}
+          onCreate={createFromDialog}
+        />
+      )}
     </div>
   )
 }

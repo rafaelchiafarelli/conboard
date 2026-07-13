@@ -42,4 +42,10 @@ void register_output_action(Registrar&);
 // src/deploy.cpp.
 void register_deploy(crow::SimpleApp& app, const std::string& base);
 
+// Device inventory: GET <base>/devices lists attached USB/input devices, classifies
+// each by type, and marks whether a boards/*.json profile already matches it (so the
+// console can offer the undesignated ones in its add-device flow). Hand-written; uses
+// libudev + the shared condetect classifier. Defined in src/devices.cpp.
+void register_devices(crow::SimpleApp& app, const std::string& base);
+
 }  // namespace conboard

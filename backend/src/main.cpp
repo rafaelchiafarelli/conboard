@@ -96,6 +96,9 @@ int main() {
     // reload). Hand-written, not a harpia entity.
     conboard::register_deploy(app, api_base);
 
+    // Device inventory for the console's add-device flow. Hand-written.
+    conboard::register_devices(app, api_base);
+
     CROW_ROUTE(app, "/healthz")([]{ return "ok"; });
 
     // ---- Websocket seam for the dispatcher event relay ----------------------

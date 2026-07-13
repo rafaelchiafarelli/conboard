@@ -121,3 +121,29 @@ export async function deployBoard(board: Board): Promise<{ written: string; relo
   if (!res.ok) throw new Error(`deploy -> ${res.status}`)
   return res.json()
 }
+
+/**
+ * One attached device as the backend's inventory endpoint (GET /devices) reports it.
+ * `type` is '' when the device is actionable but unclassified; `designated` is true
+ * when a boards/*.json profile already matches it (so the add-device flow offers only
+ * the undesignated ones). `tags` are the identity tags to seed a new profile with.
+ */
+export interface AttachedDevice {
+  name: string
+  type: '' | 'midi' | 'joystick' | 'keyboard' | 'mouse'
+  vid: string
+  pid: string
+  serial: string
+  devpath: string
+  designated: boolean
+  profile: string
+  tags: Record<string, string>
+}
+
+/** List currently-attached devices for the add-device flow (empty if unreachable). */
+export async function fetchDevices(): Promise<AttachedDevice[]> {
+  const res = await fetch(`${BASE}/devices`, { headers: { 'X-User': 'devices', 'X-Pswd': HASH } })
+  if (!res.ok) throw new Error(`devices -> ${res.status}`)
+  const txt = await res.text()
+  return txt ? (JSON.parse(txt) as AttachedDevice[]) : []
+}

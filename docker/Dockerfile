@@ -45,11 +45,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 #   protobuf-compiler + libprotobuf-dev            -> message structs (.pb.cc)
 #   protobuf-compiler-grpc + libgrpc++-dev         -> the generated gRPC services
 #   libsoci-dev + libsoci-sqlite3-4.0 + libsqlite3-dev -> SOCI DAO on SQLite
+#   libudev-dev          -> backend device-inventory endpoint enumerates attached
+#                           devices + their udev ID_* tags (src/devices.cpp)
 #   patchelf             -> stamp an absolute RUNPATH so the bundled runtime .so's
 #                           resolve on the board with NO apt install (see package.sh)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake git pkg-config ca-certificates file ccache patchelf \
-        libzmq3-dev libasound2-dev uuid-dev \
+        libzmq3-dev libasound2-dev uuid-dev libudev-dev \
         libboost-dev libboost-system-dev libboost-date-time-dev \
         protobuf-compiler libprotobuf-dev protobuf-compiler-grpc libgrpc++-dev \
         libsoci-dev libsoci-sqlite3-4.0 libsqlite3-dev \
