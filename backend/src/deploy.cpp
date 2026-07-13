@@ -151,4 +151,99 @@ void register_deploy(crow::SimpleApp& app, const std::string& base) {
         });
 }
 
+namespace {
+
+// The launcher names a handler's service after DevName with all whitespace removed
+// (+ an evdev identity suffix); see LowLevel/launcher/src/main.cpp. Reproduce the base.
+std::string service_base(const std::string& devname) {
+    std::string s;
+    for (char c : devname) if (!std::isspace(static_cast<unsigned char>(c))) s += c;
+    return s;
+}
+
+// A unit filename is safe to hand to systemctl/rm (no shell metacharacters).
+bool safe_unit(const std::string& n) {
+    if (n.empty()) return false;
+    for (char c : n)
+        if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '.' || c == '_' || c == '-')) return false;
+    return true;
+}
+
+}  // namespace
+
+// Inverse of deploy: remove a board from the device's realtime path so the hardware
+// stops. Deletes the tag-matched boards/*.json and stops+removes the handler's
+// systemd unit(s) (the exact MIDI name and any evdev "<base>-<id>" variants).
+void register_undeploy(crow::SimpleApp& app, const std::string& base) {
+    app.route_dynamic(base + "/undeploy").methods(crow::HTTPMethod::POST)(
+        [](const crow::request& req, crow::response& res) {
+            if (req.get_header_value("X-Pswd") != HASH) { res.code = 401; res.end(); return; }
+
+            rapidjson::Document doc;
+            if (doc.Parse(req.body.c_str()).HasParseError() || !doc.IsObject() ||
+                !doc.HasMember("DEVICE") || !doc["DEVICE"].IsObject() ||
+                !doc["DEVICE"].HasMember("name") || !doc["DEVICE"]["name"].IsString()) {
+                fail(res, 400, "expected a board JSON with DEVICE.name");
+                return;
+            }
+
+            const std::string dir  = env_or("CONBOARD_BOARDS_DIR", "/conboard/boards");
+            const std::string name = doc["DEVICE"]["name"].GetString();
+            const std::string sig  = tags_sig(doc);
+
+            // 1) Delete the on-device profile (tag-matched, else sanitize(name).json).
+            std::string removed;
+            if (DIR* d = opendir(dir.c_str())) {
+                for (dirent* e; (e = readdir(d)) != nullptr; ) {
+                    const std::string fn = e->d_name;
+                    if (fn.size() < 6 || fn.substr(fn.size() - 5) != ".json") continue;
+                    const std::string path = dir + "/" + fn;
+                    rapidjson::Document cand;
+                    if (cand.Parse(read_file(path).c_str()).HasParseError() || !cand.IsObject()) continue;
+                    if (!sig.empty() && tags_sig(cand) == sig) { removed = path; break; }
+                }
+                closedir(d);
+            }
+            if (removed.empty()) {
+                const std::string byName = dir + "/" + sanitize(name) + ".json";
+                std::ifstream f(byName); if (f.good()) removed = byName;
+            }
+            if (!removed.empty()) std::remove(removed.c_str());
+
+            // 2) Stop + remove the handler unit(s): "<base>.service" and "<base>-*.service".
+            const std::string sysd = env_or("CONBOARD_SYSTEMD_DIR", "/etc/systemd/system");
+            const std::string b = service_base(name);
+            bool stopped = false;
+            if (safe_unit(b) && env_or("CONBOARD_UNDEPLOY_STOP", "1") == "1") {
+                if (DIR* d = opendir(sysd.c_str())) {
+                    for (dirent* e; (e = readdir(d)) != nullptr; ) {
+                        const std::string fn = e->d_name;
+                        if (fn.size() < 9 || fn.substr(fn.size() - 8) != ".service") continue;
+                        const bool exact  = fn == b + ".service";
+                        const bool evdev  = fn.rfind(b + "-", 0) == 0;   // "<base>-<id>.service"
+                        if (!(exact || evdev) || !safe_unit(fn)) continue;
+                        const std::string cmd =
+                            "systemctl stop " + fn + " ; systemctl disable " + fn +
+                            " ; rm -f " + sysd + "/" + fn;
+                        std::system(cmd.c_str());
+                        stopped = true;
+                    }
+                    closedir(d);
+                }
+                if (stopped) std::system("systemctl daemon-reload");
+            }
+
+            rapidjson::StringBuffer sb;
+            rapidjson::Writer<rapidjson::StringBuffer> w(sb);
+            w.StartObject();
+            w.Key("removed"); w.String(removed.c_str());
+            w.Key("stopped"); w.Bool(stopped);
+            w.EndObject();
+            res.set_header("Content-Type", "application/json");
+            res.body = sb.GetString();
+            res.code = 200;
+            res.end();
+        });
+}
+
 }  // namespace conboard

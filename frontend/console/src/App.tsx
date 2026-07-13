@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { BOARDS as FIXTURE_BOARDS } from './fixtures/devices'
 import { BOARDS as REAL_BOARDS } from './fixtures/boards'
-import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, deployBoard, fetchDevices, ping, type AttachedDevice } from './api/client'
+import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, deployBoard, undeployBoard, fetchDevices, ping, type AttachedDevice } from './api/client'
 import type { Board } from './model/rules'
 import { decodeMidi, splitStatus } from './model/midi'
 import { validateBoards, type Rule, type DeviceType } from './model/rules'
@@ -217,6 +217,9 @@ export default function App() {
     setSaveState('saving')
     try {
       if (id != null) await deleteBoard(id)
+      // Also stop it on the device (remove the realtime profile + handler). Best-effort:
+      // the device may not be deployed / the backend may be off — don't block removal.
+      try { await undeployBoard(b) } catch (e) { console.warn('[conboard] undeploy skipped', e) }
       const newLen = boards.length - 1
       setBoards((bs) => bs.filter((_, k) => k !== idx))
       setBoardIds((ids) => ids.filter((_, k) => k !== idx))
@@ -588,16 +591,13 @@ export default function App() {
           onCreate={createFromDialog}
         />
       )}
-      {removeOpen && (
+      {removeOpen && device && (
         <RemoveDeviceDialog
-          devices={boards.map((b) => ({
-            name: b.DEVICE.name,
-            type: b.DEVICE.type,
-            rules: b.body.modes.reduce((n, m) => n + m.actions.length, 0),
-          }))}
-          presetIdx={devIdx}
+          deviceName={device.DEVICE.name}
+          deviceType={device.DEVICE.type}
+          rules={device.body.modes.reduce((n, m) => n + m.actions.length, 0)}
           onCancel={() => setRemoveOpen(false)}
-          onRemove={performRemove}
+          onConfirm={() => performRemove(devIdx)}
         />
       )}
     </div>

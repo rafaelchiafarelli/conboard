@@ -123,6 +123,22 @@ export async function deployBoard(board: Board): Promise<{ written: string; relo
 }
 
 /**
+ * Remove a board profile FROM the device's realtime path (the inverse of deploy):
+ * deletes the matching boards/*.json and stops its handler service, so the hardware
+ * stops sending. Separate from the library delete because the realtime path is
+ * decoupled from the DB (see memory conboard-rules-db-architecture).
+ */
+export async function undeployBoard(board: Board): Promise<{ removed: string; stopped: boolean }> {
+  const res = await fetch(`${BASE}/undeploy`, {
+    method: 'POST',
+    headers: { 'X-User': 'deploy', 'X-Pswd': HASH, 'Content-Type': 'application/json' },
+    body: JSON.stringify(board),
+  })
+  if (!res.ok) throw new Error(`undeploy -> ${res.status}`)
+  return res.json()
+}
+
+/**
  * One attached device as the backend's inventory endpoint (GET /devices) reports it.
  * `type` is '' when the device is actionable but unclassified; `designated` is true
  * when a boards/*.json profile already matches it (so the add-device flow offers only

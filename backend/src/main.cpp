@@ -95,6 +95,7 @@ int main() {
     // Axis C: deploy an authored profile to the realtime path (write boards/*.json +
     // reload). Hand-written, not a harpia entity.
     conboard::register_deploy(app, api_base);
+    conboard::register_undeploy(app, api_base);
 
     // Device inventory for the console's add-device flow. Hand-written.
     conboard::register_devices(app, api_base);

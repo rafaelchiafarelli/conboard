@@ -42,6 +42,10 @@ void register_output_action(Registrar&);
 // src/deploy.cpp.
 void register_deploy(crow::SimpleApp& app, const std::string& base);
 
+// Inverse of deploy: POST <base>/undeploy with a board JSON removes its on-device
+// profile file and stops its handler service (so the hardware stops). src/deploy.cpp.
+void register_undeploy(crow::SimpleApp& app, const std::string& base);
+
 // Device inventory: GET <base>/devices lists attached USB/input devices, classifies
 // each by type, and marks whether a boards/*.json profile already matches it (so the
 // console can offer the undesignated ones in its add-device flow). Hand-written; uses
