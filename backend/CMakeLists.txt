@@ -47,6 +47,7 @@ add_executable(conboard_backend
 )
 target_include_directories(conboard_backend PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../LowLevel/Common/include  # rapidjson (deploy.cpp)
     ${GENCPP}                       # db/ json/ rest/ grpc/ protofiles/ ...
     ${GEN}/third_party/crow         # header-only Crow (REST + websocket)
     ${GEN}/third_party/asio         # standalone asio (Crow transport)

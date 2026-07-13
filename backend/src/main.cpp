@@ -92,6 +92,10 @@ int main() {
         return 1;
     }
 
+    // Axis C: deploy an authored profile to the realtime path (write boards/*.json +
+    // reload). Hand-written, not a harpia entity.
+    conboard::register_deploy(app, api_base);
+
     CROW_ROUTE(app, "/healthz")([]{ return "ok"; });
 
     // ---- Websocket seam for the dispatcher event relay ----------------------

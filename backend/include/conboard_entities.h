@@ -36,4 +36,10 @@ void register_rule(Registrar&);
 void register_trigger(Registrar&);
 void register_output_action(Registrar&);
 
+// Axis C: deploy an authored profile to the realtime path. Not a harpia entity --
+// hand-written. POST <base>/deploy with a board JSON (the boards/*.json shape);
+// writes it into the on-device boards dir and triggers a handler reload. Defined in
+// src/deploy.cpp.
+void register_deploy(crow::SimpleApp& app, const std::string& base);
+
 }  // namespace conboard
