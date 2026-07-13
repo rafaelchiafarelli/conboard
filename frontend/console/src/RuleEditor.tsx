@@ -15,7 +15,7 @@ import type {
   HoldMode,
   OutputAction,
 } from './model/rules'
-import { decodeMidi, MESSAGE_NAMES, isCC, splitStatus, makeStatus } from './model/midi'
+import { decodeMidi, MESSAGE_NAMES, isCC, splitStatus, makeStatus, MIDI_MODES, midiModeInfo } from './model/midi'
 import {
   KEY_TOKEN_GROUPS,
   codeGroupsFor,
@@ -162,6 +162,7 @@ function MidiTriggerFields({ input, onEdit }: { input: MidiTrigger; onEdit: () =
   const { channel } = splitStatus(input.b0)
   const cc = isCC(input.b0)
   const d = decodeMidi(input.b0, input.b1, input.b2)
+  const mi = midiModeInfo(input.mode)
 
   const patch = (p: Partial<MidiTrigger>) => {
     Object.assign(input, p)
@@ -200,8 +201,20 @@ function MidiTriggerFields({ input, onEdit }: { input: MidiTrigger; onEdit: () =
           <input type="number" min={0} max={127} value={input.b1} onChange={(e) => patch({ b1: clamp(e.target.value) })} />
         </div>
         <div className="field">
-          <label>{cc ? 'Value' : 'Velocity (data 2)'}</label>
-          <input type="number" min={0} max={127} value={input.b2} onChange={(e) => patch({ b2: clamp(e.target.value) })} />
+          <label>{cc ? mi.b2Label.replace('Velocity / value (data 2)', 'Value') : mi.b2Label}</label>
+          <input type="number" min={0} max={127} value={input.b2}
+                 className={mi.b2Ignored ? 'dim' : undefined}
+                 onChange={(e) => patch({ b2: clamp(e.target.value) })} />
+        </div>
+        <div className="field">
+          <label>Operation mode</label>
+          <select value={input.mode ?? 'normal'}
+                  onChange={(e) => patch({ mode: e.target.value === 'normal' ? undefined : (e.target.value as MidiTrigger['mode']) })}>
+            {MIDI_MODES.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+          <span className="hint">{mi.hint}</span>
         </div>
       </div>
       <div className="bytechip">
@@ -209,6 +222,7 @@ function MidiTriggerFields({ input, onEdit }: { input: MidiTrigger; onEdit: () =
         <b>
           {d.human} · {d.detail}
         </b>
+        {input.mode && input.mode !== 'normal' && <span className="mode-tag">{mi.label}</span>}
       </div>
     </>
   )
