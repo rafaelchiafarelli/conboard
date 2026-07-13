@@ -113,10 +113,10 @@ RUN --mount=type=cache,target=/ccache \
 # large, and under QEMU emulation each g++ is very RAM-hungry. On a high-core host,
 # -j $(nproc) launches dozens at once, exhausts memory, and emulated exec() starts
 # failing with exit code 126 (observed on a many-core builder). BACKEND_JOBS caps
-# it: 8 suits an 8-core/32G+ builder; lower it (--build-arg BACKEND_JOBS=4) if the
-# emulated backend build OOMs on a leaner host. Note per-file emulation overhead
+# it: 16 suits a 16-core/64G+ builder; lower it (--build-arg BACKEND_JOBS=8 or 4) if
+# the emulated backend build OOMs on a leaner host. Note per-file emulation overhead
 # dominates, so higher -j mainly helps throughput when RAM allows.
-ARG BACKEND_JOBS=8
+ARG BACKEND_JOBS=16
 RUN --mount=type=cache,target=/ccache \
     JOBS="$(nproc)"; if [ "$JOBS" -gt "${BACKEND_JOBS}" ]; then JOBS="${BACKEND_JOBS}"; fi; \
     echo "backend build with -j $JOBS (cap ${BACKEND_JOBS}, QEMU memory safety)"; \

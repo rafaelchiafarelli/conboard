@@ -155,6 +155,9 @@ header .stage { margin-left: auto; font-family: var(--mono); font-size: 10.5px; 
 .btn.ghost { background: transparent; }
 .btn.danger-ghost { background: transparent; border-color: transparent; color: var(--ink-faint); padding: 6px 9px; }
 .btn.danger-ghost:hover { color: var(--danger); border-color: #4a2a28; }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #1a0a08; }
+.btn.danger:hover { filter: brightness(1.08); }
+.btn.danger:disabled { background: var(--panel-2); border-color: var(--line); color: var(--ink-faint); cursor: default; filter: none; }
 
 .section { border: 1px solid var(--line-soft); border-radius: 10px; background: var(--panel); margin-bottom: 16px; overflow: hidden; }
 .section > .sec-head { display: flex; align-items: center; gap: 10px; padding: 12px 15px; border-bottom: 1px solid var(--line-soft); background: linear-gradient(180deg, #1d222a, #191d24); }
