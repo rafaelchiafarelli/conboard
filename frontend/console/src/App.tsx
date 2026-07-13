@@ -8,6 +8,7 @@ import { validateBoards, type Rule, type DeviceType } from './model/rules'
 import RuleEditor from './RuleEditor'
 import Monitor from './Monitor'
 import AddDeviceDialog from './AddDeviceDialog'
+import RemoveDeviceDialog from './RemoveDeviceDialog'
 import LiveDock from './LiveDock'
 
 /** A board is "connected" when an attached device carries all of its match tags. */
@@ -57,6 +58,7 @@ function OutputSummary({ rule }: { rule: Rule }) {
 export default function App() {
   const [view, setView] = useState<View>('rules')
   const [addOpen, setAddOpen] = useState(false) // add-device dialog (item 7)
+  const [removeOpen, setRemoveOpen] = useState(false) // remove-device dialog (item 4)
   const [liveDevIdx, setLiveDevIdx] = useState<number | null>(null) // per-device live dock (item 2)
   const [attached, setAttached] = useState<AttachedDevice[]>([])    // attached hw, for connection LEDs
   const [devIdx, setDevIdx] = useState(0)
@@ -203,20 +205,32 @@ export default function App() {
       setDeployState('error')
     }
   }
-  const deleteDevice = async () => {
-    if (!device) return
-    if (boards.length <= 1) { window.alert('Cannot delete the last device.'); return }
-    if (!window.confirm(`Delete device "${device.DEVICE.name}" and all its rules?`)) return
-    const id = boardIds[devIdx]
-    const di = devIdx
+  // Remove a device (item 4): the last device CAN be removed now (empty state is
+  // handled in the render). Deletes from the backend library, then updates local
+  // state and reselects a still-valid neighbour.
+  const performRemove = async (idx: number) => {
+    setRemoveOpen(false)
+    const b = boards[idx]
+    if (!b) return
+    const id = boardIds[idx]
     setSaveState('saving')
     try {
       if (id != null) await deleteBoard(id)
-      setBoards((bs) => bs.filter((_, k) => k !== di))
-      setBoardIds((ids) => ids.filter((_, k) => k !== di))
-      select(Math.max(0, di - 1), 0, 0)
+      const newLen = boards.length - 1
+      setBoards((bs) => bs.filter((_, k) => k !== idx))
+      setBoardIds((ids) => ids.filter((_, k) => k !== idx))
+      // Reselect: the device that shifted into `idx`, else the last remaining one.
+      const ni = newLen <= 0 ? 0 : Math.min(idx, newLen - 1)
+      setDevIdx(ni); setModeIdx(0); setRuleIdx(0)
+      snapshot.current = null; setDirty(false)
+      // Keep the live dock pointed at the right board (indices shift on removal).
+      setLiveDevIdx((li) => (li == null ? null : li === idx ? null : li > idx ? li - 1 : li))
       setSaveState('saved')
-    } catch (e) { console.error('[conboard] delete board failed', e); setSaveState('error') }
+    } catch (e) {
+      console.error('[conboard] delete board failed', e)
+      setSaveState('error')
+      window.alert(`Could not delete "${b.DEVICE.name}": ${(e as Error).message}`)
+    }
   }
 
   // Load boards from the backend rules-library once. If the backend is up but missing
@@ -230,11 +244,12 @@ export default function App() {
       try {
         if (await ping()) {
           let loaded = await fetchBoards()
-          const have = new Set(loaded.map((l) => l.board.DEVICE.name))
-          const missing = REAL_BOARDS.filter((b) => !have.has(b.DEVICE.name))
-          if (missing.length && !cancelled) {
+          // Seed the library from the bundled boards ONLY when it is empty (first run).
+          // Topping up "missing" boards on every load would resurrect ones the user
+          // deleted — which is exactly why a deleted device used to reappear on reload.
+          if (loaded.length === 0 && !cancelled) {
             setSource('seeding')
-            for (const b of missing) {
+            for (const b of REAL_BOARDS) {
               try {
                 await saveBoard(b, null)
               } catch (e) {
@@ -340,7 +355,7 @@ export default function App() {
           <div className="dev-tools">
             <button className="btn ghost" onClick={() => setAddOpen(true)} title="Add a device (pick an attached one or enter manually)">＋ New</button>
             <button className="btn ghost" onClick={copyDevice} title="Copy this device's rule set to a new device (A→B)">⧉ Copy</button>
-            <button className="btn danger-ghost" onClick={deleteDevice} title="Delete this device and its rules">🗑 Delete</button>
+            <button className="btn danger-ghost" onClick={() => setRemoveOpen(true)} title="Remove a device from the library" disabled={!boards.length}>🗑 Remove</button>
           </div>
           {DEVICE_GROUPS.map((g) => {
             const items = boards.map((b, i) => ({ b, i })).filter((x) => x.b.DEVICE.type === g.type)
@@ -384,6 +399,15 @@ export default function App() {
           })}
         </nav>
 
+        {!device ? (
+          <div className="empty-editor" style={{ flex: 1 }}>
+            <div>
+              <div className="big">No devices</div>
+              Click <b>＋ New</b> in the rail to add one.
+            </div>
+          </div>
+        ) : (
+        <>
         <section className="list" aria-label="Rules">
           <div className="list-head">
             <div className="dev-title">{device.DEVICE.name}</div>
@@ -541,6 +565,8 @@ export default function App() {
             onClose={() => setLiveDevIdx(null)}
           />
         )}
+        </>
+        )}
       </div>
 
       {addOpen && (
@@ -549,6 +575,18 @@ export default function App() {
           existingNames={boards.map((b) => b.DEVICE.name)}
           onCancel={() => setAddOpen(false)}
           onCreate={createFromDialog}
+        />
+      )}
+      {removeOpen && (
+        <RemoveDeviceDialog
+          devices={boards.map((b) => ({
+            name: b.DEVICE.name,
+            type: b.DEVICE.type,
+            rules: b.body.modes.reduce((n, m) => n + m.actions.length, 0),
+          }))}
+          presetIdx={devIdx}
+          onCancel={() => setRemoveOpen(false)}
+          onRemove={performRemove}
         />
       )}
     </div>
