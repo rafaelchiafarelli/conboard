@@ -35,6 +35,24 @@ for unit in usb-otg launcher dispatcher backend frontend; do
     systemctl stop "${unit}.service" 2>/dev/null || true
 done
 
+echo "== removing stale auto-generated per-device services =="
+# The launcher writes one unit per matched device (Description="auto generated
+# service file."). These are NOT part of the artifact, so nothing else cleans them,
+# and a lingering/stale one makes the launcher `systemctl restart` an OLD config
+# instead of writing a fresh unit (a dead handler after re-install -- e.g. a MIDI
+# device that stops sending). Wipe them so every install regenerates them clean.
+for f in /etc/systemd/system/*.service; do
+    [ -e "$f" ] || continue
+    if grep -q "auto generated service file" "$f" 2>/dev/null; then
+        u="$(basename "$f")"
+        systemctl stop "$u" 2>/dev/null || true
+        systemctl disable "$u" 2>/dev/null || true
+        rm -f "$f"
+        echo "   removed stale $u"
+    fi
+done
+systemctl daemon-reload 2>/dev/null || true
+
 echo "== copying program tree to /conboard =="
 mkdir -p /conboard
 # Copy everything except the installer/uninstaller and the manifest. Preserve the

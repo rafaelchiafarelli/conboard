@@ -10,7 +10,6 @@ import Monitor from './Monitor'
 import AddDeviceDialog from './AddDeviceDialog'
 import RemoveDeviceDialog from './RemoveDeviceDialog'
 import CopyDeviceDialog from './CopyDeviceDialog'
-import LiveDock from './LiveDock'
 
 // Deletion tombstone: names the user explicitly removed. Seeding tops up the bundled
 // real boards that are MISSING and NOT tombstoned — so real devices appear on a fresh
@@ -71,11 +70,9 @@ function OutputSummary({ rule }: { rule: Rule }) {
 }
 
 export default function App() {
-  const [showMonitor, setShowMonitor] = useState(false) // full live monitor overlay (item 6)
   const [addOpen, setAddOpen] = useState(false) // add-device dialog (item 7)
   const [removeOpen, setRemoveOpen] = useState(false) // remove-device dialog (item 4)
   const [copyOpen, setCopyOpen] = useState(false) // copy-device dialog
-  const [liveDevIdx, setLiveDevIdx] = useState<number | null>(null) // per-device live dock (item 2)
   const [attached, setAttached] = useState<AttachedDevice[]>([])    // attached hw, for connection LEDs
   const [devIdx, setDevIdx] = useState(0)
   const [modeIdx, setModeIdx] = useState(0)
@@ -249,8 +246,6 @@ export default function App() {
       const ni = newLen <= 0 ? 0 : Math.min(idx, newLen - 1)
       setDevIdx(ni); setModeIdx(0); setRuleIdx(0)
       snapshot.current = null; setDirty(false)
-      // Keep the live dock pointed at the right board (indices shift on removal).
-      setLiveDevIdx((li) => (li == null ? null : li === idx ? null : li > idx ? li - 1 : li))
       setSaveState('saved')
     } catch (e) {
       console.error('[conboard] delete board failed', e)
@@ -369,31 +364,6 @@ export default function App() {
       <header>
         <span className="mark">conboard</span>
         <span className="sub">console</span>
-        <span className="head-live">
-          {/* Per-device live toggle for the SELECTED device (items 2/5), on the right
-              of the page. Enabled only when it's connected (heartbeat O5, USB fallback);
-              opens the live-events panel on the right of the working area. */}
-          {device && (() => {
-            const conn = liveBus.isLive(device.DEVICE.name) || boardConnected(device, attached)
-            const watching = liveDevIdx === devIdx
-            return (
-              <button
-                className={`live-btn${watching ? ' on' : ''}`}
-                disabled={!conn}
-                title={conn ? (watching ? 'Stop watching this device’s live events' : 'Watch this device’s live events')
-                            : 'Device not detected as connected'}
-                onClick={() => setLiveDevIdx(watching ? null : devIdx)}
-              >
-                <span className={`led${watching ? ' on' : ''}`} />
-                live · {device.DEVICE.name}
-              </button>
-            )
-          })()}
-          <button className={`monitor-toggle${showMonitor ? ' on' : ''}`} onClick={() => setShowMonitor((s) => !s)}
-                  title="Show the full live monitor (all devices)">
-            <span className={`led${showMonitor ? ' on' : ''}`} /> Live monitor
-          </button>
-        </span>
         <span className="stage">
           {source === 'loading' ? 'connecting…' : source === 'seeding' ? 'seeding library…' : source === 'backend' ? 'live · backend' : 'live fixtures'}
           {saveState === 'saving' && ' · saving…'}
@@ -601,26 +571,15 @@ export default function App() {
             </div>
           )}
         </main>
-
-        {/* Per-device live events open on the RIGHT of the working area, beside the
-            editor — they don't replace it (items 2/5). */}
-        {liveDevIdx != null && boards[liveDevIdx] && (
-          <LiveDock
-            deviceName={boards[liveDevIdx].DEVICE.name}
-            connected={liveBus.isLive(boards[liveDevIdx].DEVICE.name) || boardConnected(boards[liveDevIdx], attached)}
-            onClose={() => setLiveDevIdx(null)}
-          />
-        )}
         </>
         )}
-      </div>
 
-      {/* Full live monitor (all devices) — the single toggle "on top" (item 6). */}
-      {showMonitor && (
-        <div className="monitor-overlay">
-          <Monitor boards={boards} onClose={() => setShowMonitor(false)} />
-        </div>
-      )}
+        {/* Live events — a PERMANENT column on the right of the rule editor, showing
+            all devices' real-time events. Not an overlay, not toggled. */}
+        <aside className="live-col">
+          <Monitor boards={boards} />
+        </aside>
+      </div>
 
       {addOpen && (
         <AddDeviceDialog

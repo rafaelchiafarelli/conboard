@@ -347,6 +347,11 @@ input.dim { opacity: .5; }
 .sender-chip .sender-name { font-weight: 600; }
 .sender-chip.big .type-badge { font-size: 9px; }
 
+/* ---------- live events: permanent right column (all devices) ---------- */
+.work > .live-col { flex: none; width: 400px; min-width: 280px; max-width: 48vw; resize: horizontal; overflow: hidden; border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+.live-col > .monitor { flex: 1; min-height: 0; padding: 12px 14px; }
+.live-col .feed-scroll { overflow-x: auto; }
+
 /* ---------- crash screen (ErrorBoundary) ---------- */
 .crash { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--ground); }
 .crash-card { width: min(760px, 100%); background: var(--panel); border: 1px solid var(--danger); border-radius: 12px; padding: 22px 24px; box-shadow: 0 0 0 1px var(--danger), 0 20px 60px rgba(0,0,0,.4); }
