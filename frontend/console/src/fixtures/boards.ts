@@ -1,8 +1,8 @@
-// Fixtures generated verbatim from the real board files: boards/Arduino_Micro.json,
-// boards/Dj4Mix.json (MIDI) and boards/Xbox360.json (joystick, from origin/main — the
-// on-device runtime source of truth). Complete configs, not trimmed. Regenerate from the
-// source JSON rather than hand-editing. Fake keyboard/mouse devices for UI testing live
-// in fakeKeyboards.ts / fakeMice.ts; fixtures/devices.ts aggregates real + fake.
+// The bundled REAL board profiles, verbatim from the on-device board files:
+// boards/Arduino_Micro.json, boards/Dj4Mix.json (MIDI) and boards/Xbox360.json
+// (joystick). These are the only fixtures — no fake/test devices exist. Used to seed
+// an empty backend library and as the offline fallback. Regenerate from the source
+// JSON rather than hand-editing.
 //
 // Shape matches ../model/rules.ts one-to-one, so the JSON drops straight in as Board[].
 

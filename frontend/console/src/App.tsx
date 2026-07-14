@@ -9,6 +9,7 @@ import RuleEditor from './RuleEditor'
 import Monitor from './Monitor'
 import AddDeviceDialog from './AddDeviceDialog'
 import RemoveDeviceDialog from './RemoveDeviceDialog'
+import CopyDeviceDialog from './CopyDeviceDialog'
 import LiveDock from './LiveDock'
 
 // Deletion tombstone: names the user explicitly removed. Seeding tops up the bundled
@@ -73,6 +74,7 @@ export default function App() {
   const [showMonitor, setShowMonitor] = useState(false) // full live monitor overlay (item 6)
   const [addOpen, setAddOpen] = useState(false) // add-device dialog (item 7)
   const [removeOpen, setRemoveOpen] = useState(false) // remove-device dialog (item 4)
+  const [copyOpen, setCopyOpen] = useState(false) // copy-device dialog
   const [liveDevIdx, setLiveDevIdx] = useState<number | null>(null) // per-device live dock (item 2)
   const [attached, setAttached] = useState<AttachedDevice[]>([])    // attached hw, for connection LEDs
   const [devIdx, setDevIdx] = useState(0)
@@ -198,14 +200,18 @@ export default function App() {
       }
     } catch (e) { console.error('[conboard] create board failed', e); setSaveState('error') }
   }
-  const copyDevice = async () => {
+  const copyFromDialog = async (newName: string) => {
+    setCopyOpen(false)
     if (!device) return
-    const name = window.prompt(`Copy "${device.DEVICE.name}" to new device name?`, `${device.DEVICE.name} copy`)?.trim()
-    if (!name) return
-    const clone: Board = { ...structuredClone(device), DEVICE: { ...device.DEVICE, name } }
+    untombstone(newName)
+    const clone: Board = { ...structuredClone(device), DEVICE: { ...device.DEVICE, name: newName } }
     setSaveState('saving')
-    try { addBoardLocal(clone, await copyBoard(device, { name })); setSaveState('saved') }
-    catch (e) { console.error('[conboard] copy board failed', e); setSaveState('error') }
+    try { addBoardLocal(clone, await copyBoard(device, { name: newName })); setSaveState('saved') }
+    catch (e) {
+      console.error('[conboard] copy board failed', e)
+      setSaveState('error')
+      window.alert(`Could not copy "${device.DEVICE.name}": ${(e as Error).message}`)
+    }
   }
   // Axis C: push this device's saved profile to the realtime path (writes boards/*.json
   // on the device + reloads the handler). The Board model IS the boards/*.json shape.
@@ -401,7 +407,7 @@ export default function App() {
           <span className="lbl">Devices</span>
           <div className="dev-tools">
             <button className="btn ghost" onClick={() => setAddOpen(true)} title="Add a device (pick an attached one or enter manually)">＋ New</button>
-            <button className="btn ghost" onClick={copyDevice} title="Copy this device's rule set to a new device (A→B)">⧉ Copy</button>
+            <button className="btn ghost" onClick={() => setCopyOpen(true)} title="Copy this device's rule set to a new device (A→B)" disabled={!device}>⧉ Copy</button>
             <button className="btn danger-ghost" onClick={() => setRemoveOpen(true)} title="Remove a device from the library" disabled={!boards.length}>🗑 Remove</button>
           </div>
           {DEVICE_GROUPS.map((g) => {
@@ -631,6 +637,14 @@ export default function App() {
           rules={device.body.modes.reduce((n, m) => n + m.actions.length, 0)}
           onCancel={() => setRemoveOpen(false)}
           onConfirm={() => performRemove(devIdx)}
+        />
+      )}
+      {copyOpen && device && (
+        <CopyDeviceDialog
+          sourceName={device.DEVICE.name}
+          existingNames={boards.map((b) => b.DEVICE.name)}
+          onCancel={() => setCopyOpen(false)}
+          onCopy={copyFromDialog}
         />
       )}
     </div>
