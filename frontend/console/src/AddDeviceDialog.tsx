@@ -17,14 +17,6 @@ const EXEC: Record<DeviceType, string> = {
   mouse: '/conboard/LowLevel/Mouse/build/conMouse',
 }
 
-// Dev-only stand-ins so the flow is exercisable in `npm run dev` with no backend.
-const MOCK: AttachedDevice[] = [
-  { name: 'Xbox 360 Controller', type: 'joystick', vid: '045e', pid: '028e', serial: '', devpath: '/devices/…/3-1.2',
-    designated: false, profile: '', tags: { ID_MODEL: 'Xbox_360_Controller', ID_VENDOR_ID: '045e', ID_MODEL_ID: '028e', ID_BUS: 'usb' } },
-  { name: 'nanoKONTROL2', type: 'midi', vid: '0944', pid: '0117', serial: '', devpath: '/devices/…/3-1.3',
-    designated: false, profile: '', tags: { ID_MODEL: 'nanoKONTROL2', ID_VENDOR_ID: '0944', ID_MODEL_ID: '0117', ID_BUS: 'usb' } },
-]
-
 function buildBoard(name: string, type: DeviceType, tags: Record<string, string>): Board {
   const hasTags = Object.keys(tags).length > 0
   return {
@@ -52,7 +44,7 @@ export default function AddDeviceDialog({
   onCreate: (board: Board, deploy: boolean) => void
 }) {
   const [devices, setDevices] = useState<AttachedDevice[] | null>(null)
-  const [source, setSource] = useState<'loading' | 'live' | 'mock' | 'offline'>('loading')
+  const [source, setSource] = useState<'loading' | 'live' | 'offline'>('loading')
   // selection: an attached device, or 'manual', or null (nothing picked yet)
   const [pick, setPick] = useState<AttachedDevice | 'manual' | null>(null)
   const [name, setName] = useState('')
@@ -67,11 +59,9 @@ export default function AddDeviceDialog({
         setDevices(all.filter((d) => !d.designated))
         setSource('live')
       } catch {
-        if (cancelled) return
-        // Dev server: show mocks so the flow can be exercised; on a real board a
-        // failed fetch just means "no inventory" -> manual entry only.
-        if ((import.meta as { env?: { DEV?: boolean } }).env?.DEV) { setDevices(MOCK); setSource('mock') }
-        else { setDevices([]); setSource('offline') }
+        // No inventory endpoint (backend off / not on device): manual entry only. No
+        // fake devices are ever shown.
+        if (!cancelled) { setDevices([]); setSource('offline') }
       }
     })()
     return () => { cancelled = true }
@@ -109,7 +99,7 @@ export default function AddDeviceDialog({
           <div className="ad-section-label">
             Attached devices without a profile
             <span className={`ad-src ${source}`}>
-              {source === 'loading' ? 'scanning…' : source === 'live' ? 'live' : source === 'mock' ? 'demo data' : 'backend offline'}
+              {source === 'loading' ? 'scanning…' : source === 'live' ? 'live' : 'backend offline'}
             </span>
           </div>
 
