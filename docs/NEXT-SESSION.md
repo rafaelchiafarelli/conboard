@@ -1,4 +1,43 @@
-# conboard — next-session handoff (2026-07-10)
+# conboard — next-session handoff (2026-07-13)
+
+All console-bug work is on branch **`integration/console-fixes`** (pushed). It stacks
+the console fixes + item-8 backend regen + Cluster B/D + the live rework. Build it with
+`./build-cross.sh zero3` (now `-j16` via `BACKEND_JOBS`).
+
+## ⚠️ Do a CLEAN SLATE on the board before trusting anything
+Stale on-device state was the real cause of "delete doesn't work / DJ-Tech stopped":
+- The launcher writes one **auto-generated `<devname>.service`** per device. Nothing
+  used to remove them, so a stale unit got `systemctl restart`ed with an old
+  `ExecStart`/JSON → dead handler after re-install. **Fixed** — install + uninstall now
+  wipe units whose `Description="auto generated service file."`.
+- The **SQLite DB** (`/conboard/backend/data`) is preserved across installs by design;
+  stale/duplicate rows linger. `uninstall --purge` wipes it.
+- `boards/*.json` ARE reset by install (rsync `--delete` + the artifact ships the 3 real).
+
+**Recovery procedure (run on the board):**
+```sh
+sudo ./uninstall-on-device.sh --purge      # program + DB + (now) stale per-device units
+# rebuild the fresh artifact on the build host, copy it over, then:
+sudo ./install-on-device.sh                # seeds a clean DB; launcher regenerates units
+# verify no stale services survived:
+grep -l "auto generated service file" /etc/systemd/system/*.service   # should print nothing
+systemctl status "$(systemctl list-units --type=service | grep -i dj || true)"  # DJ-Tech unit healthy?
+```
+
+## Still needs on-board verification / a dispatcher change
+- **Delete**: backend DELETE is correct (204) + frontend tombstone persists deletions;
+  confirm on a CLEAN DB that delete removes the row and (via `/undeploy`) stops the
+  handler. If a device still shows after delete+reload on a clean DB, capture
+  `curl -s -X DELETE -H "X-User:board" -H "X-Pswd:<hash>" localhost:8080/api/v1/board/<id>`.
+- **DJ-Tech events**: with clean services + the conMIDI open-retry fix, confirm it sends.
+- **Live monitor sender name/type + per-device filtering + heartbeat LEDs**: these light
+  up only once the dispatcher emits the **`HB,<uuid>,<devname>`** frame — INTERFACE.md
+  **O5 (NEEDS ACK)**. The console consumes it with fallback today.
+- **Live events** are now a permanent RIGHT column (all devices), not an overlay.
+
+---
+
+# conboard — earlier handoff (2026-07-10)
 
 Quick-start for the session that will **fix the remaining console bugs**. Pairs with the
 project memory `conboard-backend-wireup` (auto-loaded). Read this first, then the memory.
