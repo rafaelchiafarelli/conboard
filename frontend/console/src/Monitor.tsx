@@ -29,7 +29,7 @@ const short = (id: string) => (id.length > 10 ? id.slice(0, 8) + '…' : id)
 
 interface Sender { id: string; lastSeen: number }
 
-export default function Monitor({ boards, onClose }: { boards: Board[]; onClose: () => void }) {
+export default function Monitor({ boards, onClose }: { boards: Board[]; onClose?: () => void }) {
   const [events, setEvents] = useState<DeviceEvent[]>([])
   const [paused, setPaused] = useState(false)
   const [filter, setFilter] = useState('all')
@@ -108,7 +108,7 @@ export default function Monitor({ boards, onClose }: { boards: Board[]; onClose:
           <button className="btn" onClick={() => setPaused((p) => !p)}>{paused ? '▶ Resume' : '⏸ Pause'}</button>
           <button className="btn ghost" onClick={() => { setEvents([]); sendersRef.current = []; setFilter('all'); bump() }}
                   disabled={!events.length && !senders.length}>Clear</button>
-          <button className="btn ghost" onClick={onClose} title="Close the live monitor">✕ Close</button>
+          {onClose && <button className="btn ghost" onClick={onClose} title="Close the live monitor">✕ Close</button>}
         </div>
       </div>
 

@@ -31,6 +31,19 @@ echo "== removing systemd unit files =="
 for u in "${UNITS[@]}"; do
     rm -f "/etc/systemd/system/${u}.service"
 done
+# Also remove the launcher's auto-generated per-device units (one per matched
+# device). Nothing else tracks these, so without this they linger forever and a
+# stale one breaks the next install's handler for that device.
+for f in /etc/systemd/system/*.service; do
+    [ -e "$f" ] || continue
+    if grep -q "auto generated service file" "$f" 2>/dev/null; then
+        u="$(basename "$f")"
+        systemctl stop "$u" 2>/dev/null || true
+        systemctl disable "$u" 2>/dev/null || true
+        rm -f "$f"
+        echo "   removed auto-generated $u"
+    fi
+done
 systemctl daemon-reload
 systemctl reset-failed 2>/dev/null || true
 
