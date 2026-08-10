@@ -1,0 +1,27 @@
+
+on object mode
+s - scale object
+g - grab
+    x - direction x
+    y - direction y
+    z - direction z
+a - select all
+shift+a --> add mesh
+numpad / --> isolate item
+
+shift+c --> send the origin to the origin of the scene
+
+shift + tab - enable/disable snaping 
+shift + space --> show tool bar
+x --> delete object
+tag --> change between object and edit modes
+
+shift MMB (midle mouse button)
+
+on edit mode
+    shift + space --> show tool bar
+    1 - vertex selection
+    2 - edges selection
+    3 - face selection
+
+    s - scale selection

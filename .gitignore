@@ -41,6 +41,7 @@ frontend/venv/
 *.pyc
 *__pycache__
 .vscode/
+.claude/
 
 scripts/Python-3.8.0.tgz
 scripts/Python-3.8.0/
