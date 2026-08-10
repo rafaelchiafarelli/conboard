@@ -86,7 +86,10 @@ Then confirm the gadget can bind:
 
 ```bash
 ls /sys/class/udc        # must be non-empty (e.g. 5100000.usb on the H618)
-systemctl status usb-otg.service dispatcher.service launcher.service
+systemctl status usb-otg.service dispatcher.service launcher.service backend.service
+curl -s localhost:8080/healthz   # backend management API, direct
+curl -s localhost/healthz        # via nginx — same origin as the console UI
+open http://<board-ip>/          # the console
 ```
 
 > ⚠️ **Zero 3 hardware caveat:** the H618's USB-OTG controller is left *disabled*
@@ -97,10 +100,19 @@ systemctl status usb-otg.service dispatcher.service launcher.service
 ## What's in the artifact
 
 - Binaries: `libcommon.so`, `launcher`, `dispatcher`, `conMIDI`, `conMouse`, `conKeyB`, `conJoyS`
-- systemd units: `usb-otg`, `launcher`, `dispatcher`, `frontend`
+- The C++ **backend** (`conboard_backend`) — management REST/gRPC API over an
+  embedded SQLite rules library, built via a separate `cmake`/`ninja` pass in the
+  same Dockerfile stage (see `docker/Dockerfile`'s `backend/` block). Its runtime
+  `.so` closure is bundled into `lib/` alongside the device handlers' — the whole
+  artifact needs **no `apt install` on the board**.
+- The built **console** SPA (`frontend/console/`, Vite + React) — compiled in its own
+  arch-independent Dockerfile stage (`FROM node:22-alpine AS frontend`, runs on the
+  build host, not under QEMU) and copied into `frontend/` in the artifact.
+- systemd units: `usb-otg`, `launcher`, `dispatcher`, `backend`
+- nginx site (`backend/assets/interface.conf`) — serves the console SPA at `/` and
+  reverse-proxies `/api/v1` + `/ws` to the backend and `/websocket` to the dispatcher.
+  Installed only if `nginx` is already present on the board (`install-on-device.sh`
+  warns and continues headless if not).
 - `100-usb.rules` + `event_handler.sh` (udev hotplug)
 - `scripts/` (USB gadget scripts), `boards/` (device JSON), `dispatcher` `config.json`
 - `install-on-device.sh`, `MANIFEST.txt`
-
-The python frontend (`backend/`) is not built here; set up its venv per
-`scripts/install.sh` `install_frontend`.

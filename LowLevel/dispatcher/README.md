@@ -1,3 +1,8 @@
+> **Superseded by [`../../INTERFACE.md`](../../INTERFACE.md).** This was an early
+> planning note; `INTERFACE.md` §3 documents the dispatcher's actual implemented
+> Crow routes (`/config`, `/iocommand`, `/screencommand`, `/ws`) and is kept current
+> against `src/main.cpp`. Kept here as the original design intent.
+
 # IO API
 * API's related to the devices, including show whitch devices are installed (that have a json file), witch are active (with it's service running). Also, this API's inform the user of any action toke by the user, such ass clicking, tapping, moving, etc. In this case, this means that the API will have access to the Unique Number of the device and give information about it (witch json it uses?)
 * To clarify, this API may or may not be directly used by the user. In case the user does not have access to this API, they must be firewalled. 

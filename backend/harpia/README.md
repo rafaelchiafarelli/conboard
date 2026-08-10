@@ -40,7 +40,7 @@ each with a `kind` discriminant enum plus optional per-variant fields:
 
 | message (`_table`) | mirrors `rules.ts` | notes |
 |---|---|---|
-| `trigger` | `Trigger` (`Midi`/`Evdev`) | `kind` = `tk_midi`/`tk_evdev`; midi uses `b0..b2`, evdev uses `code`/`edge`/`value`/… |
+| `trigger` | `Trigger` (`Midi`/`Evdev`) | `kind` = `tk_midi`/`tk_evdev`; midi uses `b0..b2` + optional `midi_mode` (`mm_normal`/`mm_trigger_higher`/`mm_trigger_lower`/`mm_spot`/`mm_blink`, mirrors firmware `midi_action_mode`), evdev uses `code`/`edge`/`value`/… |
 | `output_action` | `OutputAction` (`Midi`/`Keyboard`/`Mouse`) | `kind` = `ak_*`; mouse fields kept as `string` for board-file fidelity |
 | `rule` | `Rule` | 1-to-1 FK `input` → `trigger`; 1-to-many `outputs` → `output_action`; `change_mode_*` |
 | `mode` | `Mode` | `mode_id`, `active`; 1-to-many `mode_header` + `rules` |

@@ -190,15 +190,17 @@ scope for this ledger except as context.
   path only. Revisit when building MIDI→keystroke/text rules. See memory
   `conboard-dispatch-overflow`.
 
-- **O5 — Heartbeat/roster frame on `/ws`. `NEEDS ACK` (dispatcher side).**
+- **O5 — Heartbeat/roster frame on `/ws`. `NEEDS ACK` (dispatcher side). Still open
+  as of milestone `2026-08-10`.**
   The console's live view is **one stream keyed by uuid** with no device name and no
   liveness, so it cannot (a) split the stream across the configured devices or (b) show
   a per-device "connected" LED from the actual heartbeat. **Proposal (additive, §3):**
   the dispatcher emits one `HB,<uuid>,<devname>` frame per live sender ~1/s (see §3).
   That single frame supplies the uuid→devname map *and* liveness. The console side is
-  **built and merged** (backend/UI session) to consume this with graceful fallback (it
-  shows all senders + a note until the frames arrive); it needs the dispatcher to start
-  emitting them. Requested by the console worklist items 2/3.
+  **built and merged into `main`** (backend/UI session) to consume this with graceful
+  fallback (it shows all senders + a note until the frames arrive); confirmed via
+  `grep '"HB' LowLevel/dispatcher/src/` that the dispatcher does **not** emit it yet.
+  Requested by the console worklist items 2/3.
 
 ---
 
@@ -210,3 +212,7 @@ scope for this ledger except as context.
 - **v0.1** — backend/UI session. Added **O5**: proposed the additive `HB,<uuid>,<devname>`
   heartbeat/roster frame on `/ws` (§3) so the console can do device-centric live
   filtering + heartbeat LEDs. Console consumes it with fallback; awaiting dispatcher ack.
+- **v0.1 (milestone `2026-08-10`)** — the console/backend side of everything referenced
+  above (deploy/undeploy, the O5-consuming live monitor, device inventory) is merged to
+  `main`. No wire-format change since v0.1; O1 and O5 are still open on the dispatcher
+  side.

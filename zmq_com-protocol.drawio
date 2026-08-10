@@ -313,6 +313,9 @@
                 <mxCell id="66" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
                     <mxGeometry x="670" y="800" width="120" height="60" as="geometry"/>
                 </mxCell>
+                <mxCell id="o5-note" value="PROPOSED, NEEDS ACK (INTERFACE.md O5, milestone 2026-08-10):&lt;br&gt;dispatcher-&gt;WS additionally emits&lt;br&gt;&lt;b&gt;HB,&amp;lt;uuid&amp;gt;,&amp;lt;devname&amp;gt;&lt;/b&gt; ~1/s per live sender&lt;br&gt;so the console can map uuid-&gt;device name&lt;br&gt;and show per-device liveness.&lt;br&gt;Not yet implemented on the dispatcher side." style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=0;strokeColor=#d6b656;fillColor=#fff2cc;whiteSpace=wrap;spacing=6;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="700" width="330" height="120" as="geometry"/>
+                </mxCell>
             </root>
         </mxGraphModel>
     </diagram>

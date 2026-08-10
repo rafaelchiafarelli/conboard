@@ -6,8 +6,10 @@ environment-agnostic device detection (see [`../../NOTES.md`](../../NOTES.md)).
 
 The classification logic lives in the shared, board-agnostic detector
 [`LowLevel/Common/deviceDetect.{hpp,cpp}`](../../LowLevel/Common/include/deviceDetect.hpp)
-that the **launcher also uses** — so this tool and the launcher's runtime
-detection can never disagree. `devprobe` is just the human-readable front-end.
+that the **launcher** and the **backend's `GET /api/v1/devices` inventory endpoint**
+(`backend/src/devices.cpp`, consumed by the console's add-device flow) also use — so
+this tool, the launcher's runtime detection, and the console's device list can never
+disagree. `devprobe` is just the human-readable front-end.
 
 ## Why it exists
 

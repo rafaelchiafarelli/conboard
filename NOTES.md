@@ -7,18 +7,31 @@
     * ~~list of available compatible boards~~ → `./build-cross.sh list`
     * ~~enable each build separately~~ → `./build-cross.sh <board-id>`
 
-## Current focus — generalize input devices beyond MIDI
-The MIDI input→rule→output engine is being generalized so joystick/keyboard/mouse
-(all evdev) reuse it. Decisions & state recorded in detail in internal memory
-(`conboard-device-generalization`); summary:
+## Generalize input devices beyond MIDI — DONE
+The MIDI input→rule→output engine was generalized so joystick/keyboard/mouse (all
+evdev) reuse it:
 * shared, pure matchers: `midiMap` (MIDI) + `evMatch` (all evdev), unit-tested.
 * `holdGen`: synthesizes hold/long-press for non-autorepeating gamepads (pure).
 * `DeviceEngine`: shared output/coms/mode engine; `condev::runDevice`: shared main.
-* `conJoyS`: first device on the engine; `boards/Xbox360.json` profile; launcher wired.
+* `conJoyS` / `conKeyB` / `conMouse`: all three evdev handlers built on the shared
+  `EvdevDevice` engine; `conMIDI` also migrated onto `DeviceEngine`.
+* MIDI trigger matching gained **operation modes** (`normal` / `trigger_higher` /
+  `trigger_lower` / `spot` / `blink`), plumbed end-to-end: firmware matcher → harpia
+  schema → console rule editor.
+
+## Backend + console — DONE (milestone `2026-08-10`)
+A C++ management API (`backend/`, harpia-generated REST/gRPC over embedded SQLite)
+and a React console (`frontend/console/`) replace the old python-flask stub
+entirely — see [README.md § What's built](README.md#whats-built) for the feature
+list and [docs/NEXT-SESSION.md](docs/NEXT-SESSION.md) for the live punch list.
 
 ## Next
-* HARDWARE TEST conJoyS on the board (build → deploy → plug Xbox pad → keys type on host).
-* migrate MIDI onto `DeviceEngine` (base now proven by conJoyS) — keep behavior identical.
-* build `conKeyB` / `conMouse` evdev readers (matcher already supports them).
+* HARDWARE TEST the evdev stack (conJoyS/conKeyB/conMouse) on a board — built and
+  unit-tested, never exercised on real hardware. See `docs/HW-TEST-evdev.md`.
+* dispatcher: emit the `HB,<uuid>,<devname>` heartbeat/roster frame the console's
+  live view wants (`INTERFACE.md` O5, `NEEDS ACK`) and settle the HTTP port
+  inconsistency (O1).
+* fix `uninstall-on-device.sh --purge` (reported not fully reliable).
 * raise/relieve the 10-slot reporting-queue overflow (`STACKED_IO_MSG`) when rule traffic is heavy.
-* longer term: ethernet-gadget access, a real UI (flask backend exists), security/firewall.
+* longer term: ethernet-gadget access, the local power-password login (design in
+  `backend/README.md`, never implemented), security/firewall.

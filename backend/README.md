@@ -15,8 +15,10 @@ libpqxx.**
 - `generate.sh` — regenerate `generated/` from `harpia/` (SQLite dialect by default).
 - `generated/` — the harpia output, **committed** so conboard builds without the harpia
   repo present. **Never hand-edit**; regenerate.
-- `src/` — the app host: `main.cpp` (servers) + `entity_*.cpp` (one TU per entity,
-  see `include/conboard_entities.h` for why).
+- `src/` — the app host: `main.cpp` (servers) + `entity_*.cpp` (one TU per harpia
+  entity, see `include/conboard_entities.h` for why) + two hand-written (non-harpia)
+  files: `deploy.cpp` (Axis C deploy/undeploy) and `devices.cpp` (device inventory,
+  links the shared `deviceDetect`/condetect classifier from `LowLevel/Common`).
 - `db/` — the SQLite rules-library notes + runtime env template.
 - `assets/backend.service` — systemd unit.
 
@@ -47,8 +49,22 @@ REST base `/api/v1` (configurable):
   device to a profile by tags, not filename), then reloads the handler via
   `CONBOARD_RELOAD_CMD` (default: the udev coldplug replay the installer uses). Returns
   `{"written":"<path>","reloaded":<bool>}`. Hand-written (not harpia-generated).
+- `POST /api/v1/undeploy` — inverse of deploy: removes the tag-matched on-device
+  profile and stops (+ removes) its handler systemd unit(s) — the exact handler unit
+  and any evdev `<base>-<id>` variants — so the hardware stops. Returns
+  `{"removed":"<path>","stopped":<bool>}`. Hand-written, `backend/src/deploy.cpp`.
+- `GET /api/v1/devices` — device inventory for the console's add-device flow: lists
+  attached USB/input devices, classifies each with the same condetect classifier the
+  launcher uses (via libudev), and marks whether a `boards/*.json` profile already
+  matches it (`designated`). Hand-written, `backend/src/devices.cpp`.
 - `GET /healthz`
 - `GET /ws` — websocket, dispatcher event relay (seam; consumer TODO)
+
+MIDI triggers also carry an optional **operation mode** (`midiMode` on the wire,
+`mm_normal`/`mm_trigger_higher`/`mm_trigger_lower`/`mm_spot`/`mm_blink` — mirrors the
+firmware's `midi_action_mode`; `mm_normal` is the omitted zero-value). Added to
+`backend/harpia/conboard.harpia`; regenerating bumped the domain hash to
+`1bf812ac18b80d4a5ea4d51e6bfb7f58`.
 
 Every generated REST route is **credential-gated**: requests must carry
 `X-User: <entity>` and `X-Pswd: <hash>` (the hash is the compile-time md5 of the domain,

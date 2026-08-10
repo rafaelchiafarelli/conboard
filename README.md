@@ -3,6 +3,14 @@ Control Surface based on the Orange Pi.
 Most of the usb-otg ware used from https://github.com/dpavlin/usb-otg
 It is a good project and you definetly should check it out.
 
+As of **milestone `2026-08-10`**, conboard is a full stack, not just the device
+firmware: attached USB/HID devices are exposed as configurable **control-surface
+handlers** (`LowLevel/`), a **C++ management API** (`backend/`, harpia-generated REST +
+gRPC over an embedded SQLite rules library) persists and deploys rule profiles, and a
+**React console** (`frontend/console/`) — served on-device by nginx — is where you
+actually add devices, edit trigger→output rules, and watch a live event monitor. See
+[What's built](#whats-built) below for the full picture.
+
 ## Boards
 
 conboard runs on Linux SBCs with working USB-OTG / USB-gadget support. Current
@@ -52,7 +60,30 @@ are in that board's `HOW-TO-INSTALL.txt`.
 
 > Direction & scope notes live in [NOTES.md](NOTES.md).
 
-# What is done?
+## What's built — console + backend
+
+- **Console** (`frontend/console/`, Vite + React + TS): device rail with **Add /
+  Copy / Remove** dialogs backed by a backend device-inventory endpoint (so adding a
+  device offers the ones actually attached, not a blind name prompt); a **rule
+  editor** for MIDI (`b0/b1/b2` + operation mode — `normal` / `trigger_higher` /
+  `trigger_lower` / `spot` / `blink`) and evdev triggers, with sort/filter for boards
+  with hundreds of rules (e.g. a DJ controller); a **live monitor** — a shared
+  websocket bus with a per-device sender roster/LEDs and a per-device live dock that
+  seeds a new rule straight from an observed event; and **deploy/undeploy** to push
+  or pull an authored profile from the realtime path. Served on-device by nginx,
+  alongside the backend REST API and the dispatcher websocket relay.
+- **Backend** (`backend/`, C++): harpia-generated REST + gRPC over an embedded
+  **SQLite** rules library, plus hand-written **Axis C** routes — `POST /deploy` /
+  `POST /undeploy` (write/remove `boards/*.json` + reload the handler) and
+  `GET /devices` (udev-based inventory for the console's add-device flow). See
+  [backend/README.md](backend/README.md).
+- **Known gaps**: the dispatcher doesn't yet emit the `HB,<uuid>,<devname>`
+  heartbeat/roster frame the console's live view wants (`INTERFACE.md` **O5**,
+  `NEEDS ACK`) — the console falls back to showing raw sender uuids until it does.
+  `uninstall-on-device.sh --purge` is not fully reliable yet (open bug, not yet
+  root-caused). Current punch list: [docs/NEXT-SESSION.md](docs/NEXT-SESSION.md).
+
+# What is done? (LowLevel device handlers)
 
 
 * generalized behavior
@@ -85,14 +116,12 @@ are in that board's `HOW-TO-INSTALL.txt`.
     * starter joystick profile: `boards/Xbox360.json` (keyboard/mouse profiles are per-device, add like that one)
 
     
-# What is Missing?
+# What is Missing? (LowLevel device handlers)
 
 * generalized behavior 
     * missing installing the system as an ethernet port (it would simplify access by users)
     * launch/detection of a service is heavily dependent on user configuration, which is dangerous — the user should not have that power
-    * no UI yet. only a websocket 
-    * no security planned yet, needs a firewall or something that could prevent outside access to the communications. 
-    * backend in python-flask is deprecated, but it makes more sense since it has a lot of features that would speed up the process
+    * no security planned yet, needs a firewall or something that could prevent outside access to the communications.
 * midi device
     * SysEx commands are not working
     * multiple commands and multiple actions can overrun the system (pre-existing 10-slot reporting-queue overflow, `STACKED_IO_MSG`)

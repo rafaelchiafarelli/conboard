@@ -1,5 +1,16 @@
 # conboard frontend — proposal & current-state inventory
 
+> **⚠️ Historical — superseded as of milestone `2026-08-10`.** This was the
+> pre-implementation scope sketch (frontend was a react-admin demo against a fake
+> API, backend was an unfinished Flask stub). Both are gone: the console is a real
+> Vite+React app against a real C++/harpia backend. Kept as a design record — for
+> **current** state see [`../README.md` § What's built](../README.md#whats-built)
+> and [`README.md`](README.md) in this directory. The open questions in §4 below
+> have mostly been answered by what got built; §2's feature areas 1-4 (live
+> monitor, mode control, rule editor, device management) all shipped. §2.5/2.6
+> (security/user/shared/vault) remain unimplemented — see `backend/README.md`'s
+> carried-over design.
+
 This document is the starting point for specifying the conboard **user interface**.
 It records **what exists today** (so we don't re-discover it) and frames **what the UI
 is for** in the larger system. It is deliberately an inventory + scope sketch, not a

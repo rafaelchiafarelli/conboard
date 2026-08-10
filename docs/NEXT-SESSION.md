@@ -1,135 +1,95 @@
-# conboard — next-session handoff (2026-07-13)
+# conboard — next-session handoff (milestone `2026-08-10`)
 
-All console-bug work is on branch **`integration/console-fixes`** (pushed). It stacks
-the console fixes + item-8 backend regen + Cluster B/D + the live rework. Build it with
-`./build-cross.sh zero3` (now `-j16` via `BACKEND_JOBS`).
+`main` = the full console-fixes stack (console-quickwins → deploy-regression →
+device-inventory → live-monitor → console-fixes) merged in, plus a Blender-control
+investigation's salvageable bits (DJTech-4-Mix.csv, boards/blender.cmds, DevInspector).
+Tagged `milestone-2026-08-10`. Pushed to `origin/main`. Full history is normalized to
+one git identity (`rafael.chiafarelli@gmail.com`) — a mixed-identity repo was the
+original trigger for that cleanup; a `backup/blender-investigation-2026-08-10` branch
+holds the raw pre-cleanup local work in case anything in it is ever worth a second look.
 
-## ⚠️ Do a CLEAN SLATE on the board before trusting anything
-Stale on-device state was the real cause of "delete doesn't work / DJ-Tech stopped":
-- The launcher writes one **auto-generated `<devname>.service`** per device. Nothing
-  used to remove them, so a stale unit got `systemctl restart`ed with an old
-  `ExecStart`/JSON → dead handler after re-install. **Fixed** — install + uninstall now
-  wipe units whose `Description="auto generated service file."`.
-- The **SQLite DB** (`/conboard/backend/data`) is preserved across installs by design;
-  stale/duplicate rows linger. `uninstall --purge` wipes it.
-- `boards/*.json` ARE reset by install (rsync `--delete` + the artifact ships the 3 real).
+See the top-level [README.md § What's built](../README.md#whats-built) for the feature
+list. This file is the **live punch list** — what's known broken or unverified.
 
-**Recovery procedure (run on the board):**
-```sh
-sudo ./uninstall-on-device.sh --purge      # program + DB + (now) stale per-device units
-# rebuild the fresh artifact on the build host, copy it over, then:
-sudo ./install-on-device.sh                # seeds a clean DB; launcher regenerates units
-# verify no stale services survived:
-grep -l "auto generated service file" /etc/systemd/system/*.service   # should print nothing
-systemctl status "$(systemctl list-units --type=service | grep -i dj || true)"  # DJ-Tech unit healthy?
-```
+## Open bugs
 
-## Still needs on-board verification / a dispatcher change
-- **Delete**: backend DELETE is correct (204) + frontend tombstone persists deletions;
-  confirm on a CLEAN DB that delete removes the row and (via `/undeploy`) stops the
-  handler. If a device still shows after delete+reload on a clean DB, capture
-  `curl -s -X DELETE -H "X-User:board" -H "X-Pswd:<hash>" localhost:8080/api/v1/board/<id>`.
-- **DJ-Tech events**: with clean services + the conMIDI open-retry fix, confirm it sends.
-- **Live monitor sender name/type + per-device filtering + heartbeat LEDs**: these light
-  up only once the dispatcher emits the **`HB,<uuid>,<devname>`** frame — INTERFACE.md
-  **O5 (NEEDS ACK)**. The console consumes it with fallback today.
-- **Live events** are now a permanent RIGHT column (all devices), not an overlay.
+- **`uninstall-on-device.sh --purge` is not fully reliable** (reported after installing
+  this milestone on real hardware). Not yet root-caused — start by comparing what
+  `--purge` actually removes (`docker/uninstall-on-device.sh`) against what
+  `install-on-device.sh` and the launcher actually create (stale per-device
+  `.service` units, `/conboard/backend/data` SQLite file, `boards/*.json`). Get a
+  precise repro (what's left behind, on a board that had *what* installed) before
+  changing anything.
 
----
+## Still needs a dispatcher-side change
 
-# conboard — earlier handoff (2026-07-10)
+Both are `NEEDS ACK` in `INTERFACE.md` §5, confirmed still unimplemented (`grep '"HB'
+LowLevel/dispatcher/src/` finds nothing; `app.port(40080)` is still hardcoded):
 
-Quick-start for the session that will **fix the remaining console bugs**. Pairs with the
-project memory `conboard-backend-wireup` (auto-loaded). Read this first, then the memory.
+- **O1 — HTTP port inconsistency.** Dispatcher hardcodes `app.port(40080)`;
+  `config.json` says `9080`. Nginx's `/websocket` proxy matches only the hardcode by
+  luck. Make the dispatcher read its port from config and settle on one value.
+- **O5 — heartbeat/roster frame.** The console's live view wants a
+  `HB,<uuid>,<devname>` frame ~1/s per live sender (device-name map + liveness for the
+  per-device LEDs and live filtering). Console consumes it with graceful fallback
+  today (shows raw uuids). Needs the dispatcher to start emitting it.
 
-## TL;DR state
-The full **frontend ↔ backend ↔ device** loop is built and on `main`:
-- **Backend** (`backend/`): harpia-generated REST + gRPC over **SOCI/SQLite**, plus a
-  hand-written `POST /api/v1/deploy` (Axis C). Runtime `.so` closure bundled into the
-  tarball with `RUNPATH=/conboard/lib` → **no apt on the device**.
-- **Console** (`frontend/console/`): loads boards from the backend, edits + **Save**s
-  them, **board CRUD** (New/Copy/Delete), a **live monitor** off the dispatcher `/ws`,
-  and **Deploy to device**. Served on-device by nginx (`interface.conf`).
-- **Axis C**: deploy writes `/conboard/boards/<name>.json` (overwriting the profile
-  whose `header.identifier.tags` match — the launcher matches by tags, not filename)
-  and reloads via the installer's udev coldplug replay.
+## Still needs on-board verification
 
-### ⚠️ Repo state — READ BEFORE PUSHING
-- Local `main` = **`ec657d6`** (console fixes). `origin/main` = **`128c76e`**. The last
-  commit is **unpushed** — GitHub was unreachable and the user said hold. It's a clean
-  fast-forward: `git push origin main` when ready.
-- **`dist/` is STALE** (2026-07-05, pre-console/pre-Axis-C — no console SPA, no `/deploy`).
-  Rebuild before deploying: `./build-cross.sh zero3` (builds from the **local tree**, so
-  no push needed; `-j` is capped to 4 for QEMU).
-
-## Bugs from board testing (this is the next-session worklist)
-| # | Issue | Status |
-|---|---|---|
-| 1 | New device was midi-only | ✅ FIXED — prompts type (midi/joystick/keyboard/mouse) |
-| 2 | Live events show a UUID, not a device | ⚠️ PARTIAL — see below (dispatcher-side) |
-| 3 | DJ-Tech events don't show in monitor | ⚠️ DIAGNOSE on board — see below |
-| 4 | Rules/live panels not resizable | ✅ FIXED — flex + `resize:horizontal` |
-| 5 | Couldn't add joystick rules | ✅ FIXED — unblocked by #1 |
-| 6 | Simulated signals present | ✅ FIXED — removed; live-only monitor |
-
-### #2 and #3 bottom out at the dispatcher `/ws` (NOT frontend-only)
-The dispatcher streams `<uuid>,<action>` text — the sender-registration **UUID** plus an
-**opaque** action string (INTERFACE.md **O3**). The console therefore:
-- **#2**: shows/filter-by the UUID (no UUID→device-name map exists). *Real fix*: the
-  **dispatcher** must add the device name (and ideally structured fields) to the `/ws`
-  payload. Coordinate with the dispatcher/hw session; spec it against `INTERFACE.md`.
-- **#3**: On the board, open the monitor and read the **status pill**:
-  - `disconnected` → the `/websocket` → `:40080` nginx proxy or the dispatcher HTTP port
-    is wrong. **INTERFACE.md O1**: dispatcher hardcodes `app.port(40080)` while
-    `config.json` says `9080`. Reconcile the port so nginx `/websocket` reaches it.
-  - `listening` but no rows when you press a control → the **device handler isn't
-    reporting** to the dispatcher io channel (handler/dispatcher-side, not the console).
-    (See also O4 `STACKED_IO_MSG=10` overflow, memory `conboard-dispatch-overflow`.)
+- **evdev hardware test** (conJoyS/conKeyB/conMouse) — built + unit-tested, never
+  exercised on real hardware. Runbook: `docs/HW-TEST-evdev.md`.
+- **Delete/undeploy round-trip** on a clean install: delete a device in the console →
+  confirm the backend row is gone (204) **and** the on-device profile + handler unit
+  are gone (`POST /undeploy`, `backend/src/deploy.cpp`).
+- **DJ-Tech-4-Mix events reach the monitor** — the conMIDI open-retry fix
+  (`LowLevel/Common/include/runDevice.hpp`) should make the handler recover from the
+  transient ALSA-port-busy failure that used to leave it inert after a redeploy
+  restart; confirm on a board.
 
 ## How to build / install / deploy / test
+
 ```sh
-# build the board artifact from the local tree (no push needed)
 ./build-cross.sh zero3            # -> dist/zero3/conboard-zero3.tar.gz
 
 # on the board (no apt, no compile; bundled libs; installs nginx site if nginx present)
 scp dist/zero3/conboard-zero3.tar.gz <board>:~
-tar xzf conboard-zero3.tar.gz && cd conboard && sudo ./install-on-device.sh
-sudo ./uninstall-on-device.sh [--purge]     # remove (keeps rules DB unless --purge)
+tar xzf conboard-zero3.tar.gz && cd conboard
+sudo ./uninstall-on-device.sh --purge   # clean slate recommended after a schema/DB change
+sudo ./install-on-device.sh
 
 # verify
 curl -s localhost:8080/healthz   # backend direct
 curl -s localhost/healthz        # via nginx (same origin as UI)
 open http://<board-ip>/          # the console
 sudo journalctl -u backend -f    # NOTE: needs sudo (backend runs as root)
-
-# deploy a profile from the console: edit a rule -> Save -> "Deploy to device"
-#   -> POST /api/v1/deploy  -> writes boards/*.json + udev coldplug reload
 ```
 
 ## Endpoints
+
 `/api/v1/{board,mode,rule,trigger,output_action}[/<id>]` · `POST /api/v1/deploy` ·
-`GET /healthz` · `GET /ws` (backend relay seam, unused) · nginx serves the console at `/`
-and proxies `/websocket` → dispatcher `:40080`. REST is credential-gated
-(`X-User: <entity>`, `X-Pswd: <hash>`); hash = `1bf812ac18b80d4a5ea4d51e6bfb7f58`
-(bumped when `midi_mode` was added to the trigger message; regen via `backend/generate.sh`).
+`POST /api/v1/undeploy` · `GET /api/v1/devices` · `GET /healthz` · `GET /ws` (backend
+relay seam, unused). nginx serves the console at `/` and proxies `/websocket` →
+dispatcher `:40080`. REST is credential-gated (`X-User: <entity>`, `X-Pswd: <hash>`);
+hash = `1bf812ac18b80d4a5ea4d51e6bfb7f58` (bumped when `midi_mode` was added to the
+trigger message; regen via `backend/generate.sh`).
 
 ## Don't-relearn facts
+
 - **harpia is a black box.** Regenerate: `backend/generate.sh` (SQLite default;
   `HARPIA_DB_BACKEND=postgresql` for a future central host). Never hand-edit
   `backend/generated/`. `.harpia` authoring constraints (enums in root file, must import
   an `Include/` module, punctuation-plain ASCII comments) — see `backend/harpia/README.md`.
+- **`backend/generated/` IS committed source, not build output — do not gitignore
+  it.** It's regenerated wholesale (harpia cleans the output dir each run), so a
+  half-regenerated tree (old-hash files still committed alongside new ones) causes
+  duplicate-symbol link errors. If you regenerate, `git status` should show the old
+  hash's files as deleted and the new hash's as added — commit both sides together.
 - **Realtime path** runs from `/conboard/boards/*.json`, decoupled from the DB by design;
   the launcher matches a device to a profile by `header.identifier.tags`.
-- **Build**: emulated arm64 via QEMU; backend build `-j` capped to 4 (many-core hosts OOM
-  the emulated protobuf/gRPC compiles → exit 126).
+- **Build**: emulated arm64 via QEMU; backend build `-j` capped (`BACKEND_JOBS`,
+  currently 8 — many-core hosts OOM the emulated protobuf/gRPC compiles at higher
+  values → exit 126).
 - **CRLF**: `.gitattributes` forces LF; a fresh Windows/WSL clone must renormalize
   (`git config core.autocrlf false && git rm --cached -r . && git reset --hard`).
 - Frontend↔harpia JSON: camelCase fields, `ID<hash>` caller-assigned PK unique per table,
   enums as names, zero values omitted. Mapping in `frontend/console/src/api/{harpia,map,client}.ts`.
-
-## Suggested next-session order
-1. `git push origin main` (once network's up) so everyone's synced.
-2. Rebuild `dist/` and reinstall on the board (get console + deploy on-device).
-3. Drive #3 on the board (status pill) → decide if it's the O1 port or handler reporting.
-4. Take #2/#3's dispatcher-side fix to the dispatcher/hw session (add device name +
-   structured fields to `/ws`; reconcile the O1 port).
