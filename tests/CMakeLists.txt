@@ -4,6 +4,7 @@ project(conboard_tests CXX)
 # Tests compile the source-under-test directly (no libcommon.so / zmq link), so
 # the suite stays dependency-light and runs the same on host or under QEMU.
 set(COMMON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../LowLevel/Common)
+set(HMI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../LowLevel/HMI)
 
 add_executable(conboard_tests
     test_devicedetect.cpp
@@ -12,15 +13,22 @@ add_executable(conboard_tests
     test_launchermatch.cpp
     test_evmatch.cpp
     test_holdgen.cpp
+    test_quadrature.cpp
+    test_debounce.cpp
+    test_clipped_panel.cpp
     ${COMMON_DIR}/src/deviceDetect.cpp
     ${COMMON_DIR}/src/midiMap.cpp
     ${COMMON_DIR}/src/jsonParser.cpp
     ${COMMON_DIR}/src/launcherMatch.cpp
     ${COMMON_DIR}/src/evMatch.cpp
-    ${COMMON_DIR}/src/holdGen.cpp)
+    ${COMMON_DIR}/src/holdGen.cpp
+    ${HMI_DIR}/src/quadrature.cpp
+    ${HMI_DIR}/src/debounce.cpp
+    ${HMI_DIR}/src/clipped_panel.cpp)
 
 target_include_directories(conboard_tests PRIVATE
     ${COMMON_DIR}/include
+    ${HMI_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR})            # for doctest.h
 
 set_target_properties(conboard_tests PROPERTIES
@@ -29,7 +37,7 @@ set_target_properties(conboard_tests PROPERTIES
 
 # Register one CTest entry per doctest suite, so `ctest -R joystick` works too.
 enable_testing()
-foreach(suite classifier joystick usb midi json launch filter evmatch holdgen port identity)
+foreach(suite classifier joystick usb midi json launch filter evmatch holdgen port identity quadrature debounce clipped_panel)
     add_test(NAME ${suite}
              COMMAND conboard_tests --test-suite=${suite} --no-intro)
 endforeach()

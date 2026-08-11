@@ -100,6 +100,10 @@ int main() {
     // Device inventory for the console's add-device flow. Hand-written.
     conboard::register_devices(app, api_base);
 
+    // Data endpoints for LowLevel/HMI (the screen/buttons/encoders local UI).
+    // Hand-written.
+    conboard::register_hmi(app, api_base);
+
     CROW_ROUTE(app, "/healthz")([]{ return "ok"; });
 
     // ---- Websocket seam for the dispatcher event relay ----------------------

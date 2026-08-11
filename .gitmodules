@@ -1,3 +1,6 @@
 [submodule "LowLevel/Common/Crow"]
 	path = LowLevel/Common/Crow
 	url = https://github.com/CrowCpp/Crow.git
+[submodule "LowLevel/HMI/lvgl"]
+	path = LowLevel/HMI/lvgl
+	url = https://github.com/lvgl/lvgl.git

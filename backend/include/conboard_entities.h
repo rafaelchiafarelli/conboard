@@ -52,4 +52,15 @@ void register_undeploy(crow::SimpleApp& app, const std::string& base);
 // libudev + the shared condetect classifier. Defined in src/devices.cpp.
 void register_devices(crow::SimpleApp& app, const std::string& base);
 
+// HMI data endpoints for LowLevel/HMI (the screen/buttons/encoders local UI).
+// conHMI gets ALL of its domain data through these -- no nmcli/system-state
+// reads happen in that module itself (see the plan doc). Read-only for now:
+//   GET <base>/hmi/console-url    -- {"url": "http://<lan-ip>/"}
+//   GET <base>/hmi/wifi/networks  -- [{"ssid","signal","security"}, ...] (nmcli scan)
+//   GET <base>/hmi/activation     -- documented stub; real power-password login
+//                                     flow (backend/README.md) is unimplemented
+//   GET <base>/hmi/radio/stations -- [] stub; station source is still TBD
+// Hand-written (not harpia-generated), like devices.cpp. Defined in src/hmi.cpp.
+void register_hmi(crow::SimpleApp& app, const std::string& base);
+
 }  // namespace conboard

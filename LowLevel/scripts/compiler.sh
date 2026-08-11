@@ -44,6 +44,10 @@ build_JoyStick(){
 
 }
 
+build_HMI(){
+	$SCRIPTS_DIR/../HMI/scripts/build_HMI.sh
+}
+
 build_dispatcher(){
 	$SCRIPTS_DIR/../dispatcher/scripts/build_dispatcher.sh
 
@@ -59,6 +63,7 @@ compile(){
             build_KeyBoard
             build_MIDI
             build_mouse
+            build_HMI
 			build_launcher
 			build_dispatcher
 			build_devprobe

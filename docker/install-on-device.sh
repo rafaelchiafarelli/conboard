@@ -31,7 +31,7 @@ esac
 
 echo "== stopping any running conboard services =="
 # Includes retired units (frontend, old backend) so a re-install cleans them up.
-for unit in usb-otg launcher dispatcher backend frontend; do
+for unit in usb-otg launcher dispatcher backend hmi frontend; do
     systemctl stop "${unit}.service" 2>/dev/null || true
 done
 
@@ -75,6 +75,7 @@ install -m 644 /conboard/LowLevel/assets/usb-otg.service               /etc/syst
 install -m 644 /conboard/LowLevel/assets/launcher.service              /etc/systemd/system/
 install -m 644 /conboard/LowLevel/dispatcher/assets/dispatcher.service /etc/systemd/system/
 install -m 644 /conboard/backend/assets/backend.service                /etc/systemd/system/
+install -m 644 /conboard/LowLevel/HMI/assets/hmi.service               /etc/systemd/system/
 systemctl daemon-reload
 
 echo "== installing udev rule + event handler =="
@@ -108,6 +109,10 @@ fi
 
 echo "== enabling services (start on boot) =="
 systemctl enable usb-otg.service dispatcher.service launcher.service backend.service
+# hmi.service (the screen/buttons/encoders UI) is installed but deliberately NOT
+# enabled/started here: it needs the physical SPI panel + GPIO wiring to init()
+# successfully, which most boards running this installer today don't have yet.
+# Once the hardware is wired: `systemctl enable --now hmi.service`.
 
 # Start now — but NOT with `enable --now`. launcher.service is a Type=oneshot
 # that scans devices and can call `systemctl restart` for a matched device;
@@ -134,3 +139,4 @@ echo "  systemctl status usb-otg.service dispatcher.service launcher.service bac
 echo "  curl -s localhost:8080/healthz   # backend management API (direct)"
 echo "  curl -s localhost/healthz        # via nginx (same origin as the UI)"
 echo "  open http://<board-ip>/          # the conboard console UI"
+echo "  systemctl enable --now hmi.service   # once the SPI screen/buttons/encoders are wired"

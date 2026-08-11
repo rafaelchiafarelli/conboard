@@ -38,6 +38,7 @@ copy 755 LowLevel/MIDI/build/conMIDI
 copy 755 LowLevel/Mouse/build/conMouse
 copy 755 LowLevel/KeyBoard/build/conKeyB
 copy 755 LowLevel/Joystick/build/conJoyS
+copy 755 LowLevel/HMI/build/conHMI
 
 # diagnostic tool (run on the board to classify attached devices)
 copy 755 tools/devprobe/build/devprobe
@@ -51,6 +52,7 @@ copy 644 LowLevel/assets/usb-otg.service
 copy 644 LowLevel/assets/launcher.service
 copy 644 LowLevel/dispatcher/assets/dispatcher.service
 copy 644 backend/assets/backend.service
+copy 644 LowLevel/HMI/assets/hmi.service
 
 # --- udev rule + hotplug handler ---------------------------------------------
 copy 644 LowLevel/assets/100-usb.rules
@@ -97,6 +99,7 @@ ELVES=(
     "$STAGE/LowLevel/Mouse/build/conMouse"
     "$STAGE/LowLevel/KeyBoard/build/conKeyB"
     "$STAGE/LowLevel/Joystick/build/conJoyS"
+    "$STAGE/LowLevel/HMI/build/conHMI"
     "$STAGE/tools/devprobe/build/devprobe"
     "$STAGE/backend/conboard_backend"
 )
@@ -184,6 +187,7 @@ MANIFEST="$STAGE/MANIFEST.txt"
         LowLevel/Mouse/build/conMouse \
         LowLevel/KeyBoard/build/conKeyB \
         LowLevel/Joystick/build/conJoyS \
+        LowLevel/HMI/build/conHMI \
         tools/devprobe/build/devprobe \
         backend/conboard_backend ; do
         file -b "$STAGE/$rel" | sed "s|^|$rel: |"

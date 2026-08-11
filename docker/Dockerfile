@@ -49,12 +49,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 #                           devices + their udev ID_* tags (src/devices.cpp)
 #   patchelf             -> stamp an absolute RUNPATH so the bundled runtime .so's
 #                           resolve on the board with NO apt install (see package.sh)
+# LowLevel/HMI/ (the screen/buttons/encoders local UI, independent of the rest
+# of LowLevel/ -- see the plan doc) additionally needs:
+#   libgpiod-dev         -> SPI panel RESET/DC/BL lines + the 2 encoders/2 buttons
+#   libcurl4-openssl-dev -> the module's REST client (its only source of domain
+#                           data -- no nmcli/system-state reads happen here)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential cmake git pkg-config ca-certificates file ccache patchelf \
         libzmq3-dev libasound2-dev uuid-dev libudev-dev \
         libboost-dev libboost-system-dev libboost-date-time-dev \
         protobuf-compiler libprotobuf-dev protobuf-compiler-grpc libgrpc++-dev \
         libsoci-dev libsoci-sqlite3-4.0 libsqlite3-dev \
+        libgpiod-dev libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Make the compiler go through ccache so a *second* build only recompiles the

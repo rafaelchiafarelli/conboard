@@ -19,7 +19,7 @@ PURGE=0
 
 # Every unit conboard has ever shipped, current + retired (frontend = old python UI;
 # backend covers both the retired python and the current C++ one).
-UNITS=(usb-otg launcher dispatcher backend frontend)
+UNITS=(usb-otg launcher dispatcher backend hmi frontend)
 
 echo "== stopping + disabling services =="
 for u in "${UNITS[@]}"; do
