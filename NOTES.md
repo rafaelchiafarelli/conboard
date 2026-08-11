@@ -25,6 +25,20 @@ and a React console (`frontend/console/`) replace the old python-flask stub
 entirely — see [README.md § What's built](README.md#whats-built) for the feature
 list and [docs/NEXT-SESSION.md](docs/NEXT-SESSION.md) for the live punch list.
 
+## Local screen/buttons/encoders UI (`LowLevel/HMI/`) — IN PROGRESS
+A small SPI TFT + 2 push buttons + 2 rotary encoders, wired directly to the board —
+phases 1-2 of a 5-phase plan (deps + a screen-size-adaptable base component layer)
+are done; phases 3-5 (visual theming, the actual WiFi/activation/radio screens,
+deeper integration) are not started. Deliberately independent of the rest of
+`LowLevel/`: own dependencies (LVGL, libgpiod, libcurl), no `libcommon`/
+`DeviceEngine`/udev-launcher path, and it sources ALL domain data from new
+read-only `backend/src/hmi.cpp` endpoints — no nmcli/system-state reads or other
+business logic inside the UI module itself. Real SPI/GPIO bring-up (chip, transfer
+mode, init sequence, hardware rotation) is hardware-confirmed on the dev board;
+see [docs/NEXT-SESSION.md](docs/NEXT-SESSION.md) for the full handoff, the
+hard-won hardware gotchas (esp. why plain `write(2)` to spidev silently no-ops on
+this SoC), and the env var reference.
+
 ## Next
 * HARDWARE TEST the evdev stack (conJoyS/conKeyB/conMouse) on a board — built and
   unit-tested, never exercised on real hardware. See `docs/HW-TEST-evdev.md`.

@@ -82,6 +82,16 @@ are in that board's `HOW-TO-INSTALL.txt`.
   `NEEDS ACK`) — the console falls back to showing raw sender uuids until it does.
   `uninstall-on-device.sh --purge` is not fully reliable yet (open bug, not yet
   root-caused). Current punch list: [docs/NEXT-SESSION.md](docs/NEXT-SESSION.md).
+- **Local screen/buttons/encoders UI** (`LowLevel/HMI/`, binary `conHMI`) —
+  **in progress**, hardware-verified but not feature-complete: a small SPI
+  TFT + 2 push buttons + 2 rotary encoders, wired directly to the board,
+  independent of the rest of `LowLevel/` (own deps, no `libcommon`/
+  `DeviceEngine`), sourcing all its data from new read-only `backend`
+  endpoints (`GET /api/v1/hmi/*`) rather than any local business logic. Real
+  SPI/GPIO bring-up (chip, transfer mode, init sequence, rotation) confirmed
+  on the dev board; the actual WiFi/activation/radio screens, visual theming,
+  and encoder/button wiring are not done. See
+  [docs/NEXT-SESSION.md](docs/NEXT-SESSION.md) for the detailed handoff.
 
 # What is done? (LowLevel device handlers)
 
