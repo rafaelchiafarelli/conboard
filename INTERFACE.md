@@ -191,17 +191,15 @@ scope for this ledger except as context.
   path only. Revisit when building MIDI→keystroke/text rules. See memory
   `conboard-dispatch-overflow`.
 
-- **O5 — Heartbeat/roster frame on `/ws`. `NEEDS ACK` (dispatcher side). Still open
-  as of milestone `2026-08-10`.**
-  The console's live view is **one stream keyed by uuid** with no device name and no
-  liveness, so it cannot (a) split the stream across the configured devices or (b) show
-  a per-device "connected" LED from the actual heartbeat. **Proposal (additive, §3):**
-  the dispatcher emits one `HB,<uuid>,<devname>` frame per live sender ~1/s (see §3).
-  That single frame supplies the uuid→devname map *and* liveness. The console side is
-  **built and merged into `main`** (backend/UI session) to consume this with graceful
-  fallback (it shows all senders + a note until the frames arrive); confirmed via
-  `grep '"HB' LowLevel/dispatcher/src/` that the dispatcher does **not** emit it yet.
-  Requested by the console worklist items 2/3.
+- **O5 — Heartbeat/roster frame on `/ws`. RESOLVED (2026-08-12).**
+  `dispatcher::GetHeartbeats()` (`LowLevel/dispatcher/src/dispatcher.cpp`) builds one
+  `HB,<uuid>,<devname>\r\n` line per device whose last ping (io or heartbeat leg) is
+  within `HeartbeatLiveWindowSec` (5s), reusing the existing `devices`/`last_ping` maps
+  — no new state. `user_handler` (`main.cpp`) broadcasts that string to all `/ws`
+  clients about once a second, alongside the existing action-frame broadcast. Verified
+  via a full `./build-cross.sh zero3` (compiles clean under the real arm64 toolchain);
+  not yet exercised against a live console + real device on hardware — do that before
+  fully trusting the liveness LEDs.
 
 ---
 
@@ -219,3 +217,7 @@ scope for this ledger except as context.
   side.
 - **v0.2 (2026-08-11)** — **O1 resolved**: dispatcher HTTP port is now config-driven,
   settled on `40080`. O5 (heartbeat/roster frame) still open on the dispatcher side.
+- **v0.3 (2026-08-12)** — HW/dispatcher session. **O5 resolved**: dispatcher now emits
+  the `HB,<uuid>,<devname>` roster/heartbeat frame on `/ws` ~1/s per live sender.
+  Console side needs no change (already consumed this format). Not yet verified
+  end-to-end against real hardware.

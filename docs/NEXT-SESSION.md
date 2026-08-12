@@ -229,12 +229,14 @@ beyond keyboard), not attempted this session.
   `app.port(40080)`; `config.json`'s `http.port` was changed from `9080` to `40080` to
   match what nginx and every deployed board already use. Not yet rebuilt/redeployed to
   the board — do that before relying on it live.
-- **O5 — heartbeat/roster frame.** `NEEDS ACK` in `INTERFACE.md` §5, confirmed still
-  unimplemented (`grep '"HB' LowLevel/dispatcher/src/` finds nothing). The console's
-  live view wants a
-  `HB,<uuid>,<devname>` frame ~1/s per live sender (device-name map + liveness for the
-  per-device LEDs and live filtering). Console consumes it with graceful fallback
-  today (shows raw uuids). Needs the dispatcher to start emitting it.
+- **O5 — heartbeat/roster frame. RESOLVED (2026-08-12).** Dispatcher now emits
+  `HB,<uuid>,<devname>` ~1/s per live sender on `/ws`
+  (`dispatcher::GetHeartbeats()` + `user_handler` in `LowLevel/dispatcher/src/
+  {dispatcher,main}.cpp`), reusing the existing `devices`/`last_ping` maps — "live"
+  means a ping within 5s. Verified via a full `./build-cross.sh zero3` (compiles
+  clean). **Not yet rebuilt/redeployed to a real board or checked against the
+  console's live view with an actual device** — do that before trusting the
+  per-device liveness LEDs / device-name filtering in practice.
 
 ## Still needs on-board verification
 

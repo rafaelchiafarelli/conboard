@@ -36,8 +36,9 @@ static void sig_handler(int dummy)
 }
 
 void user_handler(dispatcher *dsp,atomic_bool *lst){
-    
+
     atomic_bool *lstop = lst;
+    auto last_hb_sent = std::chrono::steady_clock::now();
     while(!(*lstop))
     {
         {
@@ -51,6 +52,25 @@ void user_handler(dispatcher *dsp,atomic_bool *lst){
                 }
             }
         }
+
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_hb_sent).count() >= 1)
+        {
+            last_hb_sent = now;
+            // INTERFACE.md O5: roster/heartbeat frame, ~1/s, one "HB,<uuid>,<devname>"
+            // line per live sender so the console can build a uuid->devname map and
+            // drive per-device liveness.
+            std::string heartbeats = dsp->GetHeartbeats();
+            if(!heartbeats.empty())
+            {
+                std::lock_guard<std::mutex> _(mtx);
+                for (auto u : users)
+                {
+                    u->send_text(heartbeats);
+                }
+            }
+        }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 

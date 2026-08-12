@@ -396,6 +396,39 @@ std::string dispatcher::GetLastActions()
     return ret;
 }
 
+/**
+ * INTERFACE.md O5: one "HB,<uuid>,<devname>\r\n" line per live sender (a device
+ * whose last ping — io or heartbeat leg — is within HeartbeatLiveWindowSec), so the
+ * console can build a uuid->devname roster and drive per-device liveness LEDs.
+ */
+std::string dispatcher::GetHeartbeats()
+{
+    std::string ret = "";
+    auto now = std::chrono::system_clock::now();
+    std::lock_guard<std::mutex> locker(lock_devices);
+    for (std::map<std::string, std::string>::iterator dev = devices.begin();
+        dev != devices.end();
+        dev++)
+    {
+        std::map<std::string, std::chrono::time_point<std::chrono::system_clock>>::iterator ping = last_ping.find(dev->first);
+        if (ping == last_ping.end())
+        {
+            continue;
+        }
+        long age = std::chrono::duration_cast<std::chrono::seconds>(now - ping->second).count();
+        if (age > HeartbeatLiveWindowSec)
+        {
+            continue;
+        }
+        ret.append("HB,");
+        ret.append(dev->first);
+        ret.append(",");
+        ret.append(dev->second);
+        ret.append("\r\n");
+    }
+    return ret;
+}
+
 std::string dispatcher::GetLastAction()
 {
     std::string ret = "";

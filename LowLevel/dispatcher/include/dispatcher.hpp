@@ -50,11 +50,16 @@ class dispatcher{
         std::mutex lock_devices,command_lock;
         void startup();
 
+        // INTERFACE.md O5: a device counts as a "live sender" (gets an HB,<uuid>,<devname>
+        // roster/heartbeat frame on /ws) if it pinged within this many seconds.
+        static constexpr int HeartbeatLiveWindowSec = 5;
+
     public:
         std::string GetConfigs();
         bool PostConfigs(std::string cfg, std::string value);        
         std::string GetLastActions();
         std::string GetLastAction();
+        std::string GetHeartbeats();
         bool PostIOCommand(std::string UUID, std::vector<std::string> params);
         std::string GetConfigAddr(){return disp.http.ConfigAddr;};
         std::string GetIOCommandAddr(){return disp.http.IOCommandAddr;};
