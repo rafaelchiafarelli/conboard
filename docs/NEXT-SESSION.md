@@ -56,7 +56,13 @@ not started.
   visually with no hardware: `--panel null --dump` under qemu, rendered the
   PPM (confirmed both the plain demo screen and, via a temporary 3-item demo
   menu that was reverted before committing, the list/divider/focus styling).
-  Not yet seen on the real ST7789 panel.
+  **Hardware-confirmed same day**: deployed the binary to `192.168.7.4`
+  (swapped `/conboard/LowLevel/HMI/build/conHMI` directly, no full reinstall
+  needed) and started `hmi.service` for the first time this session --
+  `journalctl` shows a clean `conHMI: running (panel=st7789, ...)` with only
+  the expected "no hardware?" warnings for the still-unwired encoders/buttons,
+  and the dark theme background is confirmed visible by eye on the physical
+  panel.
 
 ## Hardware-confirmed facts (dev board: `rafael@192.168.7.4`, `orangepizero3`)
 
@@ -121,8 +127,8 @@ only proof that ever worked on this exact unit.
   the stack — LVGL, AppShell — only ever sees the cropped size).
 - Phases 4-5 not started: the actual WiFi/activation/radio screens, and which
   physical control does what (nav scheme), are still open. (Phase 3, the
-  visual theme, is done — see "What's built" above — but has only been seen
-  via `panel_null`, not on the real ST7789 panel.)
+  visual theme, is done and hardware-confirmed on the real ST7789 panel — see
+  "What's built" above.)
 
 ## Persisting hardware config (durable across reinstalls)
 
