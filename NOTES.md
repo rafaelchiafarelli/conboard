@@ -27,9 +27,9 @@ list and [docs/NEXT-SESSION.md](docs/NEXT-SESSION.md) for the live punch list.
 
 ## Local screen/buttons/encoders UI (`LowLevel/HMI/`) — IN PROGRESS
 A small SPI TFT + 2 push buttons + 2 rotary encoders, wired directly to the board —
-phases 1-2 of a 5-phase plan (deps + a screen-size-adaptable base component layer)
-are done; phases 3-5 (visual theming, the actual WiFi/activation/radio screens,
-deeper integration) are not started. Deliberately independent of the rest of
+phases 1-3 of a 5-phase plan (deps + a screen-size-adaptable base component layer +
+a custom dark/amber theme matching the console) are done; phases 4-5 (the actual
+WiFi/activation/radio screens, deeper integration) are not started. Deliberately independent of the rest of
 `LowLevel/`: own dependencies (LVGL, libgpiod, libcurl), no `libcommon`/
 `DeviceEngine`/udev-launcher path, and it sources ALL domain data from new
 read-only `backend/src/hmi.cpp` endpoints — no nmcli/system-state reads or other

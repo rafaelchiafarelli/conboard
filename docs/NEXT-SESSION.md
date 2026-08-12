@@ -7,9 +7,10 @@ codebase (see the plan doc from the session that started this): no
 `libcommon.so`, no `DeviceEngine`, no udev/launcher path, and it gets **all**
 domain data over the backend's REST/JSON API — no local business logic.
 
-Scope was phases 1-2 of a 5-phase plan (dependencies + a screen-size-adaptable
-base component layer); phases 3-5 (visual theming to match the console,
-WiFi/activation/radio screens, deeper backend integration) are not started.
+Scope was phases 1-3 of a 5-phase plan (dependencies + a screen-size-adaptable
+base component layer + a custom theme matching the console's palette); phases
+4-5 (the actual WiFi/activation/radio screens, deeper backend integration) are
+not started.
 
 ## What's built
 
@@ -39,6 +40,23 @@ WiFi/activation/radio screens, deeper backend integration) are not started.
   first) — enable manually with `systemctl enable --now hmi.service`.
 - 83 doctest cases (was 77) — added `quadrature`, `debounce`, `clipped_panel`
   suites, all pure logic (no gpiod/curl/lvgl needed to run them).
+- **Phase 3 (2026-08-12): custom LVGL theme matching the console.**
+  `LowLevel/HMI/include/hmi_theme.hpp` + `src/hmi_theme.cpp` — a small
+  `lv_theme_t` registered via LVGL's public theme API (`lv_theme_create` +
+  `lv_theme_set_apply_cb`), with the palette copied 1:1 from
+  `frontend/console/src/index.css`. Styles screens/root with the console's
+  `--ground` bg / `--ink` text (inherits to child labels for free), gives list
+  buttons a `--line` divider, and gives the encoder-focused item the
+  `--accent-soft` bg + `--accent` text + left border treatment that mirrors
+  the console's `.viewnav button.on` active-tab look. Wired in once, right
+  after `lvgl_glue::createDisplay()` in `main.cpp`. Deliberately narrow: only
+  covers the widget kinds `app_shell.cpp` actually builds today (screens,
+  plain containers, `lv_list`/its buttons) — add cases to `themeApply()` as
+  phase-4 screens introduce new widget kinds (arc, roller, ...). Verified
+  visually with no hardware: `--panel null --dump` under qemu, rendered the
+  PPM (confirmed both the plain demo screen and, via a temporary 3-item demo
+  menu that was reverted before committing, the list/divider/focus styling).
+  Not yet seen on the real ST7789 panel.
 
 ## Hardware-confirmed facts (dev board: `rafael@192.168.7.4`, `orangepizero3`)
 
@@ -101,9 +119,10 @@ only proof that ever worked on this exact unit.
   measurements. See `LowLevel/HMI/include/clipped_panel.hpp` for how it
   composes (wraps any `PanelDriver`, crops+offsets, everything above it in
   the stack — LVGL, AppShell — only ever sees the cropped size).
-- Phases 3-5 not started: visual theme matching `frontend/console/src/
-  index.css`'s palette, the actual WiFi/activation/radio screens, and which
-  physical control does what (nav scheme) are all open.
+- Phases 4-5 not started: the actual WiFi/activation/radio screens, and which
+  physical control does what (nav scheme), are still open. (Phase 3, the
+  visual theme, is done — see "What's built" above — but has only been seen
+  via `panel_null`, not on the real ST7789 panel.)
 
 ## Persisting hardware config (durable across reinstalls)
 
