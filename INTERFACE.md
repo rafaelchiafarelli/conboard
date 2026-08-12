@@ -66,8 +66,38 @@ handler connects (REQ)**. Addresses/ports come from
 
 **Envelope (all three legs).** Plain text, fields separated by `"; "` (semicolon; the
 parser `explode()` strips all spaces), usually a trailing `;`. **Field 0 is the
-sender-registration id** on every leg *except* the initial register request. There is
-**no length prefix, no message-type tag, and no version field** today.
+sender-registration id** on every leg *except* the initial register request and except
+for the version token added by O2 below. There is still no length prefix or
+message-type tag.
+
+**Envelope version (O2, resolved 2026-08-12).** io and heartbeat, both directions,
+now carry a literal `v0` field
+(`CONBOARD_ENVELOPE_VERSION`, `LowLevel/Common/include/envelope_version.hpp`,
+shared by `zmq_coms.cpp` and `dispatcher.cpp`) — but **trailing, not leading**.
+Field 0 stays the uuid on every leg exactly as before; `v0` is appended as the
+*last* field instead. This was a deliberate correction during verification, not
+the original design: an earlier version of this change *did* lead with `v0`, which
+silently broke live uuid matching. Root cause, found and fixed the same session: the
+shared `explode()` helper calls `std::remove(token.begin(), token.end(), ' ')` to
+strip spaces but never follows it with the matching `erase()`, so `std::remove`'s
+"new logical end" is never actually applied — every token *after the first* (i.e.
+every one that had a leading space from `"; "`) keeps its original length with a
+duplicated trailing character (`"OK"` parsed back out as `"OKK"`, a uuid gains one
+extra trailing char, etc.), which breaks exact-match comparisons on it. Leading the
+frame with `v0` pushed the uuid from field 0 (immune -- nothing before it to leave a
+stray space) to field 1 (corrupted). Fixed properly at the source in both
+`explode()` copies (`token.erase(remove(...), token.end())`), but the version field
+was left trailing anyway since there's no upside to moving the uuid back off field 0
+now that other things already key off that position. **This also means
+heartbeat-delivered `reload`/`file`/`outstop` commands (§2.3) were silently
+non-functional before today** — the exact-match compares in
+`DeviceEngine::coms_handler()` against a corrupted token never matched anything, so
+no queued command ever actually fired (harmless for `"OK"`, silently broken for
+real commands). Not a regression from this session's work; O2 testing is what
+surfaced it. **Deliberately excluded from `v0`: the register leg (§2.1)** — its raw,
+undelimited-bytes wire shape is what the devname-corruption bug (fixed 2026-08-12,
+see `docs/NEXT-SESSION.md`) depended on diffing correctly; adding a version field
+there means changing that shape, which is a separate decision.
 
 ### 2.1 register (`zmq_un`) — the sender-registration id
 - **device → dispatcher:** the raw `DevName` string (no envelope, no delimiter).
@@ -80,21 +110,25 @@ sender-registration id** on every leg *except* the initial register request. The
   number assigned to a sender when it registers"; concretely it is this UUID string.)
 
 ### 2.2 io (`zmq_io`) — user-action reports  *(payload churns)*
-- **device → dispatcher:** `<uuid>; <DevName>; <action>; `
-- **dispatcher → device:** `OK`
+- **device → dispatcher:** `<uuid>; <DevName>; <action>; v0;`
+- **dispatcher → device:** `OK` (trivial ack, not itself versioned)
 - Dispatcher stores the latest as `(uuid → action)` and keeps a history ring
   (`zmq_io.history`, default 100). The `<action>` string is an **opaque device-produced
   payload** (e.g. conMIDI's `ar_str()` report) — **this is the churning payload**, not
   framing.
-- ⚠️ Device side buffers reports in an in-process queue bounded by `STACKED_IO_MSG = 10`
-  (`LowLevel/Common/include/zmq_coms.hpp`); bursts overflow and **drop reports**
-  (reporting path only — does not affect the action/command path). Deferred; see project
-  memory `conboard-dispatch-overflow`.
+- **O4 relieved (2026-08-12).** Device side buffers reports in an in-process queue,
+  `STACKED_IO_MSG` (`LowLevel/Common/include/zmq_coms.hpp`), raised `10` → `64`. On
+  overflow `zmq_coms::dispatch()` now evicts the **oldest** queued report to make room
+  for the new one (previously rejected the newest) — a live monitor cares about current
+  state more than a complete backlog, so this keeps the stream from lagging further
+  behind during a sustained burst. Still reporting-path only; the action/command path is
+  unaffected. The overflow log (`DeviceEngine::report()`) is now rate-limited to once/sec
+  instead of once per dropped report.
 
 ### 2.3 heartbeat (`zmq_hb`) — liveness + commands  *(command vocab churns)*
-- **device → dispatcher:** `<uuid>; <DevName>; `
-- **dispatcher → device:** `<uuid>; OK;`  (nothing pending)
-  or  `<uuid>; <cmd>; <params>; `  (a queued command)
+- **device → dispatcher:** `<uuid>; <DevName>; v0;`
+- **dispatcher → device:** `<uuid>; OK; v0;`  (nothing pending)
+  or  `<uuid>; <cmd>; <params>; v0;`  (a queued command)
 - The device **filters the reply by matching field 0 to its own uuid**.
 - Commands are queued by the backend via `POST /iocommand` (§3) and delivered on the
   device's next heartbeat. Current command vocabulary (**payload**):
@@ -119,20 +153,23 @@ The dispatcher runs an embedded **Crow** app. Routes (`LowLevel/dispatcher/src/m
 **`/ws` payload.** On connect the dispatcher sends the action history as CSV:
 ```
 UUID,UserAction\r\n
-<uuid>,<action>\r\n
+v0,<uuid>,<action>\r\n
 …
 ```
-then streams each new action as a single `<uuid>,<action>` text frame. (It currently
+then streams each new action as a single `v0,<uuid>,<action>` text frame. (It currently
 also rebroadcasts any inbound WS frame to all clients — assume that is incidental and
-subject to change.)
+subject to change.) The `v0,` envelope-version token (O2, resolved 2026-08-12) leads
+every data row; the CSV header row stays unversioned since the console keys its
+"skip this line" check off the literal `UUID,` prefix. The console strips the token
+defensively, so an older dispatcher build that doesn't send it still parses fine.
 
 **Proposed heartbeat/roster frame (`NEEDS ACK`, O5).** Action frames stay exactly as
 above — their `<action>` payload already contains commas (e.g. conMIDI's `[b0,b1,b2]`),
 so we do **not** add fields to them. Instead the dispatcher additionally emits, about
 once a second, one **heartbeat frame per live sender**, distinguished by a literal `HB`
-first token:
+first token (now led by the `v0,` envelope-version token, O2):
 ```
-HB,<uuid>,<devname>\r\n
+v0,HB,<uuid>,<devname>\r\n
 ```
 `<devname>` is the sender's registered `DevName` (§2.1), which contains no comma. This
 one additive frame gives the console two things it can't derive today: the
@@ -178,28 +215,52 @@ scope for this ledger except as context.
   `/websocket`, rather than the unused `9080`. The `configParser` default of `9999`
   is an unreached fallback (config.json always ships the key) and was left as-is.
 
-- **O2 — No envelope version field. `NEEDS ACK`.**
-  Nothing in §2/§3 carries a version. **Proposal (additive):** introduce a `v` field in
-  the envelope so v0↔v1 can be distinguished when harpia lands. Cheap to add now; flagged
-  because both sides must agree where it lives.
+- **O2 — Envelope version field. RESOLVED + HARDWARE-VERIFIED (2026-08-12).**
+  Added a literal `v0` token (`CONBOARD_ENVELOPE_VERSION`,
+  `LowLevel/Common/include/envelope_version.hpp`, shared by device handlers and the
+  dispatcher) to every leg that already carries structured, delimited payload: io and
+  heartbeat on ZMQ (both directions — **trailing** field, see §2.2/§2.3 for why not
+  leading), and the dispatcher's `/ws` output (action rows and the `HB` roster frame —
+  leading `v0,`, §3, safe there since the frontend does plain JS string splitting, not
+  the buggy C++ `explode()`). WS-side receivers strip the token defensively (tolerating
+  an unversioned sender); the ZMQ legs don't need to since the uuid position didn't
+  move. **Deliberately left unversioned: the register leg** (§2.1, raw undelimited
+  bytes — versioning it means changing that wire shape, a separate decision) **and the
+  io leg's trivial `OK` ack** (no structured content to key a version off).
+  **Found and fixed along the way**: a real, previously-unknown bug in the shared
+  `explode()` parser (see §2 preamble) that silently broke heartbeat-delivered
+  `reload`/`file`/`outstop` commands — unrelated to O2 itself, but surfaced by it.
+  Verified live on `192.168.7.4`: connected directly to `/ws` (port `40080`) with the
+  real wireless keyboard+mouse combo running — `v0,HB,<uuid>,<devname>` frames stream
+  once/sec for both devices, and typing on the physical keyboard produced
+  `v0,<uuid>,[1,<code>,<press/release>]` action frames, confirming both the ZMQ-side
+  fields (uuid stayed matchable) and the WS-side version token work correctly
+  end-to-end.
 
 - **O3 — WS action payload is opaque CSV.** `<uuid>,<action>` where `<action>` is a raw
   device string. As typed rules/reports arrive this **will churn** — treated as payload,
   not framing. No ack needed; noted so the frontend doesn't hardcode a shape.
 
-- **O4 — Reporting-queue overflow (`STACKED_IO_MSG = 10`).** Known, deferred; reporting
-  path only. Revisit when building MIDI→keystroke/text rules. See memory
-  `conboard-dispatch-overflow`.
+- **O4 — Reporting-queue overflow. RELIEVED + DEPLOYED (2026-08-12).** `STACKED_IO_MSG`
+  (`LowLevel/Common/include/zmq_coms.hpp`) raised `10` → `64`, and `zmq_coms::dispatch()`
+  now evicts the oldest queued report on overflow instead of rejecting the newest — see
+  §2.2 for detail. Reporting path only, doesn't touch the action/command path. This is
+  relief, not a structural fix: a *sustained* burst (not just a short spike) can still
+  overflow a bounded queue fed one round-trip at a time; revisit with real pipelining
+  (batching, or a non-REQ/REP transport) when building MIDI→keystroke/text rules if that
+  turns out to matter in practice. Deployed to `192.168.7.4` alongside O2; not
+  separately load-tested against a real burst (no easy way to generate one from the
+  wireless keyboard/mouse combo used for this session's hardware verification).
 
-- **O5 — Heartbeat/roster frame on `/ws`. RESOLVED (2026-08-12).**
+- **O5 — Heartbeat/roster frame on `/ws`. RESOLVED + HARDWARE-VERIFIED (2026-08-12).**
   `dispatcher::GetHeartbeats()` (`LowLevel/dispatcher/src/dispatcher.cpp`) builds one
   `HB,<uuid>,<devname>\r\n` line per device whose last ping (io or heartbeat leg) is
   within `HeartbeatLiveWindowSec` (5s), reusing the existing `devices`/`last_ping` maps
   — no new state. `user_handler` (`main.cpp`) broadcasts that string to all `/ws`
   clients about once a second, alongside the existing action-frame broadcast. Verified
-  via a full `./build-cross.sh zero3` (compiles clean under the real arm64 toolchain);
-  not yet exercised against a live console + real device on hardware — do that before
-  fully trusting the liveness LEDs.
+  live on `192.168.7.4` connecting straight to `/ws` (not yet through the console UI
+  itself, but the console parses this exact stream) — one `HB` line per second for both
+  the `WirelessKB` and `WirelessMouse` uuids, continuously, over multiple checks.
 
 ---
 
@@ -221,3 +282,35 @@ scope for this ledger except as context.
   the `HB,<uuid>,<devname>` roster/heartbeat frame on `/ws` ~1/s per live sender.
   Console side needs no change (already consumed this format). Not yet verified
   end-to-end against real hardware.
+- **v0.4 (2026-08-12)** — HW/dispatcher session. **O2 resolved + hardware-verified**:
+  added the `v0` envelope-version token to io/heartbeat (both directions, ZMQ,
+  trailing field) and `/ws` output (action rows + `HB` frame, leading field);
+  registration leg and the io ack intentionally left unversioned (see O2). **O4
+  relieved + deployed**: `STACKED_IO_MSG` `10`→`64` plus drop-oldest overflow policy.
+  Console (`frontend/console/src/model/events.ts`) updated to strip the version token,
+  tolerating dispatcher builds that predate it. **Two bugs found and fixed along the
+  way** (see O2): (1) a heartbeat-reply construction bug in
+  `dispatcher::th_heart_beat()` that sent queued commands to devices as empty strings
+  instead of the real command; (2) a missing `erase()` after `remove()` in the shared
+  `explode()` parser (both copies) that silently corrupted every non-first token,
+  which meant heartbeat-delivered `reload`/`file`/`outstop` commands never actually
+  fired, for any device, ever — root-caused by isolated reproduction
+  (`std::remove` compacts but doesn't shrink) before being fixed at the source.
+  Deployed to `192.168.7.4` and verified live: `HB` frames streaming correctly for
+  both `WirelessKB`/`WirelessMouse`, and real physical keystrokes producing correctly
+  versioned action frames on `/ws`.
+- **Dispatcher SIGABRT-on-stop. FOUND + FIXED + HARDWARE-VERIFIED (2026-08-12,
+  same session).** `dispatcher.service` was throwing `std::system_error("Invalid
+  argument")` and getting SIGABRT'd on every stop during
+  `install-on-device.sh`'s "stopping any running conboard services" step (seen
+  repeatedly in `journalctl -u dispatcher.service` across multiple reinstalls this
+  session). Exactly the same class of double-join bug already fixed in
+  `zmq_coms::die()` for `conKeyB`/`conMouse`: `main.cpp` calls `dsp.die()`
+  explicitly before returning, then `~dispatcher()` calls `die()` again as the
+  stack-allocated `dsp` goes out of scope, double-joining `hb`/`th_unuique_numb`/
+  `io` — undefined behaviour that libstdc++ turns into exactly this crash. Fixed
+  the same way: `joinable()` guards on each `.join()` in `dispatcher::die()`
+  (`LowLevel/dispatcher/src/dispatcher.cpp`). Verified on `192.168.7.4`: two
+  consecutive `install-on-device.sh` reinstalls against the fixed binary both show
+  `Deactivated successfully` in the journal, no `terminate`/`ABRT`, no
+  `system_error`.

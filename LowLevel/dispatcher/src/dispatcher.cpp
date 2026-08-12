@@ -1,4 +1,5 @@
 #include "dispatcher.hpp"
+#include "envelope_version.hpp"
 /**
  * Dispatcher works as a buffer or holder for all the communication between the low level
  * and the high level.
@@ -60,10 +61,20 @@ dispatcher::~dispatcher(){
 }
 
 void dispatcher::die(){
+    // main.cpp calls dsp.die() explicitly before returning, then ~dispatcher()
+    // calls die() again on the way out (dsp is a stack object there) -- the same
+    // double-join shape already fixed in zmq_coms::die() for conKeyB/conMouse.
+    // std::thread::join() on an already-joined thread is undefined behaviour
+    // (libstdc++ throws std::system_error("Invalid argument")), which is exactly
+    // the SIGABRT seen on every dispatcher stop; guard with joinable() so a
+    // second call is a no-op.
     stop = true;
-    hb->join();
-    th_unuique_numb->join();
-    io->join();
+    if (hb && hb->joinable())
+        hb->join();
+    if (th_unuique_numb && th_unuique_numb->joinable())
+        th_unuique_numb->join();
+    if (io && io->joinable())
+        io->join();
 }
 
 void dispatcher::startup(){
@@ -86,7 +97,14 @@ std::vector<std::string> dispatcher::explode(std::string const & s, char delim)
     std::istringstream iss(s);
     for (std::string token; std::getline(iss, token, delim); )
     {
-        remove(token.begin(),token.end(),' ');
+        // std::remove compacts non-space chars to the front and returns the new
+        // logical end -- it does NOT shrink the string. Without erase() here,
+        // every token after the first (i.e. every one that had a leading space
+        // from the "; " separator) keeps its original length with a leftover
+        // duplicated trailing char (e.g. "OK" -> "OKK"), breaking any exact
+        // string compare against it (found while verifying O2: this is why
+        // heartbeat-delivered reload/file/outstop commands never fired).
+        token.erase(remove(token.begin(),token.end(),' '), token.end());
         result.push_back(std::move(token));
     }
     return result;
@@ -119,6 +137,10 @@ void dispatcher::th_io()
         {
             std::string raw = message.to_string();
             std::vector<std::string> parsed_msg = explode(raw,';');
+            // INTERFACE.md O2: envelope version trails the frame (uuid stays
+            // field 0 -- see envelope_version.hpp for why leading placement
+            // broke live uuid matching here). Not read, just present on the
+            // wire; ignored below.
             zmq::message_t reply(std::string("OK"));
             zmq::send_result_t res = io_socket.send(reply,zmq::send_flags::dontwait);
             if(!res)
@@ -219,6 +241,9 @@ void dispatcher::th_heart_beat(){
             // get the client name and uuid.
             std::string raw = message.to_string();
             std::vector<std::string> parsed_msg = explode(raw,';');
+            // INTERFACE.md O2: envelope version trails the frame (uuid stays
+            // field 0 -- see envelope_version.hpp). Not read, just present on
+            // the wire; ignored below.
             if(parsed_msg.size()>1)
             {
                 std::vector<std::string>::iterator msg_it = parsed_msg.begin(); //adjust to get the uuid
@@ -228,12 +253,12 @@ void dispatcher::th_heart_beat(){
                     resp = *msg_it;
                     {
                         std::lock_guard<std::mutex> locker(command_lock);
-                        if(commands.count(*msg_it)>0) //is there a command 
+                        if(commands.count(*msg_it)>0) //is there a command
                         {
-                            std::string cmd = commands[*msg_it]; 
+                            std::string cmd = commands[*msg_it];
                             commands.erase(*msg_it); //clear the command
                             resp.append("; ");
-                            resp.append(commands[*msg_it]);
+                            resp.append(cmd);
                             resp.append(";");
                         }
                         else
@@ -241,7 +266,10 @@ void dispatcher::th_heart_beat(){
                             resp.append("; OK;");
                         }
                     }
-                }                
+                    resp.append(" ");
+                    resp.append(CONBOARD_ENVELOPE_VERSION);
+                    resp.append(";");
+                }
             }
             zmq::message_t reply(resp);
             zmq::send_result_t s_res = coms_socket.send(reply,zmq::send_flags::none);
@@ -385,6 +413,8 @@ std::string dispatcher::GetConfigs()
 
 std::string dispatcher::GetLastActions()
 {
+    // Column header stays unversioned -- the console keys its "skip this line"
+    // check off the literal "UUID," prefix (INTERFACE.md O2/O3).
     std::string ret = "UUID,UserAction\r\n";
     {
         std::lock_guard<std::mutex> locker(action_lock);
@@ -392,6 +422,8 @@ std::string dispatcher::GetLastActions()
             LAct!=LastActions.end();
             LAct++)
         {
+            ret.append(CONBOARD_ENVELOPE_VERSION);
+            ret.append(",");
             ret.append((*(LAct)).first);
             ret.append(",");
             ret.append((*(LAct)).second);
@@ -425,7 +457,8 @@ std::string dispatcher::GetHeartbeats()
         {
             continue;
         }
-        ret.append("HB,");
+        ret.append(CONBOARD_ENVELOPE_VERSION);
+        ret.append(",HB,");
         ret.append(dev->first);
         ret.append(",");
         ret.append(dev->second);
@@ -442,6 +475,8 @@ std::string dispatcher::GetLastAction()
         if(uptodate)
         {
             uptodate = false;
+            ret.append(CONBOARD_ENVELOPE_VERSION);
+            ret.append(",");
             ret.append(LastAction.first);
             ret.append(",");
             ret.append(LastAction.second);

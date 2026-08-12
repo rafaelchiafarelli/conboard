@@ -22,6 +22,7 @@
 #include "oActions.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -104,4 +105,8 @@ private:
     bool          outToFile = false;
     std::string   outFileName;
     std::ofstream outFileStream;
+
+    // Rate-limits the "dispatch overflow" log (INTERFACE.md O4) so a sustained
+    // burst logs once/sec instead of once per dropped report.
+    std::chrono::steady_clock::time_point lastOverflowLog{};
 };

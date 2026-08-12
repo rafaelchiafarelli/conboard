@@ -52,8 +52,13 @@ void DeviceEngine::stopEngine() {
 
 bool DeviceEngine::report(const std::string &msg) {
     bool ok = com->dispatch(msg);
-    if (!ok)
-        std::cout << "dispatch overflow" << std::endl;
+    if (!ok) {
+        auto now = std::chrono::steady_clock::now();
+        if (now - lastOverflowLog >= std::chrono::seconds(1)) {
+            std::cout << "dispatch overflow (reporting queue full, dropping oldest)" << std::endl;
+            lastOverflowLog = now;
+        }
+    }
     if (outToFile)
         outFileStream << msg << std::endl;
     return ok;

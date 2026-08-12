@@ -1,7 +1,9 @@
 // Live event layer for the dispatcher stream. The whole app consumes ONE websocket
 // (the liveBus below) and fans parsed events out to the views. Frames are the
-// dispatcher's `<uuid>,<action>` text plus the proposed `HB,<uuid>,<devname>`
-// heartbeat/roster frame (INTERFACE.md O3/O5). No simulated/mock source exists.
+// dispatcher's `<uuid>,<action>` text plus the `HB,<uuid>,<devname>` heartbeat/
+// roster frame (INTERFACE.md O3/O5), each optionally led by a `v0,` envelope
+// version token (O2) that onData() strips before parsing. No simulated/mock
+// source exists.
 
 /** One incoming device event — a raw trigger the dispatcher reported. */
 export interface DeviceEvent {
@@ -106,8 +108,13 @@ class LiveBus {
   private onData(data: string) {
     let rosterChanged = false
     for (const line of data.split(/\r?\n/)) {
-      const row = line.trim()
-      if (!row || row.startsWith('UUID,')) continue // skip CSV header
+      let row = line.trim()
+      if (!row || row.startsWith('UUID,')) continue // skip CSV header (unversioned, see O2)
+      // Envelope version (O2): "v0,<rest>". Strip it defensively -- older
+      // dispatcher builds that predate O2 won't send it, so a bare frame is
+      // still handled below exactly as before.
+      const vMatch = row.match(/^v\d+,(.*)$/)
+      if (vMatch) row = vMatch[1]
       // Heartbeat/roster frame (O5): HB,<uuid>,<devname>
       if (row.startsWith('HB,')) {
         const p = row.split(',')

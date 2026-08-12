@@ -302,6 +302,56 @@ beyond keyboard), not attempted this session.
   `start` on both units) to continue testing. This is not a new bug, just another
   confirmed occurrence — still open, see below.
 
+- **O2 — envelope version field. RESOLVED + HARDWARE-VERIFIED (2026-08-12).** Added a
+  `v0` token to io/heartbeat (both ZMQ directions) and `/ws` output (action rows + `HB`
+  frame). Full detail in `INTERFACE.md` §2/§5 O2 — worth reading there, not
+  duplicated here, because the interesting part is two bugs found while verifying it,
+  not the feature itself:
+  - A heartbeat-reply bug in `dispatcher::th_heart_beat()`: queued commands were sent
+    to devices as empty strings (map lookup happened after erasing the entry). Fixed.
+  - **A real, previously-unknown bug**: the shared `explode()` parser (duplicated in
+    `zmq_coms.cpp` and `dispatcher.cpp`) called `std::remove(...)` to strip spaces but
+    never followed it with `erase()`, so every token after the first kept a leftover
+    duplicated trailing character. Practical effect: **heartbeat-delivered
+    `reload`/`file`/`outstop` commands have never actually worked** — the exact-string
+    compares in `DeviceEngine::coms_handler()` never matched. Root-caused via an
+    isolated reproduction outside the codebase, then fixed at the source (both
+    `explode()` copies). Not yet separately re-verified live (a `reload`/`file` command
+    delivered end-to-end through a real heartbeat round trip) — the fix is proven
+    correct in isolation and the surrounding pipeline (uuid matching, `HB` frames) is
+    hardware-verified, but the specific command-delivery path itself wasn't
+    re-exercised live this session. Do that first if anything built on top of
+    reload/file/outstop misbehaves.
+  - Deploy pitfall hit twice this session: after the first `scp` + `tar xzf` +
+    `install-on-device.sh` cycle, later redeploys only re-ran `install-on-device.sh`
+    against the **already-extracted** `~/conboard` directory without re-extracting the
+    freshly uploaded tarball first — so two rebuild-and-redeploy cycles silently
+    installed a stale binary while looking successful (services restarted cleanly, just
+    running old code). Caught by `strings <binary> | grep <known-new-string>` on the
+    deployed binary. **Always re-run `tar xzf conboard-zero3.tar.gz` before
+    `install-on-device.sh` on every redeploy, not just the first.**
+
+- **O4 — reporting-queue overflow. RELIEVED + DEPLOYED (2026-08-12).** `STACKED_IO_MSG`
+  `10`→`64`, drop-oldest eviction on overflow instead of drop-newest, rate-limited
+  overflow log. Detail in `INTERFACE.md` §2.2/§5 O4. Deployed alongside O2; not
+  separately load-tested against a real sustained burst (no easy way to generate one
+  from the wireless keyboard/mouse combo on hand this session).
+
+- **Dispatcher SIGABRT-on-stop. FOUND + FIXED + HARDWARE-VERIFIED (2026-08-12,
+  same session).** Seen repeatedly earlier this session
+  (`journalctl -u dispatcher.service` after every `install-on-device.sh` run):
+  `terminate called after throwing an instance of 'std::system_error'` /
+  `what(): Invalid argument`, `Main process exited, code=killed, status=6/ABRT`.
+  Exactly the same class of bug already fixed in `zmq_coms::die()` for
+  `conKeyB`/`conMouse` (double-`join()` on the same `std::thread`, see the
+  2026-08-12 entry above): `main.cpp` calls `dsp.die()` explicitly before
+  returning, then `~dispatcher()` calls `die()` again as the stack-allocated
+  `dsp` goes out of scope, double-joining `hb`/`th_unuique_numb`/`io`. Fixed with
+  the same `joinable()`-guard pattern in `dispatcher::die()`
+  (`LowLevel/dispatcher/src/dispatcher.cpp`). Verified on `192.168.7.4`: two
+  consecutive reinstalls against the fixed binary both show `Deactivated
+  successfully` in the journal, no crash.
+
 ## Still needs on-board verification
 
 - **evdev hardware test — keyboard + mouse VERIFIED (2026-08-11)** on `192.168.7.4`

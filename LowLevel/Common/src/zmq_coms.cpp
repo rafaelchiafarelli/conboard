@@ -1,4 +1,5 @@
 #include "zmq_coms.hpp"
+#include "envelope_version.hpp"
 #include <iostream>
 #include <stdlib.h>
 #include <stdio.h>
@@ -72,13 +73,19 @@ void zmq_coms::th_io()
              * 
              * 
             */
-            std::string msg="";
-            msg.append(unique_number);
+            // INTERFACE.md O2: envelope version trails the frame (NOT leading --
+            // see envelope_version.hpp for why: explode()'s `remove(...' ')`
+            // without a follow-up `erase()` leaves garbage on any token that had
+            // a leading space, i.e. every token except field 0. Field 0 must stay
+            // the uuid, so the version goes last instead).
+            std::string msg=unique_number;
             msg.append("; ");
             msg.append(DevName);
             msg.append("; ");
             msg.append(to_send);
             msg.append("; ");
+            msg.append(CONBOARD_ENVELOPE_VERSION);
+            msg.append(";");
             zmq::message_t request_msg(msg);
             
             zmq::send_result_t res_send = io_socket.send(request_msg, zmq::send_flags::dontwait);
@@ -117,14 +124,21 @@ void zmq_coms::th_io()
 }
 bool zmq_coms::dispatch(std::string msg)
 {
-    bool ret = false;
+    // INTERFACE.md O4: reporting path only (HID output is unaffected -- see
+    // DeviceEngine::oQueue). On overflow, evict the OLDEST queued report rather
+    // than reject the incoming one: a live monitor cares about current state,
+    // not a complete backlog of stale events, so this keeps the stream from
+    // lagging further behind reality during a sustained burst. Return value
+    // still signals "something was dropped" so callers can log it.
+    bool ret = true;
     {
         std::lock_guard<std::mutex> locker(io_mu);
-        if(io_queue.size()< STACKED_IO_MSG)
+        if(io_queue.size() >= STACKED_IO_MSG)
         {
-            io_queue.push(msg);
-            ret = true;
+            io_queue.pop();
+            ret = false;
         }
+        io_queue.push(msg);
     }
     return ret;
 }
@@ -189,7 +203,14 @@ std::vector<std::string> zmq_coms::explode(std::string const & s, char delim)
     std::istringstream iss(s);
     for (std::string token; std::getline(iss, token, delim); )
     {
-        remove(token.begin(),token.end(),' ');
+        // std::remove compacts non-space chars to the front and returns the new
+        // logical end -- it does NOT shrink the string. Without erase() here,
+        // every token after the first (i.e. every one that had a leading space
+        // from the "; " separator) keeps its original length with a leftover
+        // duplicated trailing char (e.g. "OK" -> "OKK"), breaking any exact
+        // string compare against it (found while verifying O2: this is why
+        // heartbeat-delivered reload/file/outstop commands never fired).
+        token.erase(remove(token.begin(),token.end(),' '), token.end());
         result.push_back(std::move(token));
     }
     return result;
@@ -236,11 +257,16 @@ std::vector<std::string> zmq_coms::heartbeat()
         * 
         */
         
+        // INTERFACE.md O2: envelope version trails the frame (see th_io() for
+        // why -- explode()'s remove()-without-erase() quirk corrupts any token
+        // that isn't field 0).
         std::string msg=unique_number;
         msg.append("; ");
         msg.append(DevName);
         msg.append("; ");
-        zmq::message_t req_message(msg);  
+        msg.append(CONBOARD_ENVELOPE_VERSION);
+        msg.append(";");
+        zmq::message_t req_message(msg);
         zmq::send_result_t send_res = hb_socket.send(req_message, zmq::send_flags::dontwait);
         if(send_res)
         {
@@ -251,6 +277,9 @@ std::vector<std::string> zmq_coms::heartbeat()
             {
                 std::string raw = reply.to_string();
                 std::vector<std::string> parsed_msg = explode(raw,';');
+                // Reply carries a trailing version token too (dispatcher side);
+                // nothing below reads past the fields it already expects, so it's
+                // ignored here rather than stripped.
                 if(parsed_msg.size()>1) //check if the message is making sense
                 {
                     std::vector<std::string>::iterator msg_it = parsed_msg.begin();

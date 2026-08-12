@@ -11,7 +11,13 @@
 #include <algorithm>
 #include <queue>
 #define WAIT_FOR_TRIES 100000
-#define STACKED_IO_MSG 10
+// Reporting-queue depth (INTERFACE.md O4). This bounds the io leg only -- HID
+// output has its own separate queue (DeviceEngine::oQueue) and is unaffected.
+// Raised from 10: th_io() sends one report per local REQ/REP round trip, so a
+// short burst (a fast MIDI fader sweep, a high-poll-rate mouse) could still
+// outrun a 10-slot buffer even though each round trip is normally sub-ms. 64
+// absorbs a much longer burst before dispatch() has to start evicting.
+#define STACKED_IO_MSG 64
 // Bounds how long a REQ socket's recv() blocks waiting for a reply. Without this,
 // a dead/unreachable dispatcher (e.g. stopped first during a reinstall) leaves the
 // heartbeat/io thread blocked forever, so Stop()/stopEngine() can never join it --
