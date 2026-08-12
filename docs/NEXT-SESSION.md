@@ -173,6 +173,27 @@ list. This file is the **live punch list** — what's known broken or unverified
   precise repro (what's left behind, on a board that had *what* installed) before
   changing anything.
 
+- **Dispatcher devname corruption on registration (found 2026-08-12, NOT yet
+  fixed).** `dispatcher::th_unique_number()` (`LowLevel/dispatcher/src/
+  dispatcher.cpp:272-280`) has `memset(data,1024,0)` — arguments swapped (should be
+  `memset(data,0,1024)`), so it zeroes zero bytes, a no-op — then builds
+  `l_devname` via `std::string((char *)message.data())`, assuming a NUL
+  terminator the wire protocol never provides (device→dispatcher registration is
+  raw, undelimited bytes per `INTERFACE.md` §2.1). When a shorter devname's ZMQ
+  message reuses memory that previously held a longer one, the string ctor reads
+  past the real content into stale bytes. **Caught live**: after a service
+  restart, the `/ws` heartbeat roster showed `WirelessKBuse` instead of
+  `WirelessKB` — literally the old `WirelessMouse` registration's tail
+  (`"...use"`) glued onto the new, shorter name. This corrupts real device names
+  shown in the console's live view, intermittently, depending on registration
+  order/timing. Fix is small and low-risk: build the string with an explicit
+  length, `std::string l_devname((char *)message.data(), message.size())`,
+  instead of relying on an assumed terminator (and fix the swapped `memset` args
+  while touching this, though it becomes moot once the string isn't relying on
+  the buffer's leftover content). Not fixed this session — found while
+  hardware-verifying the O5 heartbeat frame and the SIGTERM-hang fix, out of
+  scope for both.
+
 ## Proposed feature (not started, sized 2026-08-11): synthetic 1:1 keyboard rules on hotplug
 
 Idea from the user: when a new keyboard is plugged in, auto-generate a full 1:1
@@ -284,26 +305,37 @@ beyond keyboard), not attempted this session.
   Same-VID/PID composite devices are common (dongles, combo receivers, multi-function
   controllers) — this wasn't a synthetic edge case.
 
-  **Second bug found during the reinstall (NOT yet fixed — new, open):**
-  `conKeyB`/`conMouse` (the shared `EvdevDevice`/`DeviceEngine` stack, so likely
-  `conJoyS` too) don't shut down cleanly on SIGTERM. `install-on-device.sh`'s
-  "stopping any running conboard services" step sent the normal stop signal, and both
-  handlers hung for the full ~90s `systemd` `TimeoutStopSec` before being SIGKILLed
-  (`journalctl`: `State 'stop-sigterm' timed out. Killing.`). This left both
-  auto-generated units in a wedged `Loaded: error ... Device or resource busy` state
-  needing manual `systemctl reset-failed` + `daemon-reload` + `start` to recover — a
-  real end-user hitting this on a normal reinstall/upgrade would see handlers silently
-  fail to come back. Likely cause: `EvdevDevice::Stop()` / `DeviceEngine::stopEngine()`
-  join threads that are blocked on a synchronous `read()` (evdev fd) or a zmq call that
-  doesn't check the `stop` atomic promptly — needs the in-thread read to be interrupted
-  (e.g. close the fd first, or a poll/timeout loop) rather than relying on a blocking
-  read to return on its own. Not root-caused or fixed this session — next session
-  should start from `LowLevel/Common/src/evdevDevice.cpp` (`Stop()`) and
-  `deviceEngine.cpp` (`stopEngine()`).
-  **Reconfirmed 2026-08-12**, same two units, same symptom, on an unrelated
-  dispatcher-only reinstall — this is a reliable repro, not a one-off; worth
-  prioritizing since every future dispatcher/backend rebuild will hit it whenever
-  a keyboard/mouse/joystick is plugged in.
+  **Second bug found during the reinstall — ROOT-CAUSED + FIXED (2026-08-12):**
+  `conKeyB`/`conMouse` (the shared `EvdevDevice`/`DeviceEngine` stack, so also
+  `conJoyS`/`conMIDI`) didn't shut down cleanly on SIGTERM. Root cause:
+  `zmq_coms`'s heartbeat/io REQ sockets did a fully blocking `recv()` with no
+  timeout (`LowLevel/Common/src/zmq_coms.cpp`); `install-on-device.sh` stops the
+  dispatcher *before* the per-device handler units, so a handler's next
+  heartbeat/io round trip waited forever for a reply that would never come, and
+  `stopEngine()` hung inside `thcoms->join()`/`io_thread->join()` until systemd's
+  ~90s `TimeoutStopSec` gave up and SIGKILLed it — leaving the auto-generated unit
+  wedged (`Loaded: error ... Device or resource busy`) needing manual
+  `systemctl reset-failed` + `daemon-reload` + `start` to recover.
+
+  Fixed with `ZMQ_RCVTIMEO` (1s) on the hb/io/un REQ sockets plus reconnecting on
+  a fresh socket after a timeout (a REQ socket that timed out mid-reply is still
+  "owed" a recv — `send()`-ing again on the same socket throws instead of
+  working). That fix then unmasked a **second, previously-unreachable bug**:
+  `DeviceEngine::stopEngine()` calls `com->die()` explicitly and then `delete
+  com`, whose destructor calls `die()` again — joining the same `std::thread`
+  twice, which is undefined behaviour and which libstdc++ turns into a
+  `std::system_error("Invalid argument")` abort. It never fired before because
+  the first `join()` always hung forever first, so this line was never reached.
+  `zmq_coms::die()` now guards with `joinable()` so a second call is a no-op.
+
+  Verified live on `192.168.7.4`: before either fix, reinstalling with the
+  wireless keyboard+mouse handlers running took 3m19s (each unit hanging ~90s
+  before SIGKILL, then wedged, needing manual recovery); with only the first fix,
+  the reinstall was fast but the handler crashed via the double-join instead;
+  with both fixes, a clean `systemctl stop` of both units completes in ~0.25s
+  with `Deactivated successfully` in the journal — no hang, no crash — and the
+  handlers restart and keep reporting real keyboard/mouse input correctly
+  afterward.
 - **Delete/undeploy round-trip. VERIFIED (2026-08-11)** on `192.168.7.4`: exercised the
   console's exact flow (`DELETE /board/<id>` then `POST /undeploy`) against a disposable
   synthetic board (unique fake `header.identifier.tags` so it could never match real
