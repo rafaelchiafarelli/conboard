@@ -89,7 +89,18 @@ void zmq_coms::th_io()
                 std::cout<<"IOwill wait"<<std::endl;
                 zmq::message_t recv_msg;
                 zmq::recv_result_t res  = io_socket.recv(recv_msg,zmq::recv_flags::none);
-
+                if(!res)
+                {
+                    // No reply within RCV_TIMEOUT_MS (dispatcher unreachable/down).
+                    // A REQ socket that timed out mid-reply can't just send() again
+                    // -- it's still "owed" a recv -- so reconnect on a fresh socket
+                    // right away (the `!io_connected` / WAIT_FOR_TRIES path below is
+                    // a much slower fallback, meant for "never got connected" at
+                    // startup, not a mid-flight timeout).
+                    io_socket.close();
+                    io_socket = zmq::socket_t(io_context, zmq::socket_type::req);
+                    io_handler();
+                }
             }
         }
         else if (!io_connected)
@@ -124,6 +135,7 @@ bool zmq_coms::dispatch(std::string msg)
 void zmq_coms::io_handler()
 {
     io_socket.setsockopt(ZMQ_LINGER, 10);
+    io_socket.setsockopt(ZMQ_RCVTIMEO, RCV_TIMEOUT_MS);
     io_connected = io_socket.connect(io_address);
     if(!io_connected)
         std::cout<<"IO server not connected"<<std::endl;
@@ -134,6 +146,7 @@ void zmq_coms::io_handler()
 void zmq_coms::heartbeat_handler()
 {
     hb_socket.setsockopt(ZMQ_LINGER, 10);
+    hb_socket.setsockopt(ZMQ_RCVTIMEO, RCV_TIMEOUT_MS);
     hb_connected = hb_socket.connect(hb_address);
     if(!hb_connected)
         std::cout<<"Heartbeat not connected to:"<<hb_address.c_str()<<std::endl;
@@ -146,6 +159,7 @@ void zmq_coms::unique_number_handler(){
         //send the DevName to the dispatcher and receive a unique number in response
         //there is a catch if two devices with the same name are installed. See dispatcher for more information
     un_socket.setsockopt(ZMQ_LINGER, 10);
+    un_socket.setsockopt(ZMQ_RCVTIMEO, RCV_TIMEOUT_MS);
     un_connected = un_socket.connect(un_address);
     if(un_connected)
     {
@@ -246,8 +260,21 @@ std::vector<std::string> zmq_coms::heartbeat()
                     }
                 }
             }
+            else
+            {
+                // No reply within RCV_TIMEOUT_MS (e.g. the dispatcher was stopped
+                // out from under us -- install-on-device.sh stops it before the
+                // per-device handlers). A REQ socket that timed out mid-reply can't
+                // send() again -- it's still "owed" a recv -- so reconnect on a
+                // fresh socket; heartbeat_handler() runs again on the next call
+                // since hb_connected is now false. Without this, coms_handler()'s
+                // thread blocks here forever and stopEngine() can never join it.
+                hb_socket.close();
+                hb_socket = zmq::socket_t(hb_context, zmq::socket_type::req);
+                hb_connected = false;
+            }
         }
-    } 
+    }
     return ret;
 }
 
