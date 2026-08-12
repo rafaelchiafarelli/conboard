@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 
     std::thread *th_user_handler;
     th_user_handler = new std::thread(&user_handler, &dsp, &stop);
-    app.port(40080)
+    app.port(dsp.GetHTTPPort())
       .multithreaded()
       .run();
 

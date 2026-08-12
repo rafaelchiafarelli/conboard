@@ -73,10 +73,11 @@ only proof that ever worked on this exact unit.
   ST7789 datasheet without re-testing on this exact panel** — cheap clones
   vary enough that a "more correct" sequence can render worse than what's
   proven to work.
-- **Rotation**: `CONHMI_PANEL_ROTATION=90` (standard ST7789 MADCTL hardware
-  rotation, `0x60`) confirmed correct orientation on screen. **Not yet fully
-  settled** — user may still need `270` (`0xA0`) if it turns out flipped;
-  same drop-in mechanism, one-line change, no rebuild.
+- **Rotation: FINALIZED (2026-08-11) at `CONHMI_PANEL_ROTATION=270`** (`0xA0`).
+  `90` was tried first and looked flipped 180° on the actual enclosure; `270`
+  confirmed correct by eye on hardware. Applied on the board via a
+  `hmi.service.d` drop-in and now also the compiled-in default in
+  `LowLevel/HMI/src/main.cpp` (so a fresh install needs no drop-in for this).
 - **`/conboard` on this board was NOT a real install before this session** —
   `conboard_backend` was a 0-byte placeholder, `BOARD.txt`/`HOW-TO-INSTALL.txt`
   were empty, and both `backend.service` and `hmi.service` were `systemctl
@@ -100,7 +101,6 @@ only proof that ever worked on this exact unit.
   measurements. See `LowLevel/HMI/include/clipped_panel.hpp` for how it
   composes (wraps any `PanelDriver`, crops+offsets, everything above it in
   the stack — LVGL, AppShell — only ever sees the cropped size).
-- Rotation direction (90 vs 270) not 100% finalized — see above.
 - Phases 3-5 not started: visual theme matching `frontend/console/src/
   index.css`'s palette, the actual WiFi/activation/radio screens, and which
   physical control does what (nav scheme) are all open.
@@ -132,7 +132,7 @@ sudo systemctl restart hmi.service
 | `CONHMI_PANEL_DC_LINE` | `74` (PC10) | **confirmed** |
 | `CONHMI_PANEL_BL_LINE` | `-1` (none) | not needed on this panel (no BL pin used by the reference driver) |
 | `CONHMI_PANEL_WIDTH` / `HEIGHT` | `240` / `320` | **confirmed** (physical panel, pre-rotation) |
-| `CONHMI_PANEL_ROTATION` | `90` | working, not fully finalized (may need `270`) |
+| `CONHMI_PANEL_ROTATION` | `270` | **confirmed** (2026-08-11) |
 | `CONHMI_WORK_X/Y_OFFSET`, `WIDTH`/`HEIGHT` | `0,0,320,240` (no crop) | **placeholder** — needs real enclosure measurements |
 | `CONHMI_ENC1_A`/`B`/`BTN`, `CONHMI_ENC2_A`/`B`/`BTN`, `CONHMI_BTN1`/`BTN2` | see above | **placeholder** — not wired yet |
 
@@ -175,28 +175,72 @@ list. This file is the **live punch list** — what's known broken or unverified
 
 ## Still needs a dispatcher-side change
 
-Both are `NEEDS ACK` in `INTERFACE.md` §5, confirmed still unimplemented (`grep '"HB'
-LowLevel/dispatcher/src/` finds nothing; `app.port(40080)` is still hardcoded):
-
-- **O1 — HTTP port inconsistency.** Dispatcher hardcodes `app.port(40080)`;
-  `config.json` says `9080`. Nginx's `/websocket` proxy matches only the hardcode by
-  luck. Make the dispatcher read its port from config and settle on one value.
-- **O5 — heartbeat/roster frame.** The console's live view wants a
+- **O1 — HTTP port inconsistency. RESOLVED (2026-08-11).** Dispatcher now reads its
+  HTTP port from `config.json` (`dispatcher::GetHTTPPort()`) instead of hardcoding
+  `app.port(40080)`; `config.json`'s `http.port` was changed from `9080` to `40080` to
+  match what nginx and every deployed board already use. Not yet rebuilt/redeployed to
+  the board — do that before relying on it live.
+- **O5 — heartbeat/roster frame.** `NEEDS ACK` in `INTERFACE.md` §5, confirmed still
+  unimplemented (`grep '"HB' LowLevel/dispatcher/src/` finds nothing). The console's
+  live view wants a
   `HB,<uuid>,<devname>` frame ~1/s per live sender (device-name map + liveness for the
   per-device LEDs and live filtering). Console consumes it with graceful fallback
   today (shows raw uuids). Needs the dispatcher to start emitting it.
 
 ## Still needs on-board verification
 
-- **evdev hardware test** (conJoyS/conKeyB/conMouse) — built + unit-tested, never
-  exercised on real hardware. Runbook: `docs/HW-TEST-evdev.md`.
-- **Delete/undeploy round-trip** on a clean install: delete a device in the console →
-  confirm the backend row is gone (204) **and** the on-device profile + handler unit
-  are gone (`POST /undeploy`, `backend/src/deploy.cpp`).
+- **evdev hardware test — keyboard + mouse VERIFIED (2026-08-11)** on `192.168.7.4`
+  with a real 2.4G wireless keyboard+mouse combo receiver (`4037:2804`). Real
+  keystrokes and real mouse motion/clicks confirmed flowing end-to-end (hardware →
+  kernel evdev → `conKeyB`/`conMouse` → `DeviceEngine::report()` → zmq → dispatcher →
+  `/ws` live stream), cross-checked against a raw `/dev/input/eventN` capture running
+  simultaneously. Starter profiles added: `boards/WirelessKB.json` /
+  `boards/WirelessMouse.json` (closes the "no keyboard/mouse profiles shipped" gap).
+  Joystick (`conJoyS`) still untested — no gamepad was available this session.
+  Runbook: `docs/HW-TEST-evdev.md` (note: its §0/§1 host-PC-in-the-loop setup wasn't
+  used — this test connected over the network instead and read the dispatcher's `/ws`
+  stream directly, which turned out to be a simpler and equally conclusive way to prove
+  the pipeline works).
+  **Bug found + fixed along the way (deploy.cpp): FIXED + REDEPLOYED, live on
+  `192.168.7.4`.** `backend/src/deploy.cpp`'s `tags_sig()` matched an existing
+  on-device profile file by `header.identifier.tags` alone. A composite USB device
+  (this receiver) exposes a keyboard interface and a mouse interface under the *same*
+  `ID_VENDOR_ID`/`ID_MODEL_ID`, so deploying the mouse profile silently overwrote the
+  keyboard profile's file — only one of the two ever existed on disk, and the launcher
+  only ever spawned one handler correctly. Fixed by folding `DEVICE.type` into the
+  signature. Rebuilt (`./build-cross.sh zero3`), reinstalled on `192.168.7.4`, and
+  re-verified live: deploying keyboard then mouse now correctly produces two separate
+  files (`WirelessKB.json` + `WirelessMouse.json`) with the right content in each.
+  Same-VID/PID composite devices are common (dongles, combo receivers, multi-function
+  controllers) — this wasn't a synthetic edge case.
+
+  **Second bug found during the reinstall (NOT yet fixed — new, open):**
+  `conKeyB`/`conMouse` (the shared `EvdevDevice`/`DeviceEngine` stack, so likely
+  `conJoyS` too) don't shut down cleanly on SIGTERM. `install-on-device.sh`'s
+  "stopping any running conboard services" step sent the normal stop signal, and both
+  handlers hung for the full ~90s `systemd` `TimeoutStopSec` before being SIGKILLed
+  (`journalctl`: `State 'stop-sigterm' timed out. Killing.`). This left both
+  auto-generated units in a wedged `Loaded: error ... Device or resource busy` state
+  needing manual `systemctl reset-failed` + `daemon-reload` + `start` to recover — a
+  real end-user hitting this on a normal reinstall/upgrade would see handlers silently
+  fail to come back. Likely cause: `EvdevDevice::Stop()` / `DeviceEngine::stopEngine()`
+  join threads that are blocked on a synchronous `read()` (evdev fd) or a zmq call that
+  doesn't check the `stop` atomic promptly — needs the in-thread read to be interrupted
+  (e.g. close the fd first, or a poll/timeout loop) rather than relying on a blocking
+  read to return on its own. Not root-caused or fixed this session — next session
+  should start from `LowLevel/Common/src/evdevDevice.cpp` (`Stop()`) and
+  `deviceEngine.cpp` (`stopEngine()`).
+- **Delete/undeploy round-trip. VERIFIED (2026-08-11)** on `192.168.7.4`: exercised the
+  console's exact flow (`DELETE /board/<id>` then `POST /undeploy`) against a disposable
+  synthetic board (unique fake `header.identifier.tags` so it could never match real
+  hardware, plus a dummy systemd unit standing in for a handler). Result: DB row 204 →
+  404, `boards/*.json` profile removed, systemd unit stopped+disabled+deleted, no
+  residue left on the board. No bug found — this path works as designed.
 - **DJ-Tech-4-Mix events reach the monitor** — the conMIDI open-retry fix
   (`LowLevel/Common/include/runDevice.hpp`) should make the handler recover from the
   transient ALSA-port-busy failure that used to leave it inert after a redeploy
-  restart; confirm on a board.
+  restart; confirm on a board. **Still pending (2026-08-11): hardware wasn't
+  available this session — pinned for next time.**
 
 ## How to build / install / deploy / test
 

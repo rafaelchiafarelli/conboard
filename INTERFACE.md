@@ -169,13 +169,14 @@ scope for this ledger except as context.
 
 ## 5. Open items
 
-- **O1 — HTTP port is inconsistent. `NEEDS ACK` (affects both sides).**
-  The dispatcher Crow app is **hardcoded to `app.port(40080)`** in
-  `LowLevel/dispatcher/src/main.cpp`, but `config.json` declares `http.port: 9080` and
-  the `configParser` default is `9999`. nginx (`interface.conf`) proxies `/websocket`
-  → `40080`, which matches only the hardcode. **Proposal:** make the dispatcher read its
-  HTTP port from config and settle on one value. Backend/UI session: which port do you
-  want to consume? (This is where the frontend's websocket lands.)
+- **O1 — HTTP port is inconsistent. RESOLVED (2026-08-11).**
+  The dispatcher Crow app now reads its port from config
+  (`dispatcher::GetHTTPPort()` → `app.port(dsp.GetHTTPPort())` in
+  `LowLevel/dispatcher/src/main.cpp`) instead of hardcoding `40080`.
+  `config.json`'s `http.port` was changed from `9080` to `40080` — settling on the
+  value nginx (`interface.conf`) and every deployed board already use for
+  `/websocket`, rather than the unused `9080`. The `configParser` default of `9999`
+  is an unreached fallback (config.json always ships the key) and was left as-is.
 
 - **O2 — No envelope version field. `NEEDS ACK`.**
   Nothing in §2/§3 carries a version. **Proposal (additive):** introduce a `v` field in
@@ -216,3 +217,5 @@ scope for this ledger except as context.
   above (deploy/undeploy, the O5-consuming live monitor, device inventory) is merged to
   `main`. No wire-format change since v0.1; O1 and O5 are still open on the dispatcher
   side.
+- **v0.2 (2026-08-11)** — **O1 resolved**: dispatcher HTTP port is now config-driven,
+  settled on `40080`. O5 (heartbeat/roster frame) still open on the dispatcher side.

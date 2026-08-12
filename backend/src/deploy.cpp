@@ -5,9 +5,10 @@
 // This endpoint bridges the two: it takes an edited profile (the boards/*.json shape,
 // which the frontend already produces from its Board model) and:
 //   1. writes it into the on-device boards dir -- OVERWRITING the file whose
-//      header.identifier.tags match, because the launcher matches a device to a
-//      profile by those tags (LowLevel/Common/src/launcherMatch.cpp), not by filename,
-//      so a second file with the same tags would double-match; and
+//      header.identifier.tags + DEVICE.type match (see tags_sig below), because the
+//      launcher matches a device to a profile by tags alone
+//      (LowLevel/Common/src/launcherMatch.cpp), not by filename, so a second file with
+//      the same tags would double-match; and
 //   2. triggers the same udev coldplug replay the installer uses, so the launcher
 //      restarts that device's handler with the new profile.
 //
@@ -46,8 +47,18 @@ std::string read_file(const std::string& p) {
     return ss.str();
 }
 
-// Order-independent signature of header.identifier.tags, for matching the existing
-// profile file. Empty if the board declares no tags.
+// Order-independent signature of header.identifier.tags + DEVICE.type, for matching
+// the existing profile file. Empty if the board declares no tags.
+//
+// DEVICE.type is folded in because tags alone aren't unique per profile: a composite
+// USB device (e.g. a wireless keyboard+mouse receiver) exposes multiple functional
+// interfaces under one shared ID_VENDOR_ID/ID_MODEL_ID, so a keyboard profile and a
+// mouse profile for the *same physical dongle* legitimately have identical tags. Tags
+// alone would make the second deploy overwrite the first profile's file instead of
+// writing its own (confirmed on hardware: a 4037:2804 combo receiver's mouse profile
+// silently clobbered the keyboard profile's boards/*.json). type is stable across a
+// device rename, so redeploying the *same* profile after an edit still finds and
+// overwrites its own file.
 std::string tags_sig(const rapidjson::Value& board) {
     std::vector<std::string> kv;
     if (board.IsObject() && board.HasMember("header") && board["header"].IsObject()) {
@@ -62,9 +73,16 @@ std::string tags_sig(const rapidjson::Value& board) {
             }
         }
     }
+    if (kv.empty())
+        return "";  // a profile with no tags matches nothing (preserve prior behavior)
     std::sort(kv.begin(), kv.end());
     std::string s;
     for (const auto& e : kv) { s += e; s += ';'; }
+    if (board.IsObject() && board.HasMember("DEVICE") && board["DEVICE"].IsObject() &&
+        board["DEVICE"].HasMember("type") && board["DEVICE"]["type"].IsString()) {
+        s += "type=";
+        s += board["DEVICE"]["type"].GetString();
+    }
     return s;
 }
 

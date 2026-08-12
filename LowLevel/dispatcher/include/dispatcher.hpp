@@ -58,6 +58,7 @@ class dispatcher{
         bool PostIOCommand(std::string UUID, std::vector<std::string> params);
         std::string GetConfigAddr(){return disp.http.ConfigAddr;};
         std::string GetIOCommandAddr(){return disp.http.IOCommandAddr;};
+        int GetHTTPPort(){return disp.http.port;};
         bool PostScreenCommand(std::string UUID, std::vector<std::string> params);                
         void die();
         dispatcher();

@@ -113,10 +113,9 @@ int main(int argc, char *argv[])
         // the CONHMI_WORK_* working-box wrapping below for that.
         cfg.width         = static_cast<int>(envOrUint("CONHMI_PANEL_WIDTH", 240));
         cfg.height        = static_cast<int>(envOrUint("CONHMI_PANEL_HEIGHT", 320));
-        // 90 (landscape): current physical mounting. Standard ST7789 MADCTL
-        // convention, not yet hardware-confirmed on this exact panel -- if
-        // the image comes out mirrored, try 270 before assuming it's broken.
-        cfg.rotation      = envOrInt("CONHMI_PANEL_ROTATION", 90);
+        // 270 (landscape): hardware-confirmed correct orientation on this
+        // exact panel/enclosure (2026-08-11).
+        cfg.rotation      = envOrInt("CONHMI_PANEL_ROTATION", 270);
         panel = std::make_unique<St7789Panel>(cfg);
     } else {
         panel = std::make_unique<NullPanel>(

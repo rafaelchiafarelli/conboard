@@ -45,8 +45,12 @@ REST base `/api/v1` (configurable):
 - `POST /api/v1/deploy` — **Axis C**: deploy an authored profile to the realtime path.
   Body is a board in the `boards/*.json` shape (what the frontend `Board` model
   serializes to). Writes it into `CONBOARD_BOARDS_DIR` (default `/conboard/boards`),
-  **overwriting the profile whose `header.identifier.tags` match** (the launcher binds a
-  device to a profile by tags, not filename), then reloads the handler via
+  **overwriting the profile whose `header.identifier.tags` + `DEVICE.type` match**
+  (the launcher itself binds a device to a profile by tags alone, not filename — but
+  deploy also folds in `DEVICE.type` so that a composite USB device exposing multiple
+  functional interfaces under one shared VID/PID, e.g. a keyboard+mouse combo
+  receiver, gets a separate on-device file per profile instead of the second deploy
+  silently overwriting the first), then reloads the handler via
   `CONBOARD_RELOAD_CMD` (default: the udev coldplug replay the installer uses). Returns
   `{"written":"<path>","reloaded":<bool>}`. Hand-written (not harpia-generated).
 - `POST /api/v1/undeploy` — inverse of deploy: removes the tag-matched on-device

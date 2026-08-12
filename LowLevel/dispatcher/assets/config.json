@@ -13,7 +13,7 @@
         "address":"tcp://127.0.0.1"
    },
    "http":{
-    "port":9080,
+    "port":40080,
     "ConfigAddr":"/config",
     "IOCommandAddr":"/iocommand",
     "SharedCommandAddr":"/sharedcommand",
