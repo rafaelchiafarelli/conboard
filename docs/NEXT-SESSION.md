@@ -173,26 +173,25 @@ list. This file is the **live punch list** — what's known broken or unverified
   precise repro (what's left behind, on a board that had *what* installed) before
   changing anything.
 
-- **Dispatcher devname corruption on registration (found 2026-08-12, NOT yet
-  fixed).** `dispatcher::th_unique_number()` (`LowLevel/dispatcher/src/
-  dispatcher.cpp:272-280`) has `memset(data,1024,0)` — arguments swapped (should be
-  `memset(data,0,1024)`), so it zeroes zero bytes, a no-op — then builds
+- **Dispatcher devname corruption on registration. FIXED + HARDWARE-VERIFIED
+  (2026-08-12).** `dispatcher::th_unique_number()` (`LowLevel/dispatcher/src/
+  dispatcher.cpp`) had `memset(data,1024,0)` — arguments swapped (should be
+  `memset(data,0,1024)`), so it zeroed zero bytes, a no-op — then built
   `l_devname` via `std::string((char *)message.data())`, assuming a NUL
   terminator the wire protocol never provides (device→dispatcher registration is
   raw, undelimited bytes per `INTERFACE.md` §2.1). When a shorter devname's ZMQ
-  message reuses memory that previously held a longer one, the string ctor reads
+  message reused memory that previously held a longer one, the string ctor read
   past the real content into stale bytes. **Caught live**: after a service
   restart, the `/ws` heartbeat roster showed `WirelessKBuse` instead of
   `WirelessKB` — literally the old `WirelessMouse` registration's tail
-  (`"...use"`) glued onto the new, shorter name. This corrupts real device names
-  shown in the console's live view, intermittently, depending on registration
-  order/timing. Fix is small and low-risk: build the string with an explicit
-  length, `std::string l_devname((char *)message.data(), message.size())`,
-  instead of relying on an assumed terminator (and fix the swapped `memset` args
-  while touching this, though it becomes moot once the string isn't relying on
-  the buffer's leftover content). Not fixed this session — found while
-  hardware-verifying the O5 heartbeat frame and the SIGTERM-hang fix, out of
-  scope for both.
+  (`"...use"`) glued onto the new, shorter name.
+
+  Fixed by bounding the string construction with `message.size()` instead of an
+  assumed terminator, and fixing the swapped `memset` args. Verified on
+  `192.168.7.4`: cycled both handlers' registration several times via
+  `systemctl restart`, including deliberately reproducing the exact
+  Mouse-then-KB order that originally triggered the corruption — clean
+  `WirelessKB`/`WirelessMouse` devnames on `/ws` every time.
 
 ## Proposed feature (not started, sized 2026-08-11): synthetic 1:1 keyboard rules on hotplug
 
