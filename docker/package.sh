@@ -53,6 +53,8 @@ copy 644 LowLevel/assets/launcher.service
 copy 644 LowLevel/dispatcher/assets/dispatcher.service
 copy 644 backend/assets/backend.service
 copy 644 LowLevel/HMI/assets/hmi.service
+copy 644 docker/assets/conboard-firewall.service
+copy 755 docker/assets/conboard-password.sh
 
 # --- udev rule + hotplug handler ---------------------------------------------
 copy 644 LowLevel/assets/100-usb.rules
@@ -165,7 +167,12 @@ conboard — install on: ${BOARD_DESC} (${ARCH})
 4. Classify attached devices (diagnostic):
      sudo /conboard/tools/devprobe/build/devprobe
 
-To remove conboard (keeps the rules DB; add --purge to delete it too):
+5. Open the console -- it will prompt for a login the first time:
+     open http://<board-ip>/
+     sudo conboard-password           # show the login (user is "conboard")
+     sudo conboard-password --reset   # forgot it, or want a new one? this is safe any time
+
+To remove conboard (keeps the rules DB + web login; add --purge to delete those too):
      sudo ./uninstall-on-device.sh
 
 USB-OTG status for this board: ${BOARD_OTG}

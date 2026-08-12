@@ -72,8 +72,19 @@ firmware's `midi_action_mode`; `mm_normal` is the omitted zero-value). Added to
 
 Every generated REST route is **credential-gated**: requests must carry
 `X-User: <entity>` and `X-Pswd: <hash>` (the hash is the compile-time md5 of the domain,
-not a secret — conboard's own auth, the power-password design below, layers in front).
-gRPC mirrors this via `x-user`/`x-pswd` metadata.
+not a secret — a real credential was meant to layer in front, see the power-password
+design below). gRPC mirrors this via `x-user`/`x-pswd` metadata.
+
+**That front layer, until power-password exists**: `backend/assets/interface.conf`
+puts nginx Basic Auth in front of the whole site (console + `/api/v1` + `/ws`,
+`/healthz` excepted) — `install-on-device.sh` generates a random per-install password
+into `/etc/conboard-web-password.txt` (root-only) on first install -- retrieve or
+rotate it any time with `sudo conboard-password` / `sudo conboard-password --reset`
+(`docker/assets/conboard-password.sh`, installed to `/usr/local/bin`), so losing the
+password is never a real lockout. It's a stand-in,
+not the designed experience below (no rotating password, no on-screen prompt, no
+lockout escalation) — that design stays unimplemented, tracked in
+[../NOTES.md](../NOTES.md).
 
 ## Runtime config (env)
 | var | default | meaning |

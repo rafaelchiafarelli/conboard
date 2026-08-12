@@ -1,0 +1,13 @@
+[Unit]
+Description=conboard firewall (INPUT-chain allowlist: SSH, HTTP, drop the rest)
+Documentation=https://github.com/rafaelchiafarelli/conboard
+After=network.target
+Before=nginx.service backend.service dispatcher.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/conboard/scripts/conboard-firewall.sh
+
+[Install]
+WantedBy=multi-user.target

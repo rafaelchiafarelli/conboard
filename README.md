@@ -1,7 +1,7 @@
 # conboard
 Control Surface based on the Orange Pi.
 Most of the usb-otg ware used from https://github.com/dpavlin/usb-otg
-It is a good project and you definetly should check it out.
+It is a good project and you definitely should check it out.
 
 As of **milestone `2026-08-10`**, conboard is a full stack, not just the device
 firmware: attached USB/HID devices are exposed as configurable **control-surface
@@ -10,6 +10,10 @@ gRPC over an embedded SQLite rules library) persists and deploys rule profiles, 
 **React console** (`frontend/console/`) — served on-device by nginx — is where you
 actually add devices, edit trigger→output rules, and watch a live event monitor. See
 [What's built](#whats-built) below for the full picture.
+
+> New to conboard, or evaluating a unit rather than building the software? Start at
+> [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) instead — this README is the
+> engineering documentation.
 
 ## Boards
 
@@ -77,11 +81,11 @@ are in that board's `HOW-TO-INSTALL.txt`.
   `POST /undeploy` (write/remove `boards/*.json` + reload the handler) and
   `GET /devices` (udev-based inventory for the console's add-device flow). See
   [backend/README.md](backend/README.md).
-- **Known gaps**: the dispatcher doesn't yet emit the `HB,<uuid>,<devname>`
-  heartbeat/roster frame the console's live view wants (`INTERFACE.md` **O5**,
-  `NEEDS ACK`) — the console falls back to showing raw sender uuids until it does.
-  `uninstall-on-device.sh --purge` is not fully reliable yet (open bug, not yet
-  root-caused). Current punch list: [docs/NEXT-SESSION.md](docs/NEXT-SESSION.md).
+- **Known gaps**: `uninstall-on-device.sh --purge` had two compounding bugs — the
+  SIGTERM-hang in the evdev/MIDI handlers (fixed + hardware-verified 2026-08-12) and
+  an incomplete USB-gadget teardown that left the `g1` configfs tree behind (fixed in
+  code, not yet re-verified on hardware). Current punch list:
+  [docs/NEXT-SESSION.md](docs/NEXT-SESSION.md).
 - **Local screen/buttons/encoders UI** (`LowLevel/HMI/`, binary `conHMI`) —
   **in progress**, hardware-verified but not feature-complete: a small SPI
   TFT + 2 push buttons + 2 rotary encoders, wired directly to the board,
@@ -133,7 +137,18 @@ are in that board's `HOW-TO-INSTALL.txt`.
 * generalized behavior 
     * missing installing the system as an ethernet port (it would simplify access by users)
     * launch/detection of a service is heavily dependent on user configuration, which is dangerous — the user should not have that power
-    * no security planned yet, needs a firewall or something that could prevent outside access to the communications.
+    * **basic hardening landed + HARDWARE-VERIFIED (2026-08-12)**: nginx Basic Auth in
+      front of the console (a real per-install password, generated on first install
+      and retrievable/rotatable any time with `sudo conboard-password` /
+      `sudo conboard-password --reset` — losing it is never a real lockout), the
+      dispatcher's unauthenticated
+      `/config`/`/iocommand`/`/screencommand`/`/ws` HTTP server bound to loopback-only
+      (was reachable on the network with no credential at all — confirmed live on
+      `192.168.7.4` before the fix, closed after), and a default-deny INPUT firewall
+      (`scripts/conboard-firewall.sh`, ssh + :80 only). Still not the designed
+      **power-password** experience (`backend/README.md`) — no rotating password, no
+      on-screen prompt, no lockout escalation. See `docs/NEXT-SESSION.md` for the full
+      verification writeup, including two bugs the hardware pass itself caught.
 * midi device
     * SysEx commands are not working
     * multiple commands and multiple actions can overrun the system (pre-existing 10-slot reporting-queue overflow, `STACKED_IO_MSG`)

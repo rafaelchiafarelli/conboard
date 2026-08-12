@@ -31,7 +31,7 @@ esac
 
 echo "== stopping any running conboard services =="
 # Includes retired units (frontend, old backend) so a re-install cleans them up.
-for unit in usb-otg launcher dispatcher backend hmi frontend; do
+for unit in usb-otg launcher dispatcher backend hmi frontend conboard-firewall; do
     systemctl stop "${unit}.service" 2>/dev/null || true
 done
 
@@ -76,6 +76,7 @@ install -m 644 /conboard/LowLevel/assets/launcher.service              /etc/syst
 install -m 644 /conboard/LowLevel/dispatcher/assets/dispatcher.service /etc/systemd/system/
 install -m 644 /conboard/backend/assets/backend.service                /etc/systemd/system/
 install -m 644 /conboard/LowLevel/HMI/assets/hmi.service               /etc/systemd/system/
+install -m 644 /conboard/docker/assets/conboard-firewall.service       /etc/systemd/system/
 systemctl daemon-reload
 
 echo "== installing udev rule + event handler =="
@@ -88,6 +89,33 @@ install -m 755 /conboard/LowLevel/assets/event_handler.sh /conboard/event_handle
 # handlers before usb-otg + dispatcher are up, so they couldn't register with the
 # dispatcher or reach /dev/hidgN. The coldplug replay happens after those start.
 udevadm control --reload-rules || true
+
+echo "== installing conboard-password (retrieve/reset the web login any time) =="
+# On PATH regardless of where the artifact was unpacked, so "I forgot/lost the
+# password" is always `sudo conboard-password --reset`, never a real lockout.
+install -m 755 /conboard/docker/assets/conboard-password.sh /usr/local/bin/conboard-password
+
+echo "== web login: generating/keeping a per-install password =="
+# nginx's Basic Auth (backend/assets/interface.conf) is the real perimeter secret --
+# the app-level X-User/X-Pswd the backend also checks is a fixed value baked into
+# harpia-generated code (effectively public, see backend/README.md), not a real
+# credential. Generate a random password on first install (via the same
+# conboard-password helper a customer would use to reset one later, so there's one
+# code path); a re-install (without --purge, see uninstall-on-device.sh) keeps the
+# existing one so re-running this script doesn't lock the customer out with a new,
+# unannounced password. Either way, re-assert perms every run -- a stale perm from
+# an older/buggy install gets fixed by a plain re-install too.
+HTPASSWD_FILE=/etc/nginx/.htpasswd-conboard
+if [ ! -f "$HTPASSWD_FILE" ]; then
+    conboard-password --reset || echo "  WARNING: see above -- nginx will refuse to serve the site (auth_basic_user_file missing) until this is fixed (sudo conboard-password --reset)." >&2
+else
+    echo "  keeping existing login (sudo conboard-password to see it, sudo conboard-password --reset to change it)."
+    NGINX_USER="$(awk '/^[ \t]*user[ \t]+/{print $2; exit}' /etc/nginx/nginx.conf 2>/dev/null | tr -d ';')"
+    NGINX_USER="${NGINX_USER:-www-data}"
+    NGINX_GROUP="$(id -gn "$NGINX_USER" 2>/dev/null || echo "$NGINX_USER")"
+    chown "root:$NGINX_GROUP" "$HTPASSWD_FILE" 2>/dev/null || true
+    chmod 640 "$HTPASSWD_FILE"
+fi
 
 echo "== installing nginx site (serves the console UI, proxies API + websockets) =="
 # The console SPA lives at /conboard/frontend (from the artifact); nginx serves it
@@ -108,7 +136,7 @@ else
 fi
 
 echo "== enabling services (start on boot) =="
-systemctl enable usb-otg.service dispatcher.service launcher.service backend.service
+systemctl enable usb-otg.service dispatcher.service launcher.service backend.service conboard-firewall.service
 # hmi.service (the screen/buttons/encoders UI) is installed but deliberately NOT
 # enabled/started here: it needs the physical SPI panel + GPIO wiring to init()
 # successfully, which most boards running this installer today don't have yet.
@@ -119,6 +147,7 @@ systemctl enable usb-otg.service dispatcher.service launcher.service backend.ser
 # starting it inside the same systemd transaction that `--now` opens deadlocks
 # the two jobs (the installer hangs). Start as plain, separate jobs instead.
 echo "== starting services =="
+systemctl start conboard-firewall.service   # before opening anything up to the network
 systemctl start usb-otg.service       # brings up the USB gadget now
 systemctl start dispatcher.service
 systemctl start backend.service       # management API (REST/gRPC) over SQLite
@@ -136,7 +165,9 @@ echo "Done. Attached devices are handled now; the launcher also runs at boot and
 echo "Quick checks:"
 echo "  ls /sys/class/udc            # must be non-empty for USB gadget to bind"
 echo "  systemctl status usb-otg.service dispatcher.service launcher.service backend.service"
+echo "  iptables -L INPUT -n              # confirm the firewall allowlist (ssh/80 only)"
 echo "  curl -s localhost:8080/healthz   # backend management API (direct)"
 echo "  curl -s localhost/healthz        # via nginx (same origin as the UI)"
-echo "  open http://<board-ip>/          # the conboard console UI"
+echo "  open http://<board-ip>/          # the conboard console UI (will prompt for the web login)"
+echo "  sudo conboard-password            # show the web login (--reset to change it)"
 echo "  systemctl enable --now hmi.service   # once the SPI screen/buttons/encoders are wired"

@@ -14,12 +14,14 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 PURGE=0
 [ "${1:-}" = "--purge" ] && PURGE=1
 
 # Every unit conboard has ever shipped, current + retired (frontend = old python UI;
 # backend covers both the retired python and the current C++ one).
-UNITS=(usb-otg launcher dispatcher backend hmi frontend)
+UNITS=(usb-otg launcher dispatcher backend hmi frontend conboard-firewall)
 
 echo "== stopping + disabling services =="
 for u in "${UNITS[@]}"; do
@@ -51,10 +53,22 @@ echo "== removing udev rule + reloading =="
 rm -f /etc/udev/rules.d/100-usb.rules
 udevadm control --reload-rules 2>/dev/null || true
 
+echo "== reopening the firewall (conboard-firewall.service is gone) =="
+# The allowlist existed only to protect conboard's own services; leaving INPUT
+# locked down to ssh+80 after conboard itself is removed would be a surprise for
+# whatever the board is used for next.
+command -v iptables >/dev/null 2>&1 && { iptables -P INPUT ACCEPT; iptables -F INPUT; } || true
+
 echo "== removing nginx site + reloading =="
 if [ -f /etc/nginx/conf.d/conboard.conf ]; then
     rm -f /etc/nginx/conf.d/conboard.conf
     command -v nginx >/dev/null 2>&1 && { nginx -t 2>/dev/null && systemctl reload nginx 2>/dev/null || true; }
+fi
+# The generated web-login (install-on-device.sh) is host config, not app data --
+# kept across a plain uninstall (so a re-install doesn't hand out a new,
+# unannounced password) but wiped on --purge like everything else.
+if [ "$PURGE" -eq 1 ]; then
+    rm -f /etc/nginx/.htpasswd-conboard /etc/conboard-web-password.txt /usr/local/bin/conboard-password
 fi
 
 # Remove a stale global libcommon entry from older installs (pre-bundled-lib scheme),
@@ -66,12 +80,20 @@ if [ -f /usr/local/lib/libcommon.so ]; then
 fi
 rm -f /etc/ld.so.conf.d/conboard.conf 2>/dev/null || true
 
-# Tear down any live USB gadget so the port is released (best-effort; the script is
-# idempotent). conboard's own teardown lives in scripts/, gone after we rm -rf, so do
-# a minimal configfs cleanup here.
+# Tear down any live USB gadget so the port is released (best-effort). Run BEFORE
+# `rm -rf /conboard` below, while scripts/usb-gadget-stop.sh (bundled in this same
+# artifact tree, see docker/package.sh) is still on disk -- it's the real teardown
+# (unbind UDC, rm the configfs symlinks, rmdir functions/configs/strings/g1 itself),
+# not just an unbind. A plain UDC-unbind alone left the g1 configfs tree behind,
+# which is what previously made --purge not a true clean slate.
 if [ -d /sys/kernel/config/usb_gadget/g1 ]; then
     echo "== tearing down USB gadget g1 =="
-    echo "" > /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null || true
+    if [ -x "$HERE/scripts/usb-gadget-stop.sh" ]; then
+        "$HERE/scripts/usb-gadget-stop.sh" || true
+    else
+        echo "  WARNING: scripts/usb-gadget-stop.sh missing -- falling back to a UDC-only unbind." >&2
+        echo "" > /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null || true
+    fi
 fi
 
 echo "== removing program tree =="
@@ -91,4 +113,6 @@ fi
 
 echo
 echo "Done. conboard services + program removed."
-[ "$PURGE" -eq 0 ] && echo "Rules-library data kept at /conboard/backend/data (re-install restores it)."
+if [ "$PURGE" -eq 0 ]; then
+    echo "Rules-library data kept at /conboard/backend/data (re-install restores it)."
+fi

@@ -213,7 +213,14 @@ int main(int argc, char *argv[])
 
     std::thread *th_user_handler;
     th_user_handler = new std::thread(&user_handler, &dsp, &stop);
-    app.port(dsp.GetHTTPPort())
+    // Loopback-only: none of these routes (/config, /iocommand, /screencommand, /ws)
+    // carry any credential check, and nginx already proxies /ws to the console over
+    // /websocket on this same host (see backend/assets/interface.conf). Without an
+    // explicit bindaddr, Crow defaults to 0.0.0.0 -- that put unauthenticated device
+    // control (POST /iocommand) directly on the network. Nothing outside this host
+    // calls these routes; the frontend only ever reaches /ws via nginx's loopback hop.
+    app.bindaddr("127.0.0.1")
+      .port(dsp.GetHTTPPort())
       .multithreaded()
       .run();
 
