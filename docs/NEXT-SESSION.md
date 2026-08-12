@@ -241,6 +241,15 @@ beyond keyboard), not attempted this session.
   Not yet cross-checked against the console's UI directly (only the raw `/ws`
   stream) — do that next if the per-device liveness LEDs need a visual confirm.
 
+  **Further confirmed with real input** (same session, hands on the board): captured
+  a 15s `/ws` window while physically typing on the wireless keyboard and moving the
+  mouse. Every resulting action frame's uuid matched a uuid the HB roster was
+  already advertising under the right devname -- keystrokes (evdev codes 16/17/30/31,
+  press+release pairs) landed under the `WirelessKB` uuid, relative-motion reports
+  (`[2,axis,delta]`) landed under the `WirelessMouse` uuid. So the uuid-to-devname
+  mapping isn't just structurally correct, it's proven against live, distinguishable
+  traffic from two simultaneous senders.
+
   **Reinstalling on this board re-triggered the known SIGTERM-hang bug** (see below)
   on `WirelessKB-port-4-1.service`/`WirelessMouse-port-4-1.service` — both ended up
   `failed`/wedged after `install-on-device.sh`'s stop step, same symptom as
