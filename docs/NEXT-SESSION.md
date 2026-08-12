@@ -229,14 +229,24 @@ beyond keyboard), not attempted this session.
   `app.port(40080)`; `config.json`'s `http.port` was changed from `9080` to `40080` to
   match what nginx and every deployed board already use. Not yet rebuilt/redeployed to
   the board — do that before relying on it live.
-- **O5 — heartbeat/roster frame. RESOLVED (2026-08-12).** Dispatcher now emits
-  `HB,<uuid>,<devname>` ~1/s per live sender on `/ws`
+- **O5 — heartbeat/roster frame. RESOLVED + HARDWARE-VERIFIED (2026-08-12).**
+  Dispatcher now emits `HB,<uuid>,<devname>` ~1/s per live sender on `/ws`
   (`dispatcher::GetHeartbeats()` + `user_handler` in `LowLevel/dispatcher/src/
   {dispatcher,main}.cpp`), reusing the existing `devices`/`last_ping` maps — "live"
-  means a ping within 5s. Verified via a full `./build-cross.sh zero3` (compiles
-  clean). **Not yet rebuilt/redeployed to a real board or checked against the
-  console's live view with an actual device** — do that before trusting the
-  per-device liveness LEDs / device-name filtering in practice.
+  means a ping within 5s. Deployed to `192.168.7.4` and confirmed by connecting
+  directly to the dispatcher's `/ws` (port `40080`) with the real wireless
+  keyboard+mouse combo (`conKeyB`/`conMouse`, boards `WirelessKB.json`/
+  `WirelessMouse.json`) live: two distinct `HB,<uuid>,<devname>` lines streamed once
+  a second, uuids matching the currently-registered devices, cadence as designed.
+  Not yet cross-checked against the console's UI directly (only the raw `/ws`
+  stream) — do that next if the per-device liveness LEDs need a visual confirm.
+
+  **Reinstalling on this board re-triggered the known SIGTERM-hang bug** (see below)
+  on `WirelessKB-port-4-1.service`/`WirelessMouse-port-4-1.service` — both ended up
+  `failed`/wedged after `install-on-device.sh`'s stop step, same symptom as
+  2026-08-11. Recovered manually (`systemctl reset-failed` + `daemon-reload` +
+  `start` on both units) to continue testing. This is not a new bug, just another
+  confirmed occurrence — still open, see below.
 
 ## Still needs on-board verification
 
@@ -281,6 +291,10 @@ beyond keyboard), not attempted this session.
   read to return on its own. Not root-caused or fixed this session — next session
   should start from `LowLevel/Common/src/evdevDevice.cpp` (`Stop()`) and
   `deviceEngine.cpp` (`stopEngine()`).
+  **Reconfirmed 2026-08-12**, same two units, same symptom, on an unrelated
+  dispatcher-only reinstall — this is a reliable repro, not a one-off; worth
+  prioritizing since every future dispatcher/backend rebuild will hit it whenever
+  a keyboard/mouse/joystick is plugged in.
 - **Delete/undeploy round-trip. VERIFIED (2026-08-11)** on `192.168.7.4`: exercised the
   console's exact flow (`DELETE /board/<id>` then `POST /undeploy`) against a disposable
   synthetic board (unique fake `header.identifier.tags` so it could never match real
