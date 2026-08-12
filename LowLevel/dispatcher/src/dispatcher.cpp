@@ -270,14 +270,19 @@ void dispatcher::th_unique_number()
     std::cout<<"unique number adr:"<<uuid.address.c_str()<<std::endl;
     un_socket.bind(uuid.address);
     char data[1024];
-    memset(data,1024,0);
+    memset(data,0,1024);
     zmq::message_t message((const void *)data,1024);
     while(!stop)
     {
         zmq::recv_result_t res = un_socket.recv(message,zmq::recv_flags::dontwait);
         if(res)
         {
-            std::string l_devname((char *)message.data());
+            // Registration is raw, undelimited bytes (INTERFACE.md S2.1) -- no
+            // guaranteed NUL terminator. Bound by message.size(), not by scanning
+            // for a terminator: a shorter devname landing where a longer one's
+            // message used to be can otherwise read past the real content into
+            // stale bytes (seen live: "WirelessKB" corrupted to "WirelessKBuse").
+            std::string l_devname((char *)message.data(), message.size());
             std::string l_unique_number = generate_unique_number(l_devname);
             std::string resp = "";
             resp.append(l_unique_number);            
