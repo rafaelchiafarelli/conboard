@@ -13,6 +13,7 @@
 // phase 4 work.
 #include "app_shell.hpp"
 #include "clipped_panel.hpp"
+#include "hmi_theme.hpp"
 #include "lvgl_glue.hpp"
 #include "panel_null.hpp"
 #include "panel_st7789.hpp"
@@ -165,7 +166,8 @@ int main(int argc, char *argv[])
     bool haveButton2 = tryStart(button2, "button2");
 
     lv_init();
-    lvgl_glue::createDisplay(*panel);
+    lv_display_t *disp = lvgl_glue::createDisplay(*panel);
+    hmi_theme::init(disp);
 
     lv_group_t *group = lv_group_create();
     lv_group_set_default(group);
