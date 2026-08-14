@@ -31,9 +31,12 @@ libpqxx.**
    apt/docker on the device) is the portable fit. The schema is **harpia-generated**;
    tables are created at boot via the DAO `create_table()`.
 2. **Management API** — REST (Crow) + gRPC over the generated DAOs. Serves the frontend.
-3. **Dispatcher seam** — the realtime event stream from `LowLevel/dispatcher` (ZMQ),
-   relayed to the frontend over the `/ws` websocket. The ZMQ consumer is still TODO;
-   the contract is `INTERFACE.md` (repo root).
+3. **Realtime event stream** — `LowLevel/dispatcher` (ZMQ) speaks its own websocket
+   directly (`INTERFACE.md`, repo root); nginx proxies `/websocket` straight to it
+   (`127.0.0.1:40080/ws`), so the backend is not in this path at all. An earlier design
+   had the backend relay that stream itself over its own `/ws` — never implemented (no
+   ZMQ consumer) and removed (2026-08-13) once the direct-proxy path was hardware-
+   verified working end to end.
 
 > A central **PostgreSQL** authoring host is still possible later — harpia emits it with
 > `HARPIA_DB_BACKEND=postgresql backend/generate.sh` and the C++ API is identical. Not
@@ -62,7 +65,6 @@ REST base `/api/v1` (configurable):
   launcher uses (via libudev), and marks whether a `boards/*.json` profile already
   matches it (`designated`). Hand-written, `backend/src/devices.cpp`.
 - `GET /healthz`
-- `GET /ws` — websocket, dispatcher event relay (seam; consumer TODO)
 
 MIDI triggers also carry an optional **operation mode** (`midiMode` on the wire,
 `mm_normal`/`mm_trigger_higher`/`mm_trigger_lower`/`mm_spot`/`mm_blink` — mirrors the
@@ -76,7 +78,7 @@ not a secret — a real credential was meant to layer in front, see the power-pa
 design below). gRPC mirrors this via `x-user`/`x-pswd` metadata.
 
 **That front layer, until power-password exists**: `backend/assets/interface.conf`
-puts nginx Basic Auth in front of the whole site (console + `/api/v1` + `/ws`,
+puts nginx Basic Auth in front of the whole site (console + `/api/v1` + `/websocket`,
 `/healthz` excepted) — `install-on-device.sh` generates a random per-install password
 into `/etc/conboard-web-password.txt` (root-only) on first install -- retrieve or
 rotate it any time with `sudo conboard-password` / `sudo conboard-password --reset`
@@ -90,8 +92,8 @@ lockout escalation) — that design stays unimplemented, tracked in
 | var | default | meaning |
 |---|---|---|
 | `CONBOARD_DB` | `conboard.db` | SQLite file path |
-| `CONBOARD_HTTP_HOST` | `127.0.0.1` | REST/ws bind host (nginx proxies) |
-| `CONBOARD_HTTP_PORT` | `8080` | REST/ws port |
+| `CONBOARD_HTTP_HOST` | `127.0.0.1` | REST bind host (nginx proxies) |
+| `CONBOARD_HTTP_PORT` | `8080` | REST port |
 | `CONBOARD_GRPC_ADDR` | `127.0.0.1:50051` | gRPC listen address |
 | `CONBOARD_API_BASE` | `/api/v1` | REST base path |
 

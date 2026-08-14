@@ -1,5 +1,7 @@
 // conboard backend -- management API (REST + gRPC) over the harpia-generated
-// rules-library, plus a websocket seam for the dispatcher event relay.
+// rules-library. The realtime dispatcher event stream does NOT go through this
+// process -- nginx proxies it straight from the dispatcher to the console, see
+// backend/README.md.
 //
 // The message structs, JSON adapters, SOCI-backed CRUDL DAOs, REST (Crow) bindings
 // and gRPC services all come from backend/generated/ (harpia, a black box). This
@@ -13,8 +15,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
-#include <mutex>
-#include <set>
 #include <string>
 #include <thread>
 #include <vector>
@@ -106,24 +106,12 @@ int main() {
 
     CROW_ROUTE(app, "/healthz")([]{ return "ok"; });
 
-    // ---- Websocket seam for the dispatcher event relay ----------------------
-    // The realtime device stream arrives from LowLevel/dispatcher over ZMQ (see
-    // INTERFACE.md). This endpoint is where the backend will fan that stream out to
-    // connected frontend clients. The ZMQ consumer thread is TODO (INTERFACE.md v0
-    // framing); today the endpoint accepts + tracks clients so the relay can be
-    // dropped in without touching route wiring.
-    static std::mutex ws_mu;
-    static std::set<crow::websocket::connection*> ws_clients;
-    CROW_WEBSOCKET_ROUTE(app, "/ws")
-        .onopen([](crow::websocket::connection& c) {
-            std::lock_guard<std::mutex> lk(ws_mu); ws_clients.insert(&c);
-        })
-        .onclose([](crow::websocket::connection& c, const std::string&, uint16_t) {
-            std::lock_guard<std::mutex> lk(ws_mu); ws_clients.erase(&c);
-        })
-        .onmessage([](crow::websocket::connection&, const std::string&, bool) {
-            // Inbound frontend->backend messages unused for now; relay is one-way.
-        });
+    // No websocket route here: the realtime device stream (LowLevel/dispatcher, see
+    // INTERFACE.md) reaches the console directly -- nginx proxies /websocket straight
+    // to the dispatcher's own /ws (127.0.0.1:40080), never through this process. An
+    // earlier design had the backend relay that stream itself over its own /ws; it was
+    // never implemented (no ZMQ consumer) and removed once the direct-proxy path was
+    // confirmed working end to end on hardware -- see backend/README.md.
 
     // ---- start gRPC in the background (scaffolding for the future dispatcher-
     // over-gRPC migration; not consumed by the frontend yet) ------------------
@@ -139,7 +127,7 @@ int main() {
     // ---- serve REST in the foreground (single-threaded; its session is never
     // shared across threads) --------------------------------------------------
     std::cerr << "[backend] REST:  http://" << http_host << ":" << http_port
-              << api_base << "  (ws: /ws)\n";
+              << api_base << "\n";
     app.bindaddr(http_host).port(http_port).run();
 
     if (grpc_server) { grpc_server->Shutdown(); }
