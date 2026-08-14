@@ -89,11 +89,100 @@ torn down not just UDC-unbound) → reinstall (same password, devices + rules DB
 → `--purge` (exit 0, `/conboard` + web login + `g1` all gone) → final reinstall to
 leave the board in a working state.
 
+## Console bug hunt against real hardware (2026-08-14)
+Driven by the user actually using the console against `192.168.7.4` and reporting
+what didn't work, live, in the same session:
+
+* **WirelessKB invisible + un-addable — FOUND + FIXED.** `boards/WirelessKB.json` /
+  `boards/WirelessMouse.json` (realtime templates, added 2026-08-11) were never
+  mirrored into `frontend/console/src/fixtures/boards.ts` (the list that seeds the
+  console's DB-backed device library on first load). Result: the launcher auto-
+  matched the plugged-in wireless combo and it worked (events flowed), but it had no
+  DB row (invisible in the rail) and was already `designated` (so also hidden from
+  Add). Fixed by adding both to the fixtures file.
+* **A real harpia codegen bug, found chasing the above — FIXED.** The `.harpia` spec
+  declares a trigger field `interval`, but the generated protobuf field is actually
+  named `erval` (`backend/generated/proto/protofiles/trigger_*.proto`, field 10) —
+  looks like the generator stripped "int" out of "interval". The frontend was
+  sending `interval`; protobuf JSON silently 400s on an unrecognized field, so
+  *every* evdev rule using `mode: "hold"` (which carries `interval`) failed to
+  create, with zero detail in the response or backend log. This is exactly why
+  WirelessKB alone kept failing to seed even after the fixtures fix — its `KEY_ENTER
+  hold` rule tripped it. Root-caused by bisecting field-by-field with raw `curl`
+  POSTs against the live backend. Fixed in `api/harpia.ts`/`api/map.ts` (wire name is
+  now `erval`, frontend model keeps calling it `interval`). Confirmed via the user's
+  own browser auto-seeding `WirelessKB` correctly on next load.
+* **Live monitor showed raw `[type,code,value]` triples — FIXED.** Meaningless
+  without a lookup table (e.g. a left click was just `[1,272,1]`). Added a small
+  decoder (`model/hid.ts`, mirrors the curated symbol table in
+  `LowLevel/Common/src/evMatch.cpp`) plus reuse of the existing MIDI decoder
+  (`model/midi.ts`) so the monitor now shows `BTN_LEFT press` / MIDI note names
+  instead of raw numbers.
+* **Live monitor truncation — FOUND + FIXED.** `.ev-human`/`.ev-dev` had
+  `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`, silently cutting
+  decoded event text off with no visible indicator (user report: "not showing the
+  full event", saw just a truncated UUID). Removed the truncation; rows now wrap
+  instead of hiding content.
+* **Two `window.alert()` calls replaced with a proper toast.** Copy/delete failures
+  used to pop a native browser dialog, inconsistent with the rest of the app's
+  styling; now a small dismissible banner styled from the same `--danger` tokens the
+  crash screen uses.
+
+All of the above rebuilt + redeployed to `192.168.7.4` and verified against the real
+board multiple times this session (not just typechecked).
+
+## OPEN — mouse/keyboard rule output not firing (2026-08-14, unresolved)
+User report: WirelessKB and WirelessMouse both register live events (visible in the
+monitor, dispatcher heartbeats present), but pressing a key / clicking a button
+produces **no output on the connected host** — even for the simplest rules
+(`BTN_LEFT press → type "left click"`).
+
+**Ruled out this session:**
+- The deployed profile is correct (`/conboard/boards/WirelessMouse.json` matches the
+  repo template exactly after a fresh reinstall).
+- The USB gadget is fully bound: `cat /sys/class/udc/*/state` → `configured`,
+  `/dev/hidg0` exists with the right permissions.
+- The HID write path itself works: manually wrote a raw boot-keyboard report for
+  `letter_a` straight to `/dev/hidg0` over SSH (bypassing conMouse/conKeyB
+  entirely) — **user confirmed "a" appeared** on the connected host. So the
+  gadget→host link is healthy.
+- Both `WirelessKB-port-4-1.service` and `WirelessMouse-port-4-1.service` show a
+  valid, positive fd (`file: /dev/hidg0 fd:3`) at startup in the journal — not the
+  "open() failed silently, fd stays -1" theory.
+
+**Not yet confirmed — this is where to start next session:** whether the *matching*
+even fires. `DeviceEngine::report()` sends every observed input event to the
+dispatcher for the live monitor regardless of whether any rule matches it (that's
+just visibility), which is a SEPARATE code path from the local
+`evMatch::matches()` → `enqueue()` → `out_func()` → `oActions::keyboard_send()` chain
+that actually produces the output. Seeing an event in the monitor does NOT prove a
+rule matched. The monitor's new raw-event decoder (this session) should make it easy
+to confirm the exact code names the dispatcher is receiving (`KEY_A press` /
+`BTN_LEFT press` — or something else, which would point at a code mismatch instead)
+— this check was requested but not completed before the session ended.
+
+**A concrete lead worth checking, found reading the code (not yet proven):**
+`DeviceEngine::enqueue()` (`LowLevel/Common/src/deviceEngine.cpp:67`) locks
+`locking_mechanism` before touching `oQueue`/`send`, but `out_func()` (the executor
+thread, line 104) reads and mutates both **without the same lock** — a genuine data
+race on non-atomic state shared between two threads. Whether this actually explains
+"enqueued output never gets executed" (vs. just being latent-but-currently-harmless
+UB) is unconfirmed. Worth instrumenting or fixing regardless (make `send` atomic or
+have `out_func()` take the lock) even if it isn't the root cause here.
+
+## OPEN — live monitor layout, not investigated (2026-08-14)
+User: "it is ugly" and the live monitor panel can't be resized. Not looked at this
+session (deferred). Likely CSS/layout only (`.live-col`, `.monitor` in
+`frontend/console/src/index.css`) — the panel is currently a fixed-width aside with
+no resize handle.
+
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
   hardware-verified (2026-08-11), no gamepad available yet. See `docs/HW-TEST-evdev.md`.
 * load-test the reporting-queue overflow relief (`STACKED_IO_MSG`, raised 10→64 +
   drop-oldest, deployed 2026-08-12) against a real sustained burst — not yet exercised
   under load, only deployed.
+* **mouse/keyboard output not firing** (above) — now the top item, blocks the core
+  remap-a-device feature for two of four device kinds.
 * longer term: ethernet-gadget access, the local power-password login (design in
   `backend/README.md`, never implemented).

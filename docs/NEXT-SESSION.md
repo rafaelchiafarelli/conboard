@@ -1,3 +1,52 @@
+# conboard — console bug hunt handoff (2026-08-14)
+
+Session driven by the user actually running the console against the real board
+(`192.168.7.4`) and reporting what broke, live. Full detail (root causes, what was
+ruled out, exact repro commands) is in [../NOTES.md](../NOTES.md) under "Console bug
+hunt against real hardware" and the two "OPEN" sections right after it — this is
+just the short version so the next session knows where to start.
+
+**Fixed + deployed this session** (all rebuilt/redeployed to `192.168.7.4` and
+re-verified, not just typechecked):
+- WirelessKB/WirelessMouse were never added to the console's DB-seeding fixtures
+  (`frontend/console/src/fixtures/boards.ts`) even though their realtime templates
+  shipped back on 2026-08-11 — invisible + un-addable in the console despite working
+  hardware. Fixed.
+- A real harpia codegen bug: the generated protobuf field for the trigger's
+  `interval` is actually named `erval` on the wire (`backend/generated/proto/
+  protofiles/trigger_*.proto`). Sending `interval` 400s silently — this is why
+  WirelessKB kept failing to seed even after the fixtures fix (its hold-mode rule
+  carries `interval`). Fixed in `frontend/console/src/api/{harpia,map}.ts`.
+- Live monitor decoded raw `[type,code,value]`/MIDI triples into readable labels
+  (was showing meaningless raw numbers).
+- Live monitor was silently truncating event text (CSS ellipsis, no wrap) — fixed.
+- Two `window.alert()` calls (copy/delete failure) replaced with an in-app toast.
+
+**Open, top priority for next session — mouse/keyboard rule output doesn't fire.**
+Pressing a key or clicking a mouse button on the real WirelessKB/WirelessMouse
+hardware produces no output on the connected host, even though:
+- the event reaches the dispatcher and shows correctly in the (now-decoded) live
+  monitor,
+- the deployed on-device profile is correct,
+- the USB gadget is fully bound (`UDC state: configured`, `/dev/hidg0` present),
+- and a manual raw HID write straight to `/dev/hidg0` over SSH DID produce visible
+  output on the host (user-confirmed) — so the gadget→host link itself is healthy.
+
+So the break is specifically in the local rule-match → enqueue → HID-write chain
+inside `conKeyB`/`conMouse`. **Start here**: confirm via the monitor's new decoder
+whether the event even shows the expected code name (`KEY_A press` / `BTN_LEFT
+press`) — that was asked for but not confirmed before the session ended. Also see
+NOTES.md for a concrete, unconfirmed lead: `DeviceEngine::out_func()`
+(`LowLevel/Common/src/deviceEngine.cpp:104`) reads/mutates `oQueue`/`send` without
+the lock `enqueue()` (line 67) uses to write them — a genuine data race, unproven as
+the cause here but worth fixing regardless.
+
+**Open, not investigated — live monitor layout.** User: "it is ugly" and the panel
+can't be resized. Deferred; likely just `.live-col`/`.monitor` CSS
+(`frontend/console/src/index.css`), no resize handle exists today.
+
+---
+
 # conboard — local screen/buttons/encoders UI handoff (2026-08-10/11)
 
 New, **separate** workstream from the console-fixes milestone below — a small
