@@ -58,7 +58,7 @@ function triggerFromH(h: HTrigger, deviceType: DeviceType): Trigger {
     mode: (TRIGGER_EDGE[h.edge ?? 'edge_press']) as Edge,
   }
   if (h.value != null) t.value = h.value
-  if (h.interval != null) t.interval = h.interval
+  if (h.erval != null) t.interval = h.erval  // wire name is "erval", see api/harpia.ts
   if (h.delay != null) t.delay = h.delay
   return t
 }
@@ -145,7 +145,7 @@ function triggerToH(t: Trigger, id: number): HTrigger {
   }
   const h: HTrigger = { [ID_KEY]: id, kind: 'tk_evdev', code: t.code, edge: TRIGGER_EDGE_R[t.mode] }
   if (t.value != null) h.value = t.value
-  if (t.interval != null) h.interval = t.interval
+  if (t.interval != null) h.erval = t.interval  // wire name is "erval", see api/harpia.ts
   if (t.delay != null) h.delay = t.delay
   return h
 }

@@ -1,8 +1,18 @@
 // The bundled REAL board profiles, verbatim from the on-device board files:
-// boards/Arduino_Micro.json, boards/Dj4Mix.json (MIDI) and boards/Xbox360.json
-// (joystick). These are the only fixtures — no fake/test devices exist. Used to seed
+// boards/Arduino_Micro.json, boards/Dj4Mix.json (MIDI), boards/Xbox360.json
+// (joystick), and boards/WirelessKB.json / boards/WirelessMouse.json (keyboard/
+// mouse). These are the only fixtures — no fake/test devices exist. Used to seed
 // an empty backend library and as the offline fallback. Regenerate from the source
 // JSON rather than hand-editing.
+//
+// WirelessKB/WirelessMouse were added to boards/ (2026-08-11, real hardware-verified)
+// but never mirrored here (2026-08-14 gap, found live): the launcher auto-matches a
+// plugged-in wireless combo to those realtime templates independently of the
+// console's DB, so the device works (events flow) but never gets seeded into the
+// library -- it's neither in the rail (no DB row) nor addable (GET /api/v1/devices
+// already marks it `designated`, so AddDeviceDialog filters it out). Seeding these
+// two fixes it for any board, not just one that happened to have its rules-library
+// DB reset.
 //
 // Shape matches ../model/rules.ts one-to-one, so the JSON drops straight in as Board[].
 
@@ -4195,6 +4205,122 @@ export const BOARDS: Board[] = [
                   "hold": "not_hold",
                   "delay": 0
                 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "DEVICE": {
+      "timeout": 0,
+      "type": "keyboard",
+      "name": "WirelessKB",
+      "input": "2.4G Composite Devic",
+      "output": ""
+    },
+    "header": {
+      "identifier": {
+        "generics": {},
+        "tags": {
+          "ID_BUS": "usb",
+          "ID_VENDOR_ID": "4037",
+          "ID_MODEL_ID": "2804"
+        },
+        "executable": {
+          "exec": "/conboard/LowLevel/KeyBoard/build/conKeyB"
+        }
+      },
+      "actions": []
+    },
+    "body": {
+      "modes": [
+        {
+          "id": 0,
+          "active": true,
+          "mode_header": { "actions": [] },
+          "actions": [
+            {
+              "input": { "type": "keyboard", "code": "KEY_A", "mode": "press" },
+              "output": [
+                { "type": "keyboard", "data": "letter_a", "keyType": "oneKey", "hold": "not_hold", "delay": 0 }
+              ]
+            },
+            {
+              "input": { "type": "keyboard", "code": "KEY_B", "mode": "release" },
+              "output": [
+                { "type": "keyboard", "data": "b-on-release", "keyType": "text", "hold": "not_hold", "delay": 0 }
+              ]
+            },
+            {
+              "input": { "type": "keyboard", "code": "KEY_ENTER", "mode": "hold", "interval": 200 },
+              "output": [
+                { "type": "keyboard", "data": "enter held (repeats)", "keyType": "text", "hold": "not_hold", "delay": 0 }
+              ]
+            },
+            {
+              "input": { "type": "keyboard", "code": "KEY_ESC", "mode": "hold_once", "delay": 800 },
+              "output": [
+                { "type": "keyboard", "data": "esc long press", "keyType": "text", "hold": "not_hold", "delay": 0 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "DEVICE": {
+      "timeout": 0,
+      "type": "mouse",
+      "name": "WirelessMouse",
+      "input": "2.4G Composite Devic Mouse",
+      "output": ""
+    },
+    "header": {
+      "identifier": {
+        "generics": {},
+        "tags": {
+          "ID_BUS": "usb",
+          "ID_VENDOR_ID": "4037",
+          "ID_MODEL_ID": "2804"
+        },
+        "executable": {
+          "exec": "/conboard/LowLevel/Mouse/build/conMouse"
+        }
+      },
+      "actions": []
+    },
+    "body": {
+      "modes": [
+        {
+          "id": 0,
+          "active": true,
+          "mode_header": { "actions": [] },
+          "actions": [
+            {
+              "input": { "type": "mouse", "code": "BTN_LEFT", "mode": "press" },
+              "output": [
+                { "type": "keyboard", "data": "left click", "keyType": "text", "hold": "not_hold", "delay": 0 }
+              ]
+            },
+            {
+              "input": { "type": "mouse", "code": "BTN_RIGHT", "mode": "press" },
+              "output": [
+                { "type": "keyboard", "data": "right click", "keyType": "text", "hold": "not_hold", "delay": 0 }
+              ]
+            },
+            {
+              "input": { "type": "mouse", "code": "REL_WHEEL", "mode": "higher", "value": 0 },
+              "output": [
+                { "type": "keyboard", "data": "wheel up", "keyType": "text", "hold": "not_hold", "delay": 0 }
+              ]
+            },
+            {
+              "input": { "type": "mouse", "code": "REL_WHEEL", "mode": "lower", "value": 0 },
+              "output": [
+                { "type": "keyboard", "data": "wheel down", "keyType": "text", "hold": "not_hold", "delay": 0 }
               ]
             }
           ]

@@ -9,6 +9,14 @@
 //  - zero/default-valued fields are OMITTED on read (protobuf3 JSON), so an absent
 //    enum means its 0-value and an absent int means 0.
 //  - every route is credential-gated: X-User: <entity>, X-Pswd: <HASH>.
+//  - CODEGEN QUIRK (found 2026-08-14): the harpia domain spec's trigger.interval
+//    field comes out on the wire as "erval", not "interval" -- confirmed against
+//    backend/generated/proto/protofiles/trigger_*.proto (field 10 is literally
+//    `int32 erval`). Sending "interval" 400s the whole board create (protobuf JSON
+//    rejects unknown fields) with no detail in the response body or backend log --
+//    silently broke every evdev trigger using mode "hold" (interval) end to end.
+//    Backend/generated is a black box (regenerated wholesale, never hand-edited),
+//    so this is worked around here rather than in harpia itself.
 //
 // The HASH is the md5 of backend/harpia/conboard.harpia; it changes if the domain
 // changes. Keep it in sync with backend/generated (a single source of truth here).
@@ -61,7 +69,7 @@ export interface HTrigger extends HarpiaId {
   midiMode?: keyof typeof MIDI_MODE
   code?: string
   edge?: keyof typeof TRIGGER_EDGE
-  value?: number; interval?: number; delay?: number
+  value?: number; erval?: number; delay?: number  // erval: harpia codegen mangled "interval" -> "erval" (see trigger.proto), not a typo
 }
 export interface HOutputAction extends HarpiaId {
   kind?: keyof typeof ACTION_KIND
