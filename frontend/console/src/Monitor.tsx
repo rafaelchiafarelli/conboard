@@ -10,7 +10,32 @@
 
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { liveBus, type DeviceEvent, type LiveStatus } from './model/events'
-import type { Board } from './model/rules'
+import type { Board, DeviceType } from './model/rules'
+import { decodeMidi } from './model/midi'
+import { decodeEvdevRaw, parseRawTriple } from './model/hid'
+
+/**
+ * Human label for a raw event row. The wire payload is opaque -- MIDI's
+ * "[b0,b1,b2]" and evdev's "[type,code,value]" are the SAME shape (three ints
+ * in brackets) but mean completely different things, so this needs the
+ * sender's device type (resolved from the configured boards) to pick the
+ * right decoder. Falls back to the raw string when the type is unknown (a
+ * device with no library entry yet) or the payload doesn't parse.
+ */
+function humanizeRaw(raw: string | undefined, deviceType: DeviceType | undefined): string {
+  if (!raw) return ''
+  const triple = parseRawTriple(raw)
+  if (!triple) return raw
+  const [a, b, c] = triple
+  if (deviceType === 'midi') {
+    const d = decodeMidi(a, b, c)
+    return `${d.human} · ${d.detail}`
+  }
+  if (deviceType === 'joystick' || deviceType === 'keyboard' || deviceType === 'mouse') {
+    return decodeEvdevRaw(a, b, c)?.human ?? raw
+  }
+  return raw
+}
 
 const MAX_ROWS = 250
 const CONNECTED_MS = 4000
@@ -157,7 +182,7 @@ export default function Monitor({ boards, onClose }: { boards: Board[]; onClose?
                 <span className="ev-dev" title={e.device}>{short(e.device)}</span>
                 <span className="ev-event">
                   <span className="trig-badge">{e.kind === 'raw' ? 'RAW' : 'EV'}</span>
-                  <span className="ev-human">{e.raw ?? e.code ?? ''}</span>
+                  <span className="ev-human" title={e.raw}>{humanizeRaw(e.raw, typeOf(e.device))}</span>
                 </span>
                 <span className="ev-bytes" title={e.uuid ?? ''}>{short(e.uuid ?? '')}</span>
                 <span className="ev-fires"><span className="unmapped">—</span></span>

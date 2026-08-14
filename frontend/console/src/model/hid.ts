@@ -154,3 +154,74 @@ export const isAxis = (code: string) => code.startsWith('ABS_') || code.startsWi
 export function edgesFor(code: string): Edge[] {
   return isAxis(code) ? ['higher', 'lower', 'spot'] : ['press', 'release', 'hold', 'hold_once']
 }
+
+// ---- raw live-event decoding -------------------------------------------------
+// The dispatcher's raw action frame for an evdev device is Linux's own
+// [type,code,value] triple (LowLevel/Common/src/evdevDevice.cpp: processEvent ->
+// `snprintf(buf, "[%d,%d,%d]", e.type, e.code, e.value)`), completely unlabeled --
+// e.g. a left click over the wire is just "[1,272,1]". This table mirrors the
+// curated symbol table in LowLevel/Common/src/evMatch.cpp (kSymbols) so the
+// monitor can show "BTN_LEFT press" instead. Keep the two in sync if that table
+// grows; an unknown type/code pair just falls back to showing the raw triple.
+const EV_KEY = 1, EV_REL = 2, EV_ABS = 3
+
+const EVDEV_BY_NUM: Record<string, string> = {}
+function reg(type: number, code: number, name: string) { EVDEV_BY_NUM[`${type}:${code}`] = name }
+;[
+  // gamepad buttons
+  [EV_KEY, 0x130, 'BTN_SOUTH'], [EV_KEY, 0x131, 'BTN_EAST'], [EV_KEY, 0x132, 'BTN_C'],
+  [EV_KEY, 0x133, 'BTN_NORTH'], [EV_KEY, 0x134, 'BTN_WEST'], [EV_KEY, 0x135, 'BTN_Z'],
+  [EV_KEY, 0x136, 'BTN_TL'], [EV_KEY, 0x137, 'BTN_TR'], [EV_KEY, 0x138, 'BTN_TL2'],
+  [EV_KEY, 0x139, 'BTN_TR2'], [EV_KEY, 0x13a, 'BTN_SELECT'], [EV_KEY, 0x13b, 'BTN_START'],
+  [EV_KEY, 0x13c, 'BTN_MODE'], [EV_KEY, 0x13d, 'BTN_THUMBL'], [EV_KEY, 0x13e, 'BTN_THUMBR'],
+  // mouse buttons
+  [EV_KEY, 0x110, 'BTN_LEFT'], [EV_KEY, 0x111, 'BTN_RIGHT'], [EV_KEY, 0x112, 'BTN_MIDDLE'],
+  // keyboard letters
+  [EV_KEY, 30, 'KEY_A'], [EV_KEY, 48, 'KEY_B'], [EV_KEY, 46, 'KEY_C'], [EV_KEY, 32, 'KEY_D'],
+  [EV_KEY, 18, 'KEY_E'], [EV_KEY, 33, 'KEY_F'], [EV_KEY, 34, 'KEY_G'], [EV_KEY, 35, 'KEY_H'],
+  [EV_KEY, 23, 'KEY_I'], [EV_KEY, 36, 'KEY_J'], [EV_KEY, 37, 'KEY_K'], [EV_KEY, 38, 'KEY_L'],
+  [EV_KEY, 50, 'KEY_M'], [EV_KEY, 49, 'KEY_N'], [EV_KEY, 24, 'KEY_O'], [EV_KEY, 25, 'KEY_P'],
+  [EV_KEY, 16, 'KEY_Q'], [EV_KEY, 19, 'KEY_R'], [EV_KEY, 31, 'KEY_S'], [EV_KEY, 20, 'KEY_T'],
+  [EV_KEY, 22, 'KEY_U'], [EV_KEY, 47, 'KEY_V'], [EV_KEY, 17, 'KEY_W'], [EV_KEY, 45, 'KEY_X'],
+  [EV_KEY, 21, 'KEY_Y'], [EV_KEY, 44, 'KEY_Z'],
+  // keyboard digits
+  [EV_KEY, 2, 'KEY_1'], [EV_KEY, 3, 'KEY_2'], [EV_KEY, 4, 'KEY_3'], [EV_KEY, 5, 'KEY_4'],
+  [EV_KEY, 6, 'KEY_5'], [EV_KEY, 7, 'KEY_6'], [EV_KEY, 8, 'KEY_7'], [EV_KEY, 9, 'KEY_8'],
+  [EV_KEY, 10, 'KEY_9'], [EV_KEY, 11, 'KEY_0'],
+  // keyboard common/control keys
+  [EV_KEY, 1, 'KEY_ESC'], [EV_KEY, 14, 'KEY_BACKSPACE'], [EV_KEY, 15, 'KEY_TAB'],
+  [EV_KEY, 28, 'KEY_ENTER'], [EV_KEY, 57, 'KEY_SPACE'], [EV_KEY, 29, 'KEY_LEFTCTRL'],
+  [EV_KEY, 97, 'KEY_RIGHTCTRL'], [EV_KEY, 42, 'KEY_LEFTSHIFT'], [EV_KEY, 54, 'KEY_RIGHTSHIFT'],
+  [EV_KEY, 56, 'KEY_LEFTALT'], [EV_KEY, 100, 'KEY_RIGHTALT'], [EV_KEY, 125, 'KEY_LEFTMETA'],
+  [EV_KEY, 103, 'KEY_UP'], [EV_KEY, 108, 'KEY_DOWN'], [EV_KEY, 105, 'KEY_LEFT'], [EV_KEY, 106, 'KEY_RIGHT'],
+  // absolute axes
+  [EV_ABS, 0, 'ABS_X'], [EV_ABS, 1, 'ABS_Y'], [EV_ABS, 2, 'ABS_Z'],
+  [EV_ABS, 3, 'ABS_RX'], [EV_ABS, 4, 'ABS_RY'], [EV_ABS, 5, 'ABS_RZ'],
+  [EV_ABS, 16, 'ABS_HAT0X'], [EV_ABS, 17, 'ABS_HAT0Y'],
+  // relative axes
+  [EV_REL, 0, 'REL_X'], [EV_REL, 1, 'REL_Y'], [EV_REL, 6, 'REL_HWHEEL'], [EV_REL, 8, 'REL_WHEEL'],
+].forEach(([t, c, n]) => reg(t as number, c as number, n as string))
+
+/** Parse a raw dispatcher action payload "[type,code,value]" into its three ints, or null. */
+export function parseRawTriple(raw: string): [number, number, number] | null {
+  const m = raw.match(/^\[\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\]$/)
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null
+}
+
+/** Human label for an evdev raw triple, e.g. (1,272,1) -> "BTN_LEFT · Left click  press". Null if unrecognized. */
+export function decodeEvdevRaw(type: number, code: number, value: number): { human: string; short: string } | null {
+  const name = EVDEV_BY_NUM[`${type}:${code}`]
+  if (type === EV_KEY) {
+    const verb = value === 1 ? 'press' : value === 0 ? 'release' : value === 2 ? 'repeat' : `value ${value}`
+    return { human: `${name ? codeLabel(name) : `key ${code}`} ${verb}`, short: verb === 'press' ? 'DN' : verb === 'release' ? 'UP' : 'KEY' }
+  }
+  if (type === EV_REL) {
+    const label = name ? codeLabel(name) : `rel ${code}`
+    return { human: `${label} ${value > 0 ? '+' : ''}${value}`, short: 'REL' }
+  }
+  if (type === EV_ABS) {
+    const label = name ? codeLabel(name) : `abs ${code}`
+    return { human: `${label} = ${value}`, short: 'ABS' }
+  }
+  return null
+}

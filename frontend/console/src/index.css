@@ -279,9 +279,9 @@ input.dim { opacity: .5; }
 .ev-row:hover { background: var(--panel-2); }
 .ev-row.hit { border-left-color: var(--ok); }
 .ev-time { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-.ev-dev { font-size: 12px; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-dev { font-size: 12px; color: var(--ink-dim); overflow-wrap: break-word; }
 .ev-event { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.ev-human { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-human { font-weight: 600; overflow-wrap: break-word; }
 .ev-bytes { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .ev-fires { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink-dim); flex-wrap: wrap; }
 .ev-arrow { color: var(--ink-faint); }
@@ -358,6 +358,17 @@ input.dim { opacity: .5; }
 .crash-card h1 { margin: 0 0 8px; font-size: 18px; color: var(--danger); }
 .crash-card p { margin: 0 0 14px; color: var(--ink-dim); font-size: 13px; }
 .crash-card pre { margin: 0 0 16px; max-height: 50vh; overflow: auto; background: var(--ground); border: 1px solid var(--line); border-radius: 8px; padding: 14px; font-family: var(--mono); font-size: 12px; line-height: 1.5; color: var(--ink); white-space: pre-wrap; word-break: break-word; }
+
+/* ---------- error toast ---------- */
+.toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 60;
+  display: flex; align-items: center; gap: 10px; max-width: min(560px, calc(100% - 32px));
+  background: var(--panel); border: 1px solid var(--danger); border-radius: 9px;
+  box-shadow: 0 0 0 1px var(--danger), 0 14px 40px rgba(0,0,0,.45);
+  padding: 10px 12px 10px 14px; font-size: 13px; color: var(--ink); }
+.toast-msg { flex: 1; word-break: break-word; }
+.toast-x { flex: none; background: transparent; border: none; color: var(--ink-dim); font-size: 14px;
+  line-height: 1; cursor: pointer; padding: 4px; }
+.toast-x:hover { color: var(--ink); }
 
 /* ---------- add-device modal ---------- */
 .modal-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: grid; place-items: center; padding: 24px; z-index: 50; }

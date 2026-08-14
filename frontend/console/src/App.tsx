@@ -94,6 +94,15 @@ export default function App() {
   const [boardIds, setBoardIds] = useState<(number | null)[]>([])
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [deployState, setDeployState] = useState<'idle' | 'deploying' | 'deployed' | 'error'>('idle')
+  // Errors on consequential actions (copy/delete) get a dismissible toast, not a
+  // native window.alert() -- the header's saveState indicator already covers the
+  // ambient case, but a closed dialog can leave that easy to miss.
+  const [toast, setToast] = useState<string | null>(null)
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 6000)
+    return () => clearTimeout(t)
+  }, [toast])
 
   // Index safely: backend-loaded boards may have fewer devices/modes/rules than the
   // current selection (or a board with no modes), so never assume a slot exists.
@@ -207,7 +216,7 @@ export default function App() {
     catch (e) {
       console.error('[conboard] copy board failed', e)
       setSaveState('error')
-      window.alert(`Could not copy "${device.DEVICE.name}": ${(e as Error).message}`)
+      setToast(`Could not copy "${device.DEVICE.name}": ${(e as Error).message}`)
     }
   }
   // Axis C: push this device's saved profile to the realtime path (writes boards/*.json
@@ -250,7 +259,7 @@ export default function App() {
     } catch (e) {
       console.error('[conboard] delete board failed', e)
       setSaveState('error')
-      window.alert(`Could not delete "${b.DEVICE.name}": ${(e as Error).message}`)
+      setToast(`Could not delete "${b.DEVICE.name}": ${(e as Error).message}`)
     }
   }
 
@@ -605,6 +614,13 @@ export default function App() {
           onCancel={() => setCopyOpen(false)}
           onCopy={copyFromDialog}
         />
+      )}
+
+      {toast && (
+        <div className="toast" role="alert">
+          <span className="toast-msg">{toast}</span>
+          <button className="toast-x" onClick={() => setToast(null)} aria-label="Dismiss">✕</button>
+        </div>
       )}
     </div>
   )
