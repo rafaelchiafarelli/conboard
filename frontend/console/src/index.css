@@ -62,6 +62,18 @@ header .stage { margin-left: auto; font-family: var(--mono); font-size: 10.5px; 
 .work > .list { flex: none; width: 340px; min-width: 240px; max-width: 60vw; resize: horizontal; overflow: hidden; }
 .work > .editor { flex: 1; }
 
+/* Visible drag-resize affordance for the panels above (and .live-col/.livedock further down):
+   the browser's own resize grip is a faint OS-drawn glyph that reads as invisible against
+   this dark theme, which is why the resize wasn't discoverable. Draw our own in the same
+   corner, on top of (not instead of) the native hit-area -- pointer-events: none so it
+   never blocks the actual drag. */
+.work > .rail, .work > .list, .work > .livedock, .work > .live-col { position: relative; }
+.work > .rail::after, .work > .list::after, .work > .livedock::after, .work > .live-col::after {
+  content: ''; position: absolute; right: 3px; bottom: 3px; width: 9px; height: 9px;
+  pointer-events: none; opacity: .6;
+  background: repeating-linear-gradient(135deg, var(--ink-faint) 0 1.4px, transparent 1.4px 4px);
+}
+
 /* ---------- device rail ---------- */
 .rail { border-right: 1px solid var(--line); background: var(--panel); padding: 16px 12px; overflow-y: auto; }
 .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1.6px; color: var(--ink-faint); font-weight: 600; }
@@ -272,18 +284,24 @@ input.dim { opacity: .5; }
 .mon-controls select { width: auto; }
 
 .feed { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--panel); overflow: hidden; }
-.feed-head, .ev-row { display: grid; grid-template-columns: 108px 128px 1fr 120px minmax(150px, 0.9fr); gap: 12px; align-items: center; }
+/* Columns are `minmax(min, max)`, not fixed px: .live-col is user-resizable down to 280px,
+   and fixed-width columns would either force a wide min-content (blowing the row out past
+   its container) or, combined with min-width:0 below, ink-overflow into neighboring columns
+   instead of shrinking. minmax keeps every column shrinking together, wrapping content
+   instead of overlapping it. */
+.feed-head, .ev-row { display: grid; grid-template-columns: minmax(60px, 80px) minmax(42px, 64px) minmax(40px, 1fr) minmax(40px, 62px) minmax(18px, 26px); gap: 8px; align-items: center; }
 .feed-head { padding: 10px 15px; font-size: 10px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--ink-faint); font-weight: 600; border-bottom: 1px solid var(--line-soft); background: linear-gradient(180deg, #1d222a, #191d24); }
+.feed-head span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .feed-scroll { overflow-y: auto; flex: 1; min-height: 0; }
 .ev-row { padding: 9px 15px 9px 12px; border-left: 3px solid transparent; border-bottom: 1px solid var(--line-soft); font-size: 12.5px; }
 .ev-row:hover { background: var(--panel-2); }
 .ev-row.hit { border-left-color: var(--ok); }
-.ev-time { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-.ev-dev { font-size: 12px; color: var(--ink-dim); overflow-wrap: break-word; }
-.ev-event { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.ev-human { font-weight: 600; overflow-wrap: break-word; }
-.ev-bytes { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
-.ev-fires { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink-dim); flex-wrap: wrap; }
+.ev-time { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: break-word; }
+.ev-dev { font-size: 12px; color: var(--ink-dim); overflow-wrap: break-word; min-width: 0; }
+.ev-event { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.ev-human { font-weight: 600; overflow-wrap: break-word; min-width: 0; }
+.ev-bytes { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: break-word; }
+.ev-fires { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink-dim); flex-wrap: wrap; min-width: 0; }
 .ev-arrow { color: var(--ink-faint); }
 .ev-fires .match-n { color: var(--ink-faint); }
 .unmapped { color: var(--ink-faint); font-style: italic; }
@@ -350,7 +368,6 @@ input.dim { opacity: .5; }
 /* ---------- live events: permanent right column (all devices) ---------- */
 .work > .live-col { flex: none; width: 400px; min-width: 280px; max-width: 48vw; resize: horizontal; overflow: hidden; border-left: 1px solid var(--line); display: flex; flex-direction: column; }
 .live-col > .monitor { flex: 1; min-height: 0; padding: 12px 14px; }
-.live-col .feed-scroll { overflow-x: auto; }
 
 /* ---------- crash screen (ErrorBoundary) ---------- */
 .crash { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--ground); }
