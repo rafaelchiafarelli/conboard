@@ -194,6 +194,25 @@ Full suite: 83 → 86 cases, 259 assertions, all green
 (`./run-tests.sh json` / `./run-tests.sh`). Logic-only, no hardware needed.
 `docs/next-sessions/01-regression-test.md` removed now that its task is done.
 
+## CONFIRMED — reporting-queue overflow relief load-tested (2026-08-15)
+`STACKED_IO_MSG` (10→64 + drop-oldest, deployed 2026-08-12, see `INTERFACE.md` §O4)
+was load-tested against a real sustained burst instead of just shipped. Used
+continuous mouse motion on `WirelessMouse-port-4-1.service` (physical hardware,
+same board/session as the keyboard/mouse trigger-parsing fix) — deliberate
+fast/sustained shaking produced a peak of ~65 dispatch attempts/sec for ~8s
+(523 `IOwill wait` log lines in that window, `zmq_coms.cpp:96`), well above
+idle heartbeat rate.
+
+Result: **no overflow triggered** — `dispatch overflow (reporting queue full,
+dropping oldest)` (`deviceEngine.cpp:58`) never logged, service stayed `active`
+throughout and after. The synchronous ZMQ REQ/REP drain in `io_handler()` keeps
+pace with realistic mouse burst rates, so `io_queue` (`zmq_coms.cpp:136`) never
+reaches the 64-message ceiling under normal use. This is outcome (a) from
+`docs/next-sessions/03-hardware-verify-batch.md` §3b: the relief works, and
+real usage doesn't get close to needing it. Drop-oldest eviction behavior
+itself (queue actually at capacity) remains unexercised — would need either an
+artificial producer or a much heavier burst to actually fill 64 slots.
+
 ## OPEN — live monitor layout, not investigated (2026-08-14)
 User: "it is ugly" and the live monitor panel can't be resized. Not looked at this
 session (deferred). Likely CSS/layout only (`.live-col`, `.monitor` in
@@ -203,9 +222,6 @@ no resize handle.
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
   hardware-verified (2026-08-11), no gamepad available yet. See `docs/HW-TEST-evdev.md`.
-* load-test the reporting-queue overflow relief (`STACKED_IO_MSG`, raised 10→64 +
-  drop-oldest, deployed 2026-08-12) against a real sustained burst — not yet exercised
-  under load, only deployed.
 * **mouse/keyboard output not firing** (above) — now the top item, blocks the core
   remap-a-device feature for two of four device kinds.
 * longer term: ethernet-gadget access, the local power-password login (design in

@@ -1,5 +1,9 @@
 # Sessions 3, 4, 5 — hardware verification, back-to-back
 
+**Status (2026-08-15): 3b done (see below). 3a (joystick) and 3c (MIDI
+redeploy) still open — no gamepad or DJ-Tech-4-Mix controller was available
+that session. Pick both up next time that hardware is on hand.**
+
 **Scope: small each, but all three need exclusive time on the physical
 board (`192.168.7.4`) and on you, physically, plugging in different
 hardware. They cannot run in parallel with each other, or with anything
@@ -66,7 +70,7 @@ general runbook; no gamepad was available in any session so far.
 
 ---
 
-## 3b. Queue-overflow load test (needs a way to generate a real sustained burst)
+## 3b. Queue-overflow load test (needs a way to generate a real sustained burst) — DONE (2026-08-15)
 
 **Why**: `STACKED_IO_MSG` (`LowLevel/Common/include/zmq_coms.hpp:20`) was
 raised `10`→`64` with drop-oldest eviction on 2026-08-12 (see `INTERFACE.md`
@@ -91,6 +95,16 @@ burst — only shipped.
 itself a useful confirmation, or (b) you can, and the drop-oldest behavior
 degrades gracefully (no crash, no wedge, monitor recovers) rather than losing
 the pipeline. Note the result in `NOTES.md`.
+
+**Result (2026-08-15, outcome a)**: sustained mouse shaking on
+`WirelessMouse-port-4-1.service` produced a peak of ~65 dispatch attempts/sec
+for ~8s — the `dispatch overflow` log never fired, service stayed `active`
+throughout. The synchronous ZMQ REQ/REP drain in `io_handler()` keeps pace
+with realistic burst rates; `io_queue` never got close to the 64-slot
+ceiling. Drop-oldest eviction itself (queue actually at capacity) remains
+unexercised under real hardware — would need an artificial producer or a
+much heavier burst. See `NOTES.md` "CONFIRMED — reporting-queue overflow
+relief load-tested (2026-08-15)".
 
 ---
 
