@@ -145,6 +145,83 @@ TEST_SUITE("json") {
         CHECK(rep.evtrig.holdMs == 100);             // from "interval"
     }
 
+    TEST_CASE("keyboard input: symbolic code + mode resolve into evtrig") {
+        std::vector<ModeType> modes; std::vector<Actions> header;
+        jsonParser jp("", &modes, &header);
+        bool ok = jp.ReloadFromString(R"({
+            "DEVICE": {"type":"keyboard","name":"kbd"},
+            "body": {"modes":[{"id":0,"active":true,"actions":[
+                {"input":{"type":"keyboard","code":"KEY_A","mode":"press"},"output":[]},
+                {"input":{"type":"keyboard","code":"KEY_A","mode":"hold","interval":200},"output":[]}
+            ]}]}
+        })", &modes, &header);
+
+        REQUIRE(ok);
+        REQUIRE(modes[0].body_actions.size() == 2);
+
+        const devActions &press = modes[0].body_actions[0].in;
+        CHECK(press.tp == keyboard);
+        CHECK(press.evtrig.type == evmatch::EV_KEY_);
+        CHECK(press.evtrig.code == 30);               // KEY_A
+        CHECK(press.evtrig.mode == evmatch::ev_press);
+
+        const devActions &hold = modes[0].body_actions[1].in;
+        CHECK(hold.evtrig.mode == evmatch::ev_hold);
+        CHECK(hold.evtrig.holdMs == 200);             // from "interval"
+    }
+
+    TEST_CASE("mouse input: symbolic code + mode resolve into evtrig") {
+        std::vector<ModeType> modes; std::vector<Actions> header;
+        jsonParser jp("", &modes, &header);
+        bool ok = jp.ReloadFromString(R"({
+            "DEVICE": {"type":"mouse","name":"mse"},
+            "body": {"modes":[{"id":0,"active":true,"actions":[
+                {"input":{"type":"mouse","code":"BTN_LEFT","mode":"press"},"output":[]},
+                {"input":{"type":"mouse","code":"REL_WHEEL","mode":"higher","value":0},"output":[]}
+            ]}]}
+        })", &modes, &header);
+
+        REQUIRE(ok);
+        REQUIRE(modes[0].body_actions.size() == 2);
+
+        const devActions &btn = modes[0].body_actions[0].in;
+        CHECK(btn.tp == mouse);
+        CHECK(btn.evtrig.type == evmatch::EV_KEY_);
+        CHECK(btn.evtrig.code == 0x110);              // BTN_LEFT
+        CHECK(btn.evtrig.mode == evmatch::ev_press);
+
+        const devActions &wheel = modes[0].body_actions[1].in;
+        CHECK(wheel.evtrig.type == evmatch::EV_REL_);
+        CHECK(wheel.evtrig.code == 8);                // REL_WHEEL
+        CHECK(wheel.evtrig.mode == evmatch::ev_higher);
+        CHECK(wheel.evtrig.threshold == 0);
+    }
+
+    TEST_CASE("keyboard rule: input trigger and output data both parse on the same action") {
+        std::vector<ModeType> modes; std::vector<Actions> header;
+        jsonParser jp("", &modes, &header);
+        bool ok = jp.ReloadFromString(R"({
+            "DEVICE": {"type":"keyboard","name":"kbd"},
+            "body": {"modes":[{"id":0,"active":true,"actions":[
+                {"input":{"type":"keyboard","code":"KEY_A","mode":"press"},
+                 "output":[{"type":"keyboard","data":"letter_a","keyType":"oneKey"}]}
+            ]}]}
+        })", &modes, &header);
+
+        REQUIRE(ok);
+        REQUIRE(modes[0].body_actions.size() == 1);
+
+        const devActions &in = modes[0].body_actions[0].in;
+        CHECK(in.evtrig.type == evmatch::EV_KEY_);
+        CHECK(in.evtrig.code == 30);                  // KEY_A
+        CHECK(in.evtrig.mode == evmatch::ev_press);
+
+        REQUIRE(modes[0].body_actions[0].out.size() == 1);
+        const devActions &out = modes[0].body_actions[0].out[0];
+        CHECK(out.kData.data == "letter_a");
+        CHECK(out.kData.type == keyType::oneKey);
+    }
+
     TEST_CASE("invalid JSON fails gracefully (not loaded)") {
         std::vector<ModeType> modes; std::vector<Actions> header;
         jsonParser jp("", &modes, &header);
