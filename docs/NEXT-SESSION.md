@@ -288,54 +288,34 @@ list. This file is the **live punch list** — what's known broken or unverified
   Mouse-then-KB order that originally triggered the corruption — clean
   `WirelessKB`/`WirelessMouse` devnames on `/ws` every time.
 
-## Proposed feature (not started, sized 2026-08-11): synthetic 1:1 keyboard rules on hotplug
+## Synthetic 1:1 keyboard rules on hotplug — DONE + HARDWARE-VERIFIED (2026-08-15)
 
-Idea from the user: when a new keyboard is plugged in, auto-generate a full 1:1
-rule set (every `KEY_*` press → the same key typed) and write it straight into the
-rules DB — no HID-gadget/output-engine changes, purely populating
-`board`/`mode`/`rule`/`trigger`/`output_action` via the existing harpia CRUD.
-**Sized short** — deliberately scoped to skip the much bigger mouse/joystick HID
-passthrough idea (see below) that prompted this.
-
-Why it's short:
-- The DB-writing side needs nothing new: harpia already generates full CRUD for
-  `board`/`mode`/`rule`/`trigger`/`output_action`, exercised directly this session
-  (`POST /api/v1/board` etc.) with no issues.
-- The only new artifact is a static `KEY_*` → keyboard-output mapping table
-  (~100 entries, one-time, mechanical — data, not engineering).
-- Generating the rule set is then: for each `KEY_*` in the table, insert one
-  `trigger` (press, that code) + one `output_action` (type keyboard, same key) +
-  one `rule` linking them, under a `mode` under a `board` row for that device — all
-  through calls the backend already exposes.
-
-Open design question (needs a decision before writing code, not a difficulty
-issue): **where does "a new keyboard was plugged in" get noticed and trigger
-this?**
-- The **launcher** (udev-triggered C++, `LowLevel/launcher/`) calls the backend
-  REST API when it sees an unmatched keyboard-class device — closer to "fully
-  automatic," but new territory: the launcher today only touches
-  `boards/*.json` + systemd, never the DB (deliberately decoupled, see
-  "Don't-relearn facts" below).
-- The **console** does it explicitly — e.g. a "seed 1:1 rules" button in the
-  existing Add-Device dialog, reusing the `GET /devices` inventory already there.
-  Less new code, fits the current architecture cleanly, costs a click instead of
-  being silent.
-
-Either route also wants simple dedup (don't regenerate ~100 rows every time the
-same dongle reconnects) — a lookup-before-insert keyed on VID/PID or serial.
+Idea sized 2026-08-11, built and verified 2026-08-15. Full writeup:
+[next-sessions/04-synthetic-1to1-rules.md](next-sessions/04-synthetic-1to1-rules.md).
+Short version: a "Seed a full 1:1 rule set" checkbox in the console's Add-Device
+dialog (keyboard type only) generates all 105 `KEY_*` → keyboard-output rules via
+the existing harpia CRUD (`frontend/console/src/model/oneToOneKeyboard.ts`),
+riding the create+deploy pipeline unchanged. Required extending
+`LowLevel/Common/src/evMatch.cpp`'s `kSymbols` from 52 to 105 entries so the new
+symbols actually resolve at deploy/runtime (lives in `libcommon.so`, a shared
+library every LowLevel binary links — not statically in each executable).
+Hardware-verified on `192.168.7.4`: `KEY_MINUS` and `KEY_F1` (both newly
+resolvable) fired correct HID output on the real wireless-keyboard dongle; board
+restored to its pre-session state afterward.
 
 **Related, explicitly NOT this feature — true mouse/joystick 1:1 HID passthrough**
-(the bigger idea that came up first, deferred as out of scope for now): would need
-real HID output, not just DB rows. Checked this session:
-`oActions::mouse_fill_report`/`joystick_fill_report` (`LowLevel/Common/src/oActions.cpp`)
-already build correct report bytes, but the dispatch functions that would call them,
-`oMouse()`/`oJoystick()` (`LowLevel/Common/include/oActions.hpp`), are literal empty
-stubs (`virtual void oMouse(mouseActions){}`) — never wired to anything. Bigger gap:
-the USB gadget composite (`scripts/usb-composite-all.sh`) only declares **one** HID
-interface, hardcoded as a keyboard (protocol=1, boot-keyboard report descriptor) — no
-mouse/joystick HID function exists in the gadget at all yet. Sized medium (new gadget
-HID function + wiring + real OTG-to-host-PC verification, which is untested territory
-beyond keyboard), not attempted this session.
+(the bigger idea that came up first, deferred as out of scope): re-checked
+2026-08-15, still accurate. Would need real HID output, not just DB rows.
+`oActions::mouse_fill_report`/`joystick_fill_report` (`LowLevel/Common/src/
+oActions.cpp`) already build correct report bytes, but the dispatch functions
+that would call them, `oMouse()`/`oJoystick()` (`LowLevel/Common/include/
+oActions.hpp`), are literal empty stubs (`virtual void oMouse(mouseActions){}`)
+— never wired to anything. Bigger gap: the USB gadget composite (`scripts/
+usb-composite-all.sh`) only declares **one** HID interface, hardcoded as a
+keyboard (protocol=1, boot-keyboard report descriptor) — no mouse/joystick HID
+function exists in the gadget at all yet. Sized medium (new gadget HID function +
+wiring + real OTG-to-host-PC verification, untested territory beyond keyboard),
+not attempted.
 
 ## Still needs a dispatcher-side change
 
