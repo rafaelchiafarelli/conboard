@@ -207,10 +207,9 @@ Result: **no overflow triggered** — `dispatch overflow (reporting queue full,
 dropping oldest)` (`deviceEngine.cpp:58`) never logged, service stayed `active`
 throughout and after. The synchronous ZMQ REQ/REP drain in `io_handler()` keeps
 pace with realistic mouse burst rates, so `io_queue` (`zmq_coms.cpp:136`) never
-reaches the 64-message ceiling under normal use. This is outcome (a) from
-`docs/next-sessions/03-hardware-verify-batch.md` §3b: the relief works, and
-real usage doesn't get close to needing it. Drop-oldest eviction behavior
-itself (queue actually at capacity) remains unexercised — would need either an
+reaches the 64-message ceiling under normal use: the relief works, and real
+usage doesn't get close to needing it. Drop-oldest eviction behavior itself
+(queue actually at capacity) remains unexercised — would need either an
 artificial producer or a much heavier burst to actually fill 64 slots.
 
 ## OPEN — live monitor layout, not investigated (2026-08-14)
@@ -221,7 +220,13 @@ no resize handle.
 
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
-  hardware-verified (2026-08-11), no gamepad available yet. See `docs/HW-TEST-evdev.md`.
+  hardware-verified (2026-08-11), no gamepad available yet (still true as of
+  2026-08-15). See `docs/HW-TEST-evdev.md`.
+* HARDWARE RECONFIRM `conMIDI` open-retry fix (recovering from a transient ALSA
+  port-busy failure after a redeploy restart, `LowLevel/Common/include/runDevice.hpp`)
+  against the DJ-Tech-4-Mix controller (`boards/Dj4Mix.json`) — written +
+  unit-tested since 2026-08-11, no MIDI hardware available to confirm the
+  redeploy-recovery path on real hardware yet (still true as of 2026-08-15).
 * **mouse/keyboard output not firing** (above) — now the top item, blocks the core
   remap-a-device feature for two of four device kinds.
 * longer term: ethernet-gadget access, the local power-password login (design in
