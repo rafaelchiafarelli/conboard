@@ -40,9 +40,19 @@ front/pop check (kept scoped tightly, `executeOutput()` runs outside the lock so
 delayed output can't stall `enqueue()`). Rebuilt/redeployed/reverified live: 267
 real input events → 628 `/dev/hidg0` writes, output still firing correctly.
 
-**Open, not investigated — live monitor layout.** User: "it is ugly" and the panel
-can't be resized. Deferred; likely just `.live-col`/`.monitor` CSS
-(`frontend/console/src/index.css`), no resize handle exists today.
+**RESOLVED (2026-08-15) — live monitor layout ("it is ugly" + can't be resized).**
+Two stacked bugs, both found live rather than by reading the CSS: a stale
+fixed-width grid (`.feed-head`/`.ev-row` in `index.css`) whose columns no longer
+fit the panel's current 280–768px range, which combined with the Aug-14
+`min-width: 0` truncation fix to collapse the action column to ~0px and
+ink-overflow its text into the UUID column — genuinely overlapping, not just
+cramped; and a resize handle that technically worked but sat in CSS's spec-fixed
+bottom-right corner, the wrong corner for a panel docked on the right edge (a user
+spot-check on the real board caught this after the first fix only addressed
+discoverability, not the corner itself). Fixed both, added a real drag handle on
+the shared left edge with `cursor: ew-resize` feedback, rebuilt/redeployed to
+`192.168.7.4` twice and user-confirmed live each time. Full writeup in
+[../NOTES.md](../NOTES.md).
 
 ---
 

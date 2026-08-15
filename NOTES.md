@@ -212,11 +212,49 @@ usage doesn't get close to needing it. Drop-oldest eviction behavior itself
 (queue actually at capacity) remains unexercised — would need either an
 artificial producer or a much heavier burst to actually fill 64 slots.
 
-## OPEN — live monitor layout, not investigated (2026-08-14)
-User: "it is ugly" and the live monitor panel can't be resized. Not looked at this
-session (deferred). Likely CSS/layout only (`.live-col`, `.monitor` in
-`frontend/console/src/index.css`) — the panel is currently a fixed-width aside with
-no resize handle.
+## RESOLVED — live monitor layout ("it is ugly" + can't be resized), hardware-verified (2026-08-15)
+Two separate bugs stacked on top of each other, both found by testing live in a
+browser rather than reading the CSS in isolation (a throwaway mock WebSocket
+dispatcher + Playwright, driven against both the dev server and the real board,
+confirmed each fix before it shipped).
+
+**The actual "ugly" bug wasn't spacing — it was overlapping text.**
+`frontend/console/src/index.css`'s `.feed-head, .ev-row` grid (`108px 128px 1fr
+120px minmax(150px, 0.9fr)`, 500px+ of fixed columns) predates the panel's current
+width (400px default, resizable 280–768px) — leftover from before the panel was
+narrowed to a permanent side column. The Aug-14 truncation fix (`f7d7d41`) added
+`min-width: 0` to `.ev-event` so its content could shrink, but with no space left
+after the fixed columns, that `1fr` track collapsed to ~0px and its flex children
+(the RAW badge + decoded event text) ink-overflowed straight into the UUID column's
+own text — genuinely overlapping, illegible glyphs, confirmed by measuring the
+actual overlapping DOM rects in a real browser, not just "looks cramped." Fixed by
+switching every column to `minmax(min, max)` (columns shrink together instead of
+one blowing out) and adding `min-width: 0` to the remaining leaf cells; dropped
+`.live-col .feed-scroll { overflow-x: auto }` (it let rows scroll independently of
+the non-scrolling header, which is how the header ended up silently clipped) in
+favor of wrapping.
+
+**Resize was never actually broken — the first fix addressed the wrong half.**
+Live-dragging `.live-col`'s existing `resize: horizontal` in a real browser proved
+the CSS property itself worked and held through a live event stream; the real
+problem was discoverability, so the first pass added a small drawn grip in the
+browser's native corner. **User spot-check on the real board found this
+insufficient** — still felt unresizable, no cursor feedback on hover. Root cause:
+CSS `resize`'s handle is spec-fixed to an element's bottom-right corner, always,
+which for a panel docked on the *right* (bordered on its *left*) is the wrong
+corner entirely — nothing lived on the edge users actually reach for. Fixed
+(`frontend/console/src/App.tsx`) with a real JS-driven drag handle on the left edge
+(`mousedown` starts a `window`-level `mousemove`/`mouseup` drag, same 280px/48vw
+clamp as the CSS) and `cursor: ew-resize` visible across the whole edge; the native
+corner resize stays as a secondary affordance.
+
+**Verified**: `npm run typecheck` clean; live in a real browser against a mock
+dispatcher (drag-resize holds through a live event stream, no overlap from the
+panel's 280px floor through its 48vw ceiling, cursor confirmed `ew-resize` over the
+new edge); redeployed to `192.168.7.4` twice (once per round, previous build backed
+up on-device before each overwrite) and user-confirmed live both times — the second
+specifically checking hover cursor + edge-drag. `docs/next-sessions/02-live-monitor-css.md`
+removed now that its task is done.
 
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
