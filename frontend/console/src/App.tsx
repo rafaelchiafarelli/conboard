@@ -85,6 +85,36 @@ export default function App() {
   const snapshot = useRef<string | null>(null)
   const [, forceRender] = useReducer((n: number) => n + 1, 0)
 
+  // .live-col already has native CSS `resize: horizontal`, but that handle is always
+  // drawn in the browser's bottom-right corner -- the wrong corner for a panel docked
+  // on the right, where the natural drag target is the shared LEFT edge (same reason
+  // VSCode's sidebars resize from their inner edge, not a corner). This gives that edge
+  // a real, visibly-hoverable drag handle; the native corner keeps working too.
+  const liveColRef = useRef<HTMLElement | null>(null)
+  const startLiveColResize = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const el = liveColRef.current
+    if (!el) return
+    const startX = e.clientX
+    const startWidth = el.getBoundingClientRect().width
+    const min = 280
+    const max = window.innerWidth * 0.48
+    document.body.style.cursor = 'ew-resize'
+    document.body.style.userSelect = 'none'
+    const onMove = (ev: MouseEvent) => {
+      const next = startWidth + (startX - ev.clientX)
+      el.style.width = `${Math.min(max, Math.max(min, next))}px`
+    }
+    const onUp = () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
   // Data source: start EMPTY (a brief "connecting…"), then load the backend rules
   // library (harpia REST). Only the real bundled boards are ever shown — no fake test
   // devices — so nothing spurious flashes before the backend answers.
@@ -585,7 +615,8 @@ export default function App() {
 
         {/* Live events — a PERMANENT column on the right of the rule editor, showing
             all devices' real-time events. Not an overlay, not toggled. */}
-        <aside className="live-col">
+        <aside className="live-col" ref={liveColRef}>
+          <div className="live-col-handle" onMouseDown={startLiveColResize} title="Drag to resize" />
           <Monitor boards={boards} />
         </aside>
       </div>
