@@ -185,6 +185,15 @@ slow/delayed output can't stall `enqueue()` from the reader thread. Rebuilt,
 redeployed, reverified live: 267 real input events → 628 `/dev/hidg0` writes,
 output still firing correctly with the fix in place.
 
+**Regression coverage added (2026-08-15, session 1 of post-v1 roadmap):** added
+keyboard press/hold, mouse button/wheel-axis, and combined input-trigger +
+output-data cases to `tests/test_jsonparser.cpp`'s `TEST_SUITE("json")`, so this
+exact class of bug (an evdev branch parsing output fields but never calling
+`parseEvTrigger()`) fails a unit test immediately instead of shipping silently.
+Full suite: 83 → 86 cases, 259 assertions, all green
+(`./run-tests.sh json` / `./run-tests.sh`). Logic-only, no hardware needed.
+`docs/next-sessions/01-regression-test.md` removed now that its task is done.
+
 ## OPEN — live monitor layout, not investigated (2026-08-14)
 User: "it is ugly" and the live monitor panel can't be resized. Not looked at this
 session (deferred). Likely CSS/layout only (`.live-col`, `.monitor` in
