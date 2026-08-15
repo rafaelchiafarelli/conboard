@@ -172,13 +172,18 @@ covered this path — the gap wasn't test-visible). Cross-built, redeployed via 
 **51 keyboard events + 87 mouse events → 612 writes to `/dev/hidg0`**, user-confirmed
 the expected text actually appeared on the connected host.
 
-**Follow-up, not yet done**: `DeviceEngine::enqueue()`
-(`LowLevel/Common/src/deviceEngine.cpp:67`) locks `locking_mechanism` before pushing
-to `oQueue`, but `out_func()` (line 104) reads/pops the same `oQueue` **without**
-that lock — `send` itself is `std::atomic_bool` so that part's safe, but
-`std::queue` is not thread-safe for concurrent push/pop regardless. This was NOT the
-cause of the bug above (matching never fired, so nothing ever reached the queue
-concurrently under real load) but it's a genuine latent race, worth fixing next.
+**Follow-up — FIXED + HARDWARE-VERIFIED (2026-08-15, same day).**
+`DeviceEngine::enqueue()` (`LowLevel/Common/src/deviceEngine.cpp:67`) locked
+`locking_mechanism` before pushing to `oQueue`, but `out_func()` (line 104) read/
+popped the same `oQueue` **without** that lock — `send` itself is
+`std::atomic_bool` so that part was safe, but `std::queue` is not thread-safe for
+concurrent push/pop regardless. Not the cause of the bug above (matching never
+fired, so nothing reached the queue concurrently under real load), but a genuine
+latent race. Fixed by taking `locking_mechanism` around the front/pop check in
+`out_func()` too, kept scoped tightly (no `executeOutput()` inside the lock) so a
+slow/delayed output can't stall `enqueue()` from the reader thread. Rebuilt,
+redeployed, reverified live: 267 real input events → 628 `/dev/hidg0` writes,
+output still firing correctly with the fix in place.
 
 ## OPEN — live monitor layout, not investigated (2026-08-14)
 User: "it is ugly" and the live monitor panel can't be resized. Not looked at this

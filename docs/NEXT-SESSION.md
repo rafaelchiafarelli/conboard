@@ -34,12 +34,11 @@ rebuild/redeploy: 138 real input events → 612 `/dev/hidg0` writes, user-confir
 expected text appeared on the connected host. Full writeup in
 [../NOTES.md](../NOTES.md).
 
-**Now top priority — the `enqueue()`/`out_func()` lock gap is still open.**
-`DeviceEngine::out_func()` (`LowLevel/Common/src/deviceEngine.cpp:104`) reads/pops
-`oQueue` without the lock `enqueue()` (line 67) takes to push to it. `send` itself is
-`std::atomic_bool` so that part's safe, but `std::queue` isn't thread-safe for
-concurrent push/pop regardless — a genuine latent race, not the cause of the bug
-above (nothing was reaching the queue before), but real and worth fixing next.
+**RESOLVED (2026-08-15, same day) — the `enqueue()`/`out_func()` lock gap.**
+`DeviceEngine::out_func()` now takes `locking_mechanism` around the `oQueue`
+front/pop check (kept scoped tightly, `executeOutput()` runs outside the lock so a
+delayed output can't stall `enqueue()`). Rebuilt/redeployed/reverified live: 267
+real input events → 628 `/dev/hidg0` writes, output still firing correctly.
 
 **Open, not investigated — live monitor layout.** User: "it is ugly" and the panel
 can't be resized. Deferred; likely just `.live-col`/`.monitor` CSS

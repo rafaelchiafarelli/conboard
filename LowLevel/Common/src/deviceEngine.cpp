@@ -103,13 +103,24 @@ void DeviceEngine::executeOutput(devActions &out) {
 
 void DeviceEngine::out_func() {
     while (!stop) {
-        if (send) {
-            std::vector<devActions> to_send = oQueue.front();
+        std::vector<devActions> to_send;
+        bool has_work;
+        {
+            // oQueue is a plain std::queue, not thread-safe on its own -- take the
+            // same lock enqueue() uses to push, so pop() here can't race a concurrent
+            // push. Kept short (no executeOutput() inside it) so a slow/delayed
+            // output doesn't stall enqueue() from the reader thread.
+            std::lock_guard<std::mutex> locker(locking_mechanism);
+            has_work = !oQueue.empty();
+            if (has_work) {
+                to_send = std::move(oQueue.front());
+                oQueue.pop();
+            }
+            send = !oQueue.empty();
+        }
+        if (has_work) {
             for (std::vector<devActions>::iterator out = to_send.begin(); out != to_send.end(); ++out)
                 executeOutput(*out);
-            oQueue.pop();
-            if (oQueue.empty())
-                send = false;
         } else {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
