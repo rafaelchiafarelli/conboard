@@ -6,11 +6,12 @@
 // activation, console URL, radio) from the backend's REST/JSON API -- never
 // from local business logic.
 //
-// Phase 1-2 scope: this main wires the dependencies together and shows one
-// concrete end-to-end demo screen (the console URL, fetched over HTTP) to
-// prove the REST-sourced-data path for real. The WiFi/activation/radio
-// screens and the real navigation scheme (which control does what) are
-// phase 4 work.
+// Phase 1-2 scope wired the dependencies together and shipped one concrete
+// end-to-end demo screen (the console URL, fetched over HTTP) to prove the
+// REST-sourced-data path for real. Phase 4a adds the first real domain
+// screen (WiFi list, wifi_screen.cpp) behind a small top-level menu; the
+// activation/radio screens and the real navigation scheme (which control
+// does what) are still later phase-4/5 work.
 #include "app_shell.hpp"
 #include "clipped_panel.hpp"
 #include "hmi_theme.hpp"
@@ -20,6 +21,7 @@
 #include "push_button.hpp"
 #include "rest_client.hpp"
 #include "rotary_encoder.hpp"
+#include "wifi_screen.hpp"
 
 #include <lvgl.h>
 
@@ -176,18 +178,25 @@ int main(int argc, char *argv[])
     if (haveButton1) lvgl_glue::createButtonIndev(button1, LV_KEY_ESC, group);
     if (haveButton2) lvgl_glue::createButtonIndev(button2, LV_KEY_NEXT, group);
 
-    // The one concrete end-to-end demo for this pass: fetch the console URL
-    // over HTTP from the backend and render it. Proves module -> HTTP ->
-    // backend -> JSON -> LVGL render works, with zero local business logic
-    // and zero physical hardware (panel=null).
+    // Top-level menu: a minimal base for phase 4b's activation/radio screens
+    // to slot into later, one entry each. "Console URL" is the original
+    // phase 1-2 demo, now reached via the menu instead of shown directly;
+    // "WiFi" is phase 4a's first real domain screen.
     appshell::Shell shell(group);
-    lv_obj_t *scr = shell.pushScreen();
     RestClient rest(restBase, "hmi", envOr("CONHMI_REST_PSWD_HASH", "1bf812ac18b80d4a5ea4d51e6bfb7f58"));
-    auto response = rest.get("/hmi/console-url");
-    std::string text = "console URL unavailable\n(backend unreachable?)";
-    if (response && response->contains("url"))
-        text = "conboard console:\n" + response->at("url").get<std::string>();
-    appshell::createInfoLabel(scr, text);
+    lv_obj_t *menuScr = shell.pushScreen();
+    lv_obj_t *menuList = appshell::createMenuList(shell, menuScr);
+    appshell::addMenuItem(shell, menuList, "Console URL", [&shell, &rest]() {
+        lv_obj_t *scr = shell.pushScreen();
+        auto response = rest.get("/hmi/console-url");
+        std::string text = "console URL unavailable\n(backend unreachable?)";
+        if (response && response->contains("url"))
+            text = "conboard console:\n" + response->at("url").get<std::string>();
+        appshell::createInfoLabel(scr, text);
+    });
+    appshell::addMenuItem(shell, menuList, "WiFi", [&shell, &rest]() {
+        wifi_screen::push(shell, rest);
+    });
 
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);

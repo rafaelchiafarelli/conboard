@@ -46,7 +46,7 @@ can't be resized. Deferred; likely just `.live-col`/`.monitor` CSS
 
 ---
 
-# conboard — local screen/buttons/encoders UI handoff (2026-08-10/11)
+# conboard — local screen/buttons/encoders UI handoff (2026-08-10/11, phase 4a 2026-08-15)
 
 New, **separate** workstream from the console-fixes milestone below — a small
 SPI TFT + 2 push buttons + 2 rotary encoders (each with its own pushbutton),
@@ -56,9 +56,10 @@ codebase (see the plan doc from the session that started this): no
 domain data over the backend's REST/JSON API — no local business logic.
 
 Scope was phases 1-3 of a 5-phase plan (dependencies + a screen-size-adaptable
-base component layer + a custom theme matching the console's palette); phases
-4-5 (the actual WiFi/activation/radio screens, deeper backend integration) are
-not started.
+base component layer + a custom theme matching the console's palette), plus
+now phase 4a (2026-08-15): the first real domain screen (WiFi list),
+hardware-confirmed. Phase 4b (activation/radio screens) and phase 5
+(encoder/button wiring, the real navigation scheme) are still not started.
 
 ## What's built
 
@@ -111,6 +112,24 @@ not started.
   the expected "no hardware?" warnings for the still-unwired encoders/buttons,
   and the dark theme background is confirmed visible by eye on the physical
   panel.
+- **Phase 4a (2026-08-15): the WiFi list screen — DONE, hardware-confirmed.**
+  New `LowLevel/HMI/include/wifi_screen.hpp` + `src/wifi_screen.cpp`: fetches
+  `GET /hmi/wifi/networks`, renders one `appshell` menu row per network
+  (`SSID  (signal%)`), with separate fallback `createInfoLabel` text for a
+  failed fetch vs. an empty/no-networks result. `main.cpp` now pushes a small
+  top-level menu ("Console URL", "WiFi") at startup instead of jumping
+  straight into the old console-url demo, so both screens are reachable
+  through one root — a minimal base for phase 4b's activation/radio entries
+  to slot into later. Also bumped the compiled-in default font from
+  Montserrat 14 to **Montserrat 18** (`lv_conf.h`) — 14 was unreadably small
+  for a scrollable list of real network names on the physical panel.
+  **Hardware-confirmed** on `192.168.7.4`: real nearby networks render
+  correctly with good row spacing (confirmed via a temporary combined
+  debug screen — console-url text as a header line above the WiFi list on
+  one screen, since there's no encoder/button hardware yet to navigate the
+  real top-level menu — reverted before committing, same pattern as phase
+  3's temporary demo menu). User feedback: layout works but isn't polished
+  yet ("not very pretty") — left for a future UI-design pass, not blocking.
 
 ## Hardware-confirmed facts (dev board: `rafael@192.168.7.4`, `orangepizero3`)
 
@@ -173,10 +192,11 @@ only proof that ever worked on this exact unit.
   measurements. See `LowLevel/HMI/include/clipped_panel.hpp` for how it
   composes (wraps any `PanelDriver`, crops+offsets, everything above it in
   the stack — LVGL, AppShell — only ever sees the cropped size).
-- Phases 4-5 not started: the actual WiFi/activation/radio screens, and which
-  physical control does what (nav scheme), are still open. (Phase 3, the
-  visual theme, is done and hardware-confirmed on the real ST7789 panel — see
-  "What's built" above.)
+- Phase 4a (WiFi list) is done and hardware-confirmed — see "What's built"
+  above. Still open: phase 4b (the activation/radio screens) and phase 5
+  (which physical control does what — the top-level menu exists but can't
+  actually be navigated by hand until the encoder/button GPIO lines above are
+  wired).
 
 ## Persisting hardware config (durable across reinstalls)
 

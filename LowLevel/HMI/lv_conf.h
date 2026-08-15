@@ -66,8 +66,8 @@
 /*-----------
  * Fonts
  *----------*/
-#define LV_FONT_MONTSERRAT_14 1
-#define LV_FONT_DEFAULT &lv_font_montserrat_14
+#define LV_FONT_MONTSERRAT_18 1
+#define LV_FONT_DEFAULT &lv_font_montserrat_18
 
 /*==================
  * EXAMPLES AND DEMOS -- off, conHMI doesn't need LVGL's own demo assets
