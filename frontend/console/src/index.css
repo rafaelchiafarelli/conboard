@@ -368,6 +368,11 @@ input.dim { opacity: .5; }
 /* ---------- live events: permanent right column (all devices) ---------- */
 .work > .live-col { flex: none; width: 400px; min-width: 280px; max-width: 48vw; resize: horizontal; overflow: hidden; border-left: 1px solid var(--line); display: flex; flex-direction: column; }
 .live-col > .monitor { flex: 1; min-height: 0; padding: 12px 14px; }
+/* JS-driven counterpart to the native corner resize above: a full-height strip on the
+   panel's actual shared edge, since that's where a right-docked panel is naturally
+   grabbed (see the handler in App.tsx). z-index keeps it above .monitor's own content. */
+.live-col-handle { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; z-index: 5; }
+.live-col-handle:hover, .live-col-handle:active { background: var(--accent-dim); opacity: .6; }
 
 /* ---------- crash screen (ErrorBoundary) ---------- */
 .crash { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--ground); }
