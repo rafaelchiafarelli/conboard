@@ -13,6 +13,43 @@
 
 using namespace rapidjson;
 
+namespace {
+// Parses the evdev INPUT trigger shape shared by joystick/keyboard/mouse rules, e.g.
+//   {"type":"joystick","code":"BTN_SOUTH","mode":"press"}
+//   {"type":"mouse","code":"BTN_LEFT","mode":"press"}
+//   {"type":"keyboard","code":"KEY_A","mode":"hold","interval":200}
+// The symbol implies the evdev (type,code); mode selects how it fires. Only runs
+// when "code" is present, so calling it on an OUTPUT action object (which never
+// has "code") is a harmless no-op.
+void parseEvTrigger(rapidjson::Value &act, devActions &ret)
+{
+	if (!act.HasMember("code") || !act["code"].IsString())
+		return;
+	// resolveSymbol fills type+code; unknown symbol leaves them 0.
+	evmatch::resolveSymbol(act["code"].GetString(), ret.evtrig);
+	ret.evtrig.mode = evmatch::ev_nomode;
+	if (act.HasMember("mode") && act["mode"].IsString())
+	{
+		std::string m = act["mode"].GetString();
+		if (!m.compare("press"))            ret.evtrig.mode = evmatch::ev_press;
+		else if (!m.compare("release"))     ret.evtrig.mode = evmatch::ev_release;
+		else if (!m.compare("hold"))        ret.evtrig.mode = evmatch::ev_hold;
+		else if (!m.compare("hold_once"))   ret.evtrig.mode = evmatch::ev_hold_once;
+		else if (!m.compare("higher"))      ret.evtrig.mode = evmatch::ev_higher;
+		else if (!m.compare("lower"))       ret.evtrig.mode = evmatch::ev_lower;
+		else if (!m.compare("spot"))        ret.evtrig.mode = evmatch::ev_spot;
+	}
+	// threshold for higher/lower
+	if (act.HasMember("value") && act["value"].IsInt())
+		ret.evtrig.threshold = act["value"].GetInt();
+	// hold timing: "interval" for hold (repeat), "delay" for hold_once
+	if (act.HasMember("interval") && act["interval"].IsInt())
+		ret.evtrig.holdMs = act["interval"].GetInt();
+	else if (act.HasMember("delay") && act["delay"].IsInt())
+		ret.evtrig.holdMs = act["delay"].GetInt();
+}
+} // namespace
+
 jsonParser::jsonParser(std::string _FileName, std::vector<ModeType> *Mode,std::vector<Actions> *h) {
 	loaded = false;
 	//std::cout<<"helo"<<std::endl;
@@ -197,6 +234,7 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 	{
 		case devType::mouse:
 		{
+			parseEvTrigger(act, ret);   // no-op unless this is a trigger object (has "code")
 			if(act.HasMember("dx"))
 			{
 				if(act["dx"].IsInt())
@@ -289,6 +327,7 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 		break;
 		case devType::keyboard:
 		{
+			parseEvTrigger(act, ret);   // no-op unless this is a trigger object (has "code")
 			if(act.HasMember("data"))
 			{
 				if(act["data"].IsString())
@@ -398,36 +437,7 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 		break;
 		case devType::joystick:
 		{
-			// An evdev INPUT trigger, e.g.
-			//   {"type":"joystick","code":"BTN_SOUTH","mode":"press"}
-			//   {"type":"joystick","code":"ABS_X","mode":"higher","value":200}
-			//   {"type":"joystick","code":"BTN_START","mode":"hold_once","delay":500}
-			// The symbol implies the evdev (type,code); mode selects how it fires.
-			if(act.HasMember("code") && act["code"].IsString())
-			{
-				// resolveSymbol fills type+code; unknown symbol leaves them 0.
-				evmatch::resolveSymbol(act["code"].GetString(), ret.evtrig);
-			}
-			ret.evtrig.mode = evmatch::ev_nomode;
-			if(act.HasMember("mode") && act["mode"].IsString())
-			{
-				std::string m = act["mode"].GetString();
-				if(!m.compare("press"))            ret.evtrig.mode = evmatch::ev_press;
-				else if(!m.compare("release"))     ret.evtrig.mode = evmatch::ev_release;
-				else if(!m.compare("hold"))        ret.evtrig.mode = evmatch::ev_hold;
-				else if(!m.compare("hold_once"))   ret.evtrig.mode = evmatch::ev_hold_once;
-				else if(!m.compare("higher"))      ret.evtrig.mode = evmatch::ev_higher;
-				else if(!m.compare("lower"))       ret.evtrig.mode = evmatch::ev_lower;
-				else if(!m.compare("spot"))        ret.evtrig.mode = evmatch::ev_spot;
-			}
-			// threshold for higher/lower
-			if(act.HasMember("value") && act["value"].IsInt())
-				ret.evtrig.threshold = act["value"].GetInt();
-			// hold timing: "interval" for hold (repeat), "delay" for hold_once
-			if(act.HasMember("interval") && act["interval"].IsInt())
-				ret.evtrig.holdMs = act["interval"].GetInt();
-			else if(act.HasMember("delay") && act["delay"].IsInt())
-				ret.evtrig.holdMs = act["delay"].GetInt();
+			parseEvTrigger(act, ret);
 		}
 		break;
 		case devType::notype:

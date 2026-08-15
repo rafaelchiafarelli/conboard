@@ -22,24 +22,24 @@ re-verified, not just typechecked):
 - Live monitor was silently truncating event text (CSS ellipsis, no wrap) — fixed.
 - Two `window.alert()` calls (copy/delete failure) replaced with an in-app toast.
 
-**Open, top priority for next session — mouse/keyboard rule output doesn't fire.**
-Pressing a key or clicking a mouse button on the real WirelessKB/WirelessMouse
-hardware produces no output on the connected host, even though:
-- the event reaches the dispatcher and shows correctly in the (now-decoded) live
-  monitor,
-- the deployed on-device profile is correct,
-- the USB gadget is fully bound (`UDC state: configured`, `/dev/hidg0` present),
-- and a manual raw HID write straight to `/dev/hidg0` over SSH DID produce visible
-  output on the host (user-confirmed) — so the gadget→host link itself is healthy.
+**RESOLVED (2026-08-15) — mouse/keyboard rule output not firing.** Root cause:
+`jsonParser::parseIO()` only parsed the evdev trigger (`code`/`mode` → `evtrig`) for
+`"type":"joystick"`; the `mouse`/`keyboard` case branches only parsed output-shaped
+fields, so `evtrig.mode` stayed `ev_nomode` and `evmatch::matches()` returned false
+for every keyboard/mouse rule, always. Proven live before the fix (inotify watch on
+`/dev/input/event0`+`event1`+`/dev/hidg0`): 1306 real input events, 0 HID writes.
+Fixed by sharing the trigger-parsing helper across joystick/keyboard/mouse instead of
+joystick-only (`LowLevel/Common/src/jsonParser.cpp`). Hardware-reverified after
+rebuild/redeploy: 138 real input events → 612 `/dev/hidg0` writes, user-confirmed the
+expected text appeared on the connected host. Full writeup in
+[../NOTES.md](../NOTES.md).
 
-So the break is specifically in the local rule-match → enqueue → HID-write chain
-inside `conKeyB`/`conMouse`. **Start here**: confirm via the monitor's new decoder
-whether the event even shows the expected code name (`KEY_A press` / `BTN_LEFT
-press`) — that was asked for but not confirmed before the session ended. Also see
-NOTES.md for a concrete, unconfirmed lead: `DeviceEngine::out_func()`
-(`LowLevel/Common/src/deviceEngine.cpp:104`) reads/mutates `oQueue`/`send` without
-the lock `enqueue()` (line 67) uses to write them — a genuine data race, unproven as
-the cause here but worth fixing regardless.
+**Now top priority — the `enqueue()`/`out_func()` lock gap is still open.**
+`DeviceEngine::out_func()` (`LowLevel/Common/src/deviceEngine.cpp:104`) reads/pops
+`oQueue` without the lock `enqueue()` (line 67) takes to push to it. `send` itself is
+`std::atomic_bool` so that part's safe, but `std::queue` isn't thread-safe for
+concurrent push/pop regardless — a genuine latent race, not the cause of the bug
+above (nothing was reaching the queue before), but real and worth fixing next.
 
 **Open, not investigated — live monitor layout.** User: "it is ugly" and the panel
 can't be resized. Deferred; likely just `.live-col`/`.monitor` CSS

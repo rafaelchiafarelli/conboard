@@ -131,44 +131,54 @@ what didn't work, live, in the same session:
 All of the above rebuilt + redeployed to `192.168.7.4` and verified against the real
 board multiple times this session (not just typechecked).
 
-## OPEN — mouse/keyboard rule output not firing (2026-08-14, unresolved)
-User report: WirelessKB and WirelessMouse both register live events (visible in the
-monitor, dispatcher heartbeats present), but pressing a key / clicking a button
-produces **no output on the connected host** — even for the simplest rules
-(`BTN_LEFT press → type "left click"`).
+## RESOLVED — mouse/keyboard rule output not firing (found + fixed + hardware-verified 2026-08-15)
+User report (2026-08-14): WirelessKB and WirelessMouse both register live events
+(visible in the monitor, dispatcher heartbeats present), but pressing a key /
+clicking a button produced **no output on the connected host** — even for the
+simplest rules (`BTN_LEFT press → type "left click"`).
 
-**Ruled out this session:**
-- The deployed profile is correct (`/conboard/boards/WirelessMouse.json` matches the
-  repo template exactly after a fresh reinstall).
-- The USB gadget is fully bound: `cat /sys/class/udc/*/state` → `configured`,
-  `/dev/hidg0` exists with the right permissions.
-- The HID write path itself works: manually wrote a raw boot-keyboard report for
-  `letter_a` straight to `/dev/hidg0` over SSH (bypassing conMouse/conKeyB
-  entirely) — **user confirmed "a" appeared** on the connected host. So the
-  gadget→host link is healthy.
-- Both `WirelessKB-port-4-1.service` and `WirelessMouse-port-4-1.service` show a
-  valid, positive fd (`file: /dev/hidg0 fd:3`) at startup in the journal — not the
-  "open() failed silently, fd stays -1" theory.
+**Root cause, found by static read + live confirmation:** `jsonParser::parseIO()`
+(`LowLevel/Common/src/jsonParser.cpp`) is reused to parse BOTH a rule's INPUT
+trigger (`{"type":"mouse","code":"BTN_LEFT","mode":"press"}`) and its OUTPUT action
+(`{"type":"keyboard","data":"left click",...}`), dispatching on the `"type"` string
+alone. Only the `case devType::joystick` branch ever called
+`evmatch::resolveSymbol()` to populate `evtrig` from `code`/`mode` — the `mouse` and
+`keyboard` branches only parsed output-shaped fields (`dx`/`dy`/... , `data`/
+`keyType`/...) and never touched `evtrig` at all. So for every keyboard/mouse rule,
+`evtrig.mode` stayed at its default `ev_nomode`, and `evmatch::matches()`
+(`LowLevel/Common/src/evMatch.cpp:94`) returned `false` unconditionally, for every
+event, always. Joystick "worked" (structurally — never hardware-tested) purely by
+being the first evdev consumer written; keyboard/mouse support was added later and
+the trigger-parsing path was never extended to them.
 
-**Not yet confirmed — this is where to start next session:** whether the *matching*
-even fires. `DeviceEngine::report()` sends every observed input event to the
-dispatcher for the live monitor regardless of whether any rule matches it (that's
-just visibility), which is a SEPARATE code path from the local
-`evMatch::matches()` → `enqueue()` → `out_func()` → `oActions::keyboard_send()` chain
-that actually produces the output. Seeing an event in the monitor does NOT prove a
-rule matched. The monitor's new raw-event decoder (this session) should make it easy
-to confirm the exact code names the dispatcher is receiving (`KEY_A press` /
-`BTN_LEFT press` — or something else, which would point at a code mismatch instead)
-— this check was requested but not completed before the session ended.
+**Proven live before the fix** (not just read from code): built a small inotify-based
+watcher (no `strace`/`inotifywait` on-device, wrote one in ~30 lines of python3
+ctypes) on `/dev/input/event0` (keyboard), `/dev/input/event1` (mouse), and
+`/dev/hidg0` simultaneously. Result over one interaction window: **276 real keyboard
+events + 1030 real mouse events read by the handlers, zero writes to `/dev/hidg0`.**
+Confirmed the watcher itself works by manually writing a raw HID report to
+`/dev/hidg0` first (immediate `MODIFY` event) before trusting the "zero events"
+read on the real handlers.
 
-**A concrete lead worth checking, found reading the code (not yet proven):**
-`DeviceEngine::enqueue()` (`LowLevel/Common/src/deviceEngine.cpp:67`) locks
-`locking_mechanism` before touching `oQueue`/`send`, but `out_func()` (the executor
-thread, line 104) reads and mutates both **without the same lock** — a genuine data
-race on non-atomic state shared between two threads. Whether this actually explains
-"enqueued output never gets executed" (vs. just being latent-but-currently-harmless
-UB) is unconfirmed. Worth instrumenting or fixing regardless (make `send` atomic or
-have `out_func()` take the lock) even if it isn't the root cause here.
+**Fix**: extracted the trigger-parsing block (resolveSymbol + mode/threshold/holdMs)
+into a shared `parseEvTrigger()` helper, called from all three evdev branches
+(`joystick`/`keyboard`/`mouse`) instead of only `joystick`. Guarded on
+`act.HasMember("code")` so it's a no-op when parseIO is called on an OUTPUT object
+(which never has `code`).
+
+**Verified after the fix**: all 83 existing unit tests still pass (none of them
+covered this path — the gap wasn't test-visible). Cross-built, redeployed via a real
+`install-on-device.sh` reinstall on `192.168.7.4`, then re-ran the same live watch:
+**51 keyboard events + 87 mouse events → 612 writes to `/dev/hidg0`**, user-confirmed
+the expected text actually appeared on the connected host.
+
+**Follow-up, not yet done**: `DeviceEngine::enqueue()`
+(`LowLevel/Common/src/deviceEngine.cpp:67`) locks `locking_mechanism` before pushing
+to `oQueue`, but `out_func()` (line 104) reads/pops the same `oQueue` **without**
+that lock — `send` itself is `std::atomic_bool` so that part's safe, but
+`std::queue` is not thread-safe for concurrent push/pop regardless. This was NOT the
+cause of the bug above (matching never fired, so nothing ever reached the queue
+concurrently under real load) but it's a genuine latent race, worth fixing next.
 
 ## OPEN — live monitor layout, not investigated (2026-08-14)
 User: "it is ugly" and the live monitor panel can't be resized. Not looked at this
