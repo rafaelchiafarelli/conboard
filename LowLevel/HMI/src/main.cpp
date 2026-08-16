@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
     // and zero physical hardware (panel=null).
     appshell::Shell shell(group);
     lv_obj_t *scr = shell.pushScreen();
-    RestClient rest(restBase, "hmi", envOr("CONHMI_REST_PSWD_HASH", "1bf812ac18b80d4a5ea4d51e6bfb7f58"));
+    RestClient rest(restBase, "hmi", envOr("CONHMI_REST_PSWD_HASH", "b13f689a5b6f99919ddaf4d1cc7eb7ac"));
     auto response = rest.get("/hmi/console-url");
     std::string text = "console URL unavailable\n(backend unreachable?)";
     if (response && response->contains("url"))

@@ -10,8 +10,11 @@
 
 #include <zmq.hpp>
 
-#include "json/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_json.h"
-#include "zmq/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_zmq.h"
+#include "json/trigger_b13f689a5b6f99919ddaf4d1cc7eb7ac_json.h"
+#include "zmq/trigger_b13f689a5b6f99919ddaf4d1cc7eb7ac_zmq.h"
+#ifdef HARPIA_DEMO_CURVE
+#include "harpia_zmq_curve_keys.h"
+#endif
 
 int main(int argc, char* argv[]) {
     const std::string endpoint = (argc > 1) ? argv[1] : "tcp://localhost:5599";
@@ -24,7 +27,16 @@ int main(int argc, char* argv[]) {
     }
 
     ::zmq::context_t ctx{1};
+#ifdef HARPIA_DEMO_CURVE
+    harpia::zmq_transport::CurveClientKeys curve{
+        kHarpiaZmqCurveServerPublic, kHarpiaZmqCurveClientPublic,
+        kHarpiaZmqCurveClientSecret};
+    harpia::zmq_transport::trigger_sender sender(
+        ctx, endpoint, harpia::zmq_transport::runtime_origin_id(), curve);
+    std::cout << "[client] CURVE enabled" << std::endl;
+#else
     harpia::zmq_transport::trigger_sender sender(ctx, endpoint);
+#endif
     std::cout << "[client] sending " << sample << " to " << endpoint << std::endl;
 
     if (!sender.send(msg)) {

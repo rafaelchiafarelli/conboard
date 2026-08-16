@@ -5,8 +5,42 @@
 find_package(Threads)
 
 # The DB layer is emitted against SOCI (soci_core + the sqlite3
-# backend); SOCI's sqlite3 backend links the system libsqlite3.
-set(HARPIA_SOCI_LIBS soci_core soci_sqlite3)
+# backend). apt's soci-dev has no CMake CONFIG package, only bare
+# .so names findable by the linker's default search path; vcpkg's
+# soci port exports SOCI::SOCI (all installed backend components).
+if(WIN32)
+    # SOCI::SQLite3's own link interface references the
+    # SQLite3::SQLite3 imported target without importing it itself.
+    # vcpkg's sqlite3 port has no CONFIG package under that name
+    # (only "unofficial-sqlite3", target unofficial::sqlite3::sqlite3)
+    # and CMake's builtin MODULE-mode FindSQLite3 doesn't reliably win
+    # the search under the vcpkg toolchain, so alias it in by hand --
+    # a known vcpkg soci-port quirk.
+    find_package(unofficial-sqlite3 CONFIG REQUIRED)
+    if(NOT TARGET SQLite3::SQLite3)
+        add_library(SQLite3::SQLite3 ALIAS unofficial::sqlite3::sqlite3)
+    endif()
+    find_package(SOCI CONFIG REQUIRED)
+    set(HARPIA_SOCI_LIBS SOCI::SOCI)
+else()
+    set(HARPIA_SOCI_LIBS soci_core soci_sqlite3)
+endif()
+
+if(WIN32)
+    # generated/cpp/protofiles/*.pb.h was baked by the pipeline's
+    # Docker protoc (apt's, an old version) and can't compile
+    # against whatever much newer protobuf vcpkg installs (Google
+    # has removed/moved internal headers like map_field_inl.h
+    # across major versions). proto/CMakeLists.txt already
+    # regenerates matching .pb.h from the raw .proto via vcpkg's
+    # own protoc into ${CMAKE_BINARY_DIR}/proto/protofiles -- list
+    # that dir FIRST (same fix as Assets/server_template) so the
+    # adapter headers' quoted #include "protofiles/...pb.h"
+    # resolves there instead of the stale baked copy.
+    set(HARPIA_TEST_PROTO_INCLUDE_DIR ${CMAKE_BINARY_DIR}/proto)
+else()
+    set(HARPIA_TEST_PROTO_INCLUDE_DIR)
+endif()
 
 # Vendored tinyxml2 for the SOAP credential (access-rights) tests.
 add_library(harpia_tinyxml2 STATIC
@@ -14,56 +48,128 @@ add_library(harpia_tinyxml2 STATIC
 target_include_directories(harpia_tinyxml2 PUBLIC
     ${CMAKE_SOURCE_DIR}/third_party/tinyxml2)
 
-add_executable(trigger_test trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
+add_executable(trigger_test trigger_b13f689a5b6f99919ddaf4d1cc7eb7ac_test.cpp)
 target_include_directories(trigger_test PRIVATE
+    ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/third_party/crow
     ${CMAKE_SOURCE_DIR}/third_party/asio)
 target_link_libraries(trigger_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
+if(WIN32)
+    # Crow/asio pull in <windows.h>; without these its full
+    # umbrella pollutes unrelated identifiers elsewhere in the
+    # same translation unit (e.g. GetMessage, min/max).
+    target_compile_definitions(trigger_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    # harpia_test_client.h (REST/SOAP HTTP round-trip client)
+    # is Winsock2 on this platform; its own #pragma comment
+    # covers MSVC, but link explicitly too for other Windows
+    # toolchains (e.g. MinGW, which ignores pragma comment).
+    target_link_libraries(trigger_test PRIVATE ws2_32)
+endif()
 add_test(NAME trigger_test COMMAND trigger_test)
 
-add_executable(output_action_test output_action_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
+add_executable(output_action_test output_action_b13f689a5b6f99919ddaf4d1cc7eb7ac_test.cpp)
 target_include_directories(output_action_test PRIVATE
+    ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/third_party/crow
     ${CMAKE_SOURCE_DIR}/third_party/asio)
 target_link_libraries(output_action_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
+if(WIN32)
+    # Crow/asio pull in <windows.h>; without these its full
+    # umbrella pollutes unrelated identifiers elsewhere in the
+    # same translation unit (e.g. GetMessage, min/max).
+    target_compile_definitions(output_action_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    # harpia_test_client.h (REST/SOAP HTTP round-trip client)
+    # is Winsock2 on this platform; its own #pragma comment
+    # covers MSVC, but link explicitly too for other Windows
+    # toolchains (e.g. MinGW, which ignores pragma comment).
+    target_link_libraries(output_action_test PRIVATE ws2_32)
+endif()
 add_test(NAME output_action_test COMMAND output_action_test)
 
-add_executable(rule_test rule_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
+add_executable(rule_test rule_b13f689a5b6f99919ddaf4d1cc7eb7ac_test.cpp)
 target_include_directories(rule_test PRIVATE
+    ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/third_party/crow
     ${CMAKE_SOURCE_DIR}/third_party/asio)
 target_link_libraries(rule_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
+if(WIN32)
+    # Crow/asio pull in <windows.h>; without these its full
+    # umbrella pollutes unrelated identifiers elsewhere in the
+    # same translation unit (e.g. GetMessage, min/max).
+    target_compile_definitions(rule_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    # harpia_test_client.h (REST/SOAP HTTP round-trip client)
+    # is Winsock2 on this platform; its own #pragma comment
+    # covers MSVC, but link explicitly too for other Windows
+    # toolchains (e.g. MinGW, which ignores pragma comment).
+    target_link_libraries(rule_test PRIVATE ws2_32)
+endif()
 add_test(NAME rule_test COMMAND rule_test)
 
-add_executable(mode_test mode_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
+add_executable(mode_test mode_b13f689a5b6f99919ddaf4d1cc7eb7ac_test.cpp)
 target_include_directories(mode_test PRIVATE
+    ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/third_party/crow
     ${CMAKE_SOURCE_DIR}/third_party/asio)
 target_link_libraries(mode_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
+if(WIN32)
+    # Crow/asio pull in <windows.h>; without these its full
+    # umbrella pollutes unrelated identifiers elsewhere in the
+    # same translation unit (e.g. GetMessage, min/max).
+    target_compile_definitions(mode_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    # harpia_test_client.h (REST/SOAP HTTP round-trip client)
+    # is Winsock2 on this platform; its own #pragma comment
+    # covers MSVC, but link explicitly too for other Windows
+    # toolchains (e.g. MinGW, which ignores pragma comment).
+    target_link_libraries(mode_test PRIVATE ws2_32)
+endif()
 add_test(NAME mode_test COMMAND mode_test)
 
-add_executable(board_test board_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
+add_executable(board_test board_b13f689a5b6f99919ddaf4d1cc7eb7ac_test.cpp)
 target_include_directories(board_test PRIVATE
+    ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/third_party/crow
     ${CMAKE_SOURCE_DIR}/third_party/asio)
 target_link_libraries(board_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
+if(WIN32)
+    # Crow/asio pull in <windows.h>; without these its full
+    # umbrella pollutes unrelated identifiers elsewhere in the
+    # same translation unit (e.g. GetMessage, min/max).
+    target_compile_definitions(board_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    # harpia_test_client.h (REST/SOAP HTTP round-trip client)
+    # is Winsock2 on this platform; its own #pragma comment
+    # covers MSVC, but link explicitly too for other Windows
+    # toolchains (e.g. MinGW, which ignores pragma comment).
+    target_link_libraries(board_test PRIVATE ws2_32)
+endif()
 add_test(NAME board_test COMMAND board_test)
 
-add_executable(app_test app_1bf812ac18b80d4a5ea4d51e6bfb7f58_test.cpp)
+add_executable(app_test app_b13f689a5b6f99919ddaf4d1cc7eb7ac_test.cpp)
 target_include_directories(app_test PRIVATE
+    ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/third_party/crow
     ${CMAKE_SOURCE_DIR}/third_party/asio)
 target_link_libraries(app_test PRIVATE protofiles harpia_tinyxml2 ${HARPIA_SOCI_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
+if(WIN32)
+    # Crow/asio pull in <windows.h>; without these its full
+    # umbrella pollutes unrelated identifiers elsewhere in the
+    # same translation unit (e.g. GetMessage, min/max).
+    target_compile_definitions(app_test PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    # harpia_test_client.h (REST/SOAP HTTP round-trip client)
+    # is Winsock2 on this platform; its own #pragma comment
+    # covers MSVC, but link explicitly too for other Windows
+    # toolchains (e.g. MinGW, which ignores pragma comment).
+    target_link_libraries(app_test PRIVATE ws2_32)
+endif()
 add_test(NAME app_test COMMAND app_test)

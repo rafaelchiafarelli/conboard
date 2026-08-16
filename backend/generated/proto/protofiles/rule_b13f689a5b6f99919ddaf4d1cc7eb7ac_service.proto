@@ -1,0 +1,35 @@
+syntax = "proto3";
+package frameworkProtos;
+//standard protofile with error code and standard heartBeat messages
+import "protofiles/errorCode.proto";
+import "protofiles/heartBeat.proto";
+
+//user imports from harpia process
+import "protofiles/rule_b13f689a5b6f99919ddaf4d1cc7eb7ac.proto";
+
+message rule_Message {
+    rule msg = 1;
+}
+//message for the standard functions 
+message rule_HeartBeat {
+    heartBeat hb = 1;
+}
+
+//message for the pullByID function
+message rule_ID {
+    int32 id = 1;
+}
+message rule_Stream {
+    int32 id = 1;
+    string name = 2;
+    // pagination (spec: "pagination" field modifier): limit <= 0 means
+    // unbounded (return everything, matching pre-pagination behavior).
+    int32 offset = 3;
+    int32 limit = 4;
+}
+service rule_Service {
+    rpc heartBeat(rule_HeartBeat) returns (rule_HeartBeat) {}
+    rpc streamSrc(rule_Stream ) returns (stream rule_Message) {}
+    rpc pullByID(rule_ID) returns (rule_Message) {}
+    rpc push(rule_Message) returns (errorCode) {}
+}

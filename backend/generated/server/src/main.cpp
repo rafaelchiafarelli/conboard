@@ -8,14 +8,23 @@
 
 #include <zmq.hpp>
 
-#include "json/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_json.h"
-#include "zmq/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_zmq.h"
+#include "json/trigger_b13f689a5b6f99919ddaf4d1cc7eb7ac_json.h"
+#include "zmq/trigger_b13f689a5b6f99919ddaf4d1cc7eb7ac_zmq.h"
+#ifdef HARPIA_DEMO_CURVE
+#include "harpia_zmq_curve_keys.h"
+#endif
 
 int main(int argc, char* argv[]) {
     const std::string endpoint = (argc > 1) ? argv[1] : "tcp://*:5599";
 
     ::zmq::context_t ctx{1};
+#ifdef HARPIA_DEMO_CURVE
+    harpia::zmq_transport::CurveServerKeys curve{kHarpiaZmqCurveServerSecret};
+    harpia::zmq_transport::trigger_receiver receiver(ctx, endpoint, curve);
+    std::cout << "[server] CURVE enabled" << std::endl;
+#else
     harpia::zmq_transport::trigger_receiver receiver(ctx, endpoint);
+#endif
     std::cout << "[server] trigger receiver bound to " << endpoint
               << ", waiting..." << std::endl;
 

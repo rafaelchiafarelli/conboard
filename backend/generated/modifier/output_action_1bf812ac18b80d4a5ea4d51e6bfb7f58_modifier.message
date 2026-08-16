@@ -1,4 +1,0 @@
-('STREAM', 'stream ', 80, 0)
-('PULL', 'pull ', 80, 7)
-('PUSH', 'push ', 80, 12)
-('EVENT', 'event ', 80, 17)

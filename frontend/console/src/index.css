@@ -204,6 +204,9 @@ input:focus, select:focus { outline: none; border-color: var(--accent-dim); box-
 .bytechip .raw { color: var(--ink); letter-spacing: 2px; }
 .bytechip .mode-tag { font-size: 9.5px; letter-spacing: .5px; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent-dim); background: var(--accent-soft); padding: 2px 6px; border-radius: 3px; }
 input.dim { opacity: .5; }
+.field.wide { grid-column: 1 / -1; }
+input.invalid { border-color: var(--danger); }
+input.invalid:focus { box-shadow: 0 0 0 2px rgba(208, 100, 90, .25); }
 
 /* output rows */
 .out-row { display: grid; grid-template-columns: 22px 60px 1fr auto; align-items: start; gap: 11px; padding: 12px; border: 1px solid var(--line-soft); border-radius: 9px; background: var(--panel-2); margin-bottom: 10px; }

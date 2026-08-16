@@ -57,6 +57,7 @@ enum midi_mode {
     mm_trigger_lower;
     mm_spot;
     mm_blink;
+    mm_sysex;
 }
 
 // trigger. rule input, flattened MidiTrigger or EvdevTrigger.
@@ -67,6 +68,9 @@ stream pull push event message trigger {
     optional int b1;
     optional int b2;
     optional midi_mode midi_mode;
+    // lowercase hex, no separators, framing bytes included. see actions.h
+    // hexDecode and docs/next-sessions/08-midi-sysex.md.
+    optional string sysex;
     optional string code;
     optional trigger_edge edge;
     optional int value;
@@ -83,6 +87,7 @@ stream pull push event message output_action {
     optional int b0;
     optional int b1;
     optional int b2;
+    optional string sysex;
     optional string data;
     optional key_type key_type;
     optional hold_mode hold;

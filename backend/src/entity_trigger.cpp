@@ -2,8 +2,8 @@
 // headers (see include/conboard_entities.h for why one entity per TU).
 #include "conboard_entities.h"
 
-#include "rest/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_rest.h"
-#include "grpc/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_grpc.h"
+#include "rest/trigger_b13f689a5b6f99919ddaf4d1cc7eb7ac_rest.h"
+#include "grpc/trigger_b13f689a5b6f99919ddaf4d1cc7eb7ac_grpc.h"
 
 namespace conboard {
 

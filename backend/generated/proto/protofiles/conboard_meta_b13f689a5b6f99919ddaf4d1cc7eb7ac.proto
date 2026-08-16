@@ -1,0 +1,8 @@
+syntax = "proto3";
+message conboard_meta {
+int32 ID_b13f689a5b6f99919ddaf4d1cc7eb7ac = 1;
+string schema_version = 2;
+string STATUS_b13f689a5b6f99919ddaf4d1cc7eb7ac = 3;
+string ERROR_b13f689a5b6f99919ddaf4d1cc7eb7ac = 4;
+string ORIGINATOR = 5;
+}
