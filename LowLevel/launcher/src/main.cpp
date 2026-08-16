@@ -391,18 +391,29 @@ void create_json(char *devInfo, char *folder)
 			bool has_service = false;
 
 			// Per-DEVICE instancing for evdev input devices (joystick / keyboard /
-			// mouse): key the service on a stable identity -- the serial when
-			// trustworthy (so it follows the controller across ports), else the
-			// physical port (so clones with fake serials still separate). MIDI
-			// (ALSA, binds by name) is unaffected and keeps the plain DevName.
+			// mouse) AND MIDI: key the service on a stable identity -- the serial
+			// when trustworthy (so it follows the controller across ports), else
+			// the physical port (so clones with fake serials still separate).
 			// execExtra passes the bound port to the handler via -d.
+			//
+			// MIDI used to be excluded here ("ALSA binds by name, unaffected") --
+			// that was itself the bug: without a per-instance service name, two
+			// units of the same MIDI controller model produce the SAME
+			// serviceName below, so the second unit's connect event just
+			// restarts the first unit's already-existing service instead of
+			// getting a conMIDI process of its own. MIDI is included now so both
+			// get their own service + -d devpath; conMIDI itself picks the right
+			// ALSA card for that devpath via midiportmatch::pickPort (see
+			// LowLevel/Common/midiPortMatch.*), the ALSA analog of
+			// EvdevDevice::resolveNode().
 			std::string serviceName = local_json->DevName;
 			serviceName.erase(remove_if(serviceName.begin(), serviceName.end(), ::isspace), serviceName.end());
 			std::string execExtra;
 			std::string devpath = udevVar(info_from_dev, "DEVPATH");
 			devType dtype = local_json->GetType();
-			bool isEvdev = (dtype == devType::joystick || dtype == devType::keyboard || dtype == devType::mouse);
-			if(isEvdev && !devpath.empty())
+			bool isPerInstance = (dtype == devType::joystick || dtype == devType::keyboard ||
+			                      dtype == devType::mouse || dtype == devType::midi);
+			if(isPerInstance && !devpath.empty())
 			{
 				std::string serial = udevVar(info_from_dev, "ID_SERIAL_SHORT");
 				serviceName.append("-");

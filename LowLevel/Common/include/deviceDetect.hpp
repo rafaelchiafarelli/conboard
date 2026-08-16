@@ -90,4 +90,10 @@ std::vector<InputDevice> scanInputDevices();
 // Probe a single evdev node (node.name empty if it cannot be opened).
 InputDevice probeInput(const std::string &node);
 
+// Resolved /sys path of an ALSA card (e.g. card 1 -> realpath of
+// /sys/class/sound/card1), or "" if unavailable. The ALSA analog of
+// InputDevice::sysfsPath -- lets a MIDI handler bind to the card sitting under
+// a specific physical USB port, the same way evdev nodes do.
+std::string alsaCardSysfsPath(int card);
+
 } // namespace condetect

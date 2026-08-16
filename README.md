@@ -153,7 +153,7 @@ are in that board's `HOW-TO-INSTALL.txt`.
     * SysEx commands are not working
     * multiple commands and multiple actions can overrun the system (pre-existing 10-slot reporting-queue overflow, `STACKED_IO_MSG`)
     * not yet migrated onto the shared `DeviceEngine` (still uses its own orchestration)
-    * identical-MIDI separation not done — it's ALSA (binds by name), so it needs ALSA-card binding rather than the evdev per-port mechanism
+    * identical-MIDI separation — **fixed in code, not yet hardware-verified** (2026-08-16): the launcher now gives MIDI the same per-instance service naming + `-d <devpath>` treatment evdev already had (`devType::midi` was excluded before — the actual bug, since it meant only one `conMIDI` process ever ran for two identical units, not just a card-binding race), and `MIDI::MIDI()` picks the ALSA card under that devpath (`LowLevel/Common/midiPortMatch.*`, unit-tested) instead of a bare first-name-match. No two identical MIDI controllers (or any MIDI hardware at all) were available to prove this live — see `NOTES.md`.
 * joystick (input)
     * built + unit-tested + compiles, but **not yet exercised on real hardware** — no gamepad available in the session that hardware-verified keyboard/mouse
 

@@ -250,4 +250,12 @@ std::vector<InputDevice> scanInputDevices() {
     return out;
 }
 
+std::string alsaCardSysfsPath(int card) {
+    char classPath[64];
+    snprintf(classPath, sizeof(classPath), "/sys/class/sound/card%d", card);
+    char resolved[4096];
+    if (realpath(classPath, resolved)) return resolved;
+    return "";
+}
+
 } // namespace condetect

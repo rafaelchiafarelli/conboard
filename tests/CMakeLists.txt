@@ -16,8 +16,10 @@ add_executable(conboard_tests
     test_quadrature.cpp
     test_debounce.cpp
     test_clipped_panel.cpp
+    test_midiportmatch.cpp
     ${COMMON_DIR}/src/deviceDetect.cpp
     ${COMMON_DIR}/src/midiMap.cpp
+    ${COMMON_DIR}/src/midiPortMatch.cpp
     ${COMMON_DIR}/src/jsonParser.cpp
     ${COMMON_DIR}/src/launcherMatch.cpp
     ${COMMON_DIR}/src/evMatch.cpp
@@ -37,7 +39,7 @@ set_target_properties(conboard_tests PROPERTIES
 
 # Register one CTest entry per doctest suite, so `ctest -R joystick` works too.
 enable_testing()
-foreach(suite classifier joystick usb midi json launch filter evmatch holdgen port identity quadrature debounce clipped_panel)
+foreach(suite classifier joystick usb midi json launch filter evmatch holdgen port identity quadrature debounce clipped_panel midiport)
     add_test(NAME ${suite}
              COMMAND conboard_tests --test-suite=${suite} --no-intro)
 endforeach()

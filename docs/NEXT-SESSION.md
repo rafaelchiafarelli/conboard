@@ -1,3 +1,19 @@
+# conboard — identical-MIDI-device separation (2026-08-16)
+
+Session doc `docs/next-sessions/09-midi-identical-device-separation.md` removed
+(Task items 1-3 done). Full writeup in [../NOTES.md](../NOTES.md) under "FIXED,
+not hardware-verified — identical-MIDI-device separation" — short version: the
+launcher never gave MIDI per-instance service naming (excluded MIDI in the
+`isEvdev` check, so two identical controllers shared one systemd service and
+only one `conMIDI` process ever ran), now fixed the same way evdev already
+handles identical clones (USB-devpath binding). Code lands + unit-tested +
+cross-compiles clean; **no MIDI hardware was reachable this session** (not even
+a single unit), so neither the dual-unit separation nor the single-unit
+regression path has been proven live yet — do that first with real hardware
+(tracked in `NOTES.md`'s "Next" list).
+
+---
+
 # conboard — console bug hunt handoff (2026-08-14)
 
 Session driven by the user actually running the console against the real board

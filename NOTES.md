@@ -256,6 +256,64 @@ up on-device before each overwrite) and user-confirmed live both times — the s
 specifically checking hover cursor + edge-drag. `docs/next-sessions/02-live-monitor-css.md`
 removed now that its task is done.
 
+## FIXED, not hardware-verified — identical-MIDI-device separation (2026-08-16)
+Plan doc (`docs/next-sessions/09-midi-identical-device-separation.md`) removed
+now that Task items 1-3 are done; Task item 4 (hardware verification) remains
+open and is tracked in the "Next" list below instead.
+
+**A real launcher bug, worse than the doc's own guess.** The doc's "Start here"
+step 1 asked whether the launcher even spawns two `conMIDI` processes for two
+identical controllers today. Reading `LowLevel/launcher/src/main.cpp` (the
+`isEvdev` gate on per-instance service naming) showed it does not:
+`devType::midi` was explicitly excluded from per-instance naming (`joystick`/
+`keyboard`/`mouse` only), with a comment claiming MIDI "is unaffected and keeps
+the plain DevName." So two identical MIDI controllers produced the *same*
+systemd service name — the second unit's udev connect event just
+`systemctl restart`s the first unit's already-running service. **Only one
+`conMIDI` process ever ran at all**, not "two processes racing for one ALSA
+card" as the doc speculated.
+
+**Fix, mirroring evdev's already-working mechanism end to end** (same shape as
+`EvdevDevice::resolveNode()` / `condetect::nodeUnderUsbPath`, which already
+solves this exact problem for keyboard/mouse/joystick):
+- `LowLevel/launcher/src/main.cpp`: `devType::midi` added to the per-instance
+  condition (renamed `isEvdev` -> `isPerInstance`), so MIDI now gets a
+  serial-or-port-keyed service name + `-d <devpath>` on its `ExecStart`, exactly
+  like the other three device kinds.
+- `LowLevel/Common/include/deviceDetect.{hpp,cpp}`: new `alsaCardSysfsPath(int
+  card)` — the ALSA analog of the sysfs-path resolution `probeInput()` already
+  does for evdev nodes (`realpath("/sys/class/sound/cardN")`).
+- New `LowLevel/Common/{include,src}/midiPortMatch.*` (`midiportmatch::
+  pickPort`) — pure, ALSA-free, unit-tested (`tests/test_midiportmatch.cpp`, 6
+  cases, suite `midiport`): prefers the candidate whose name matches AND whose
+  sysfs path sits under the given USB devpath (reusing the already-tested
+  `condetect::nodeUnderUsbPath`), falling back unconditionally to the old
+  first-name-match so single-unit setups can't regress even if the devpath
+  heuristic doesn't land on real hardware.
+- `LowLevel/MIDI`: `raw_midi` gained `sysfsPath` (populated in `list_device()`);
+  `MIDI::MIDI()` takes a new optional `usbDevpath` param and calls
+  `midiportmatch::pickPort` instead of its old inline first-name-match loop;
+  `main.cpp` gained `-d`/`--devpath` argv parsing (mirrors `conKeyB` exactly).
+- Considered and rejected: wiring the existing-but-dead
+  `header.identifier.executable.port` JSON field (the doc floated this as
+  possibly simpler). Rejected because that field lives in the board profile
+  JSON, which is the *same file* shared by every physical unit of a controller
+  model — it structurally cannot hold a different value per physical instance,
+  so it can't solve identical-unit disambiguation. Left untouched, still dead.
+
+**Verified this session**: `./run-tests.sh` — 96 cases pass (was 90), including
+the new `midiport` suite. `./build-cross.sh zero3` — launcher, `conMIDI`, and
+`libcommon.so` all compile cleanly cross-compiled for zero3.
+
+**NOT verified — explicitly, per the doc's own honesty requirement**: no two
+identical MIDI controllers were available this session, and the only reachable
+board (`192.168.7.4`) currently has **no MIDI hardware attached at all**
+(`/proc/asound/cards` shows only onboard codecs) — so neither the dual-unit
+separation (the actual feature) nor the single-unit regression path (today's
+only tested configuration) has been checked live. Both remain open; do them
+first thing next time MIDI hardware is available, per Task item 4 and Done
+criteria in the plan doc.
+
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
   hardware-verified (2026-08-11), no gamepad available yet (still true as of
@@ -265,6 +323,9 @@ removed now that its task is done.
   against the DJ-Tech-4-Mix controller (`boards/Dj4Mix.json`) — written +
   unit-tested since 2026-08-11, no MIDI hardware available to confirm the
   redeploy-recovery path on real hardware yet (still true as of 2026-08-15).
+* HARDWARE VERIFY identical-MIDI-device separation (above, 2026-08-16) — fixed +
+  unit-tested, needs two identical MIDI controllers (or at least one, for the
+  single-unit regression check) to confirm live.
 * **mouse/keyboard output not firing** (above) — now the top item, blocks the core
   remap-a-device feature for two of four device kinds.
 * longer term: ethernet-gadget access, the local power-password login (design in
