@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <functional>
 
 namespace lvgl_glue {
 
@@ -34,6 +35,11 @@ lv_indev_t *createButtonIndev(PushButton &button, uint32_t key, lv_group_t *grou
 
 // Runs lv_tick_inc()/lv_timer_handler() on a fixed period until `running`
 // becomes false. Blocks the calling thread -- this IS conHMI's main loop.
-void runLoop(const std::atomic_bool &running, int periodMs = 5);
+// `onTick`, if set, runs once per iteration on this same thread, after
+// lv_timer_handler() -- the only safe place for a caller to make its own
+// LVGL calls (e.g. lv_group_send_data() for a simulated input event),
+// since LVGL itself is not thread safe.
+void runLoop(const std::atomic_bool &running, int periodMs = 5,
+             const std::function<void()> &onTick = nullptr);
 
 } // namespace lvgl_glue

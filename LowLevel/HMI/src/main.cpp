@@ -8,10 +8,22 @@
 //
 // Phase 1-2 scope wired the dependencies together and shipped one concrete
 // end-to-end demo screen (the console URL, fetched over HTTP) to prove the
-// REST-sourced-data path for real. Phase 4a adds the first real domain
-// screen (WiFi list, wifi_screen.cpp) behind a small top-level menu; the
-// activation/radio screens and the real navigation scheme (which control
-// does what) are still later phase-4/5 work.
+// REST-sourced-data path for real. Phase 4a added the first real domain
+// screen (WiFi list, wifi_screen.cpp). Phase 4b adds the activation screen
+// (activation_screen.cpp) -- display-only against the still-stubbed backend
+// endpoint, explicitly not the real power-password login flow. The radio
+// screen is still later phase-4b/5 work.
+//
+// Nav scheme (which physical control does what): the standalone buttons
+// now read their LVGL key from GET /hmi_binding (backend/harpia/
+// conboard.harpia's hmi_binding table, separate from the rules-library
+// domain) instead of a hardcoded key, falling back to the old ESC/NEXT
+// choice if a binding is missing. Both encoders still use LVGL's native
+// ENCODER indev semantics on real hardware -- fully honoring per-direction
+// hmi_binding rows for them needs a custom keypad-style adapter, not done
+// here. A dev-only /simulate HTTP endpoint (sim_server.cpp, opt-in via
+// CONHMI_SIM_PORT) lets any of the 8 hmi_control events be exercised over
+// curl without real GPIO hardware wired up.
 #include "app_shell.hpp"
 #include "clipped_panel.hpp"
 #include "hmi_theme.hpp"
@@ -21,6 +33,8 @@
 #include "push_button.hpp"
 #include "rest_client.hpp"
 #include "rotary_encoder.hpp"
+#include "activation_screen.hpp"
+#include "sim_server.hpp"
 #include "wifi_screen.hpp"
 
 #include <lvgl.h>
@@ -30,6 +44,7 @@
 #include <cstdlib>
 #include <getopt.h>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 
@@ -66,6 +81,49 @@ bool tryStart(Control &c, const char *name)
     std::cerr << "conHMI: " << name << " did not start (no hardware?) -- continuing without it"
               << std::endl;
     return false;
+}
+
+std::string lookupOr(const std::map<std::string, std::string> &m, const std::string &key,
+                      const std::string &def)
+{
+    auto it = m.find(key);
+    return it != m.end() ? it->second : def;
+}
+
+// Mirrors hmi_nav_key (backend/harpia/conboard.harpia) to the LV_KEY_
+// constants app_shell/lvgl_glue already build screens against. Returns
+// `fallback` for an empty/unrecognized name (0 is never a real LV_KEY_
+// value here, so callers that pass 0 as fallback can use that to detect
+// "no usable binding").
+uint32_t navKeyToLvKey(const std::string &navKey, uint32_t fallback)
+{
+    if (navKey == "nk_next")   return LV_KEY_NEXT;
+    if (navKey == "nk_prev")   return LV_KEY_PREV;
+    if (navKey == "nk_select") return LV_KEY_ENTER;
+    if (navKey == "nk_back")   return LV_KEY_ESC;
+    if (navKey == "nk_up")     return LV_KEY_UP;
+    if (navKey == "nk_down")   return LV_KEY_DOWN;
+    return fallback;
+}
+
+// Fetches every {control, navKey} row from GET /hmi_binding -- the
+// hmi_binding table (backend/harpia/conboard.harpia), separate from the
+// rules-library domain, added so the panel's nav scheme is data, not
+// compiled-in wiring. Absent "control"/"navKey" fields mean the enum's
+// zero value (hc_encoder1_ccw / nk_next -- protobuf3 JSON omits
+// zero-valued fields on the wire), matching every other harpia table.
+std::map<std::string, std::string> fetchHmiBindings(const RestClient &bindingsRest)
+{
+    std::map<std::string, std::string> bindings;
+    auto response = bindingsRest.get("/hmi_binding");
+    if (!response || !response->is_array())
+        return bindings;
+    for (const auto &row : *response) {
+        const std::string control = row.value("control", "hc_encoder1_ccw");
+        const std::string navKey  = row.value("navKey", "nk_next");
+        bindings[control] = navKey;
+    }
+    return bindings;
 }
 
 }  // namespace
@@ -167,23 +225,53 @@ int main(int argc, char *argv[])
     bool haveButton1 = tryStart(button1, "button1");
     bool haveButton2 = tryStart(button2, "button2");
 
+    // Two RestClients, same credential, different X-User: "hmi" for the
+    // hand-written backend/src/hmi.cpp routes (which only check X-Pswd),
+    // "hmi_binding" for the harpia-generated hmi_binding CRUD (which checks
+    // X-User == the entity name, like every generated route).
+    const std::string pswdHash = envOr("CONHMI_REST_PSWD_HASH", "9f20d5d43738774941f9898b22cf2cf2");
+    RestClient rest(restBase, "hmi", pswdHash);
+    RestClient bindingsRest(restBase, "hmi_binding", pswdHash);
+    const std::map<std::string, std::string> bindings = fetchHmiBindings(bindingsRest);
+
+    // Dev-only: simulate physical HMI events without real GPIO hardware,
+    // e.g. `curl -d '{"control":"hc_button1_press"}' http://host:PORT/simulate`.
+    // Off unless CONHMI_SIM_PORT is set -- see sim_server.hpp.
+    const int simPort = envOrInt("CONHMI_SIM_PORT", 0);
+    if (simPort > 0) {
+        if (sim_server::start(simPort))
+            std::cerr << "conHMI: simulate endpoint on :" << simPort << std::endl;
+        else
+            std::cerr << "conHMI: simulate endpoint failed to start on :" << simPort << std::endl;
+    }
+
     lv_init();
     lv_display_t *disp = lvgl_glue::createDisplay(*panel);
     hmi_theme::init(disp);
 
     lv_group_t *group = lv_group_create();
     lv_group_set_default(group);
+    // Both encoders keep LVGL's native ENCODER indev semantics (rotation =
+    // next/prev focus, press = select) -- hmi_binding rows for
+    // hc_encoder*_ccw/cw/press exist and are honored by the /simulate path
+    // below, but real hardware doesn't route through them yet: that needs a
+    // custom keypad-style encoder adapter to replace LVGL's built-in one, a
+    // separate decision from this pass. The two standalone buttons ARE
+    // fully data-driven already -- createButtonIndev takes an arbitrary key.
     if (haveEncoder1) lvgl_glue::createEncoderIndev(encoder1, encoder1Button, group);
     if (haveEncoder2) lvgl_glue::createEncoderIndev(encoder2, encoder2Button, group);
-    if (haveButton1) lvgl_glue::createButtonIndev(button1, LV_KEY_ESC, group);
-    if (haveButton2) lvgl_glue::createButtonIndev(button2, LV_KEY_NEXT, group);
+    if (haveButton1)
+        lvgl_glue::createButtonIndev(
+            button1, navKeyToLvKey(lookupOr(bindings, "hc_button1_press", ""), LV_KEY_ESC), group);
+    if (haveButton2)
+        lvgl_glue::createButtonIndev(
+            button2, navKeyToLvKey(lookupOr(bindings, "hc_button2_press", ""), LV_KEY_NEXT), group);
 
-    // Top-level menu: a minimal base for phase 4b's activation/radio screens
-    // to slot into later, one entry each. "Console URL" is the original
-    // phase 1-2 demo, now reached via the menu instead of shown directly;
-    // "WiFi" is phase 4a's first real domain screen.
+    // Top-level menu: a minimal base for phase 4b's screens to slot into,
+    // one entry each. "Console URL" is the original phase 1-2 demo, now
+    // reached via the menu instead of shown directly; "WiFi" is phase 4a's
+    // first real domain screen; "Activation" is phase 4b's first addition.
     appshell::Shell shell(group);
-    RestClient rest(restBase, "hmi", envOr("CONHMI_REST_PSWD_HASH", "1bf812ac18b80d4a5ea4d51e6bfb7f58"));
     lv_obj_t *menuScr = shell.pushScreen();
     lv_obj_t *menuList = appshell::createMenuList(shell, menuScr);
     appshell::addMenuItem(shell, menuList, "Console URL", [&shell, &rest]() {
@@ -197,13 +285,36 @@ int main(int argc, char *argv[])
     appshell::addMenuItem(shell, menuList, "WiFi", [&shell, &rest]() {
         wifi_screen::push(shell, rest);
     });
+    appshell::addMenuItem(shell, menuList, "Activation", [&shell, &rest]() {
+        activation_screen::push(shell, rest);
+    });
 
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);
 
     std::cerr << "conHMI: running (panel=" << panelKind << ", rest-base=" << restBase << ")"
               << std::endl;
-    lvgl_glue::runLoop(g_running);
+    // onTick runs on this same thread, right after lv_timer_handler() --
+    // the only place it's safe to call lv_group_send_data(), since LVGL
+    // itself is not thread safe and sim_server's accept thread never
+    // touches LVGL directly (see sim_server.hpp).
+    lvgl_glue::runLoop(g_running, 5, [&]() {
+        for (const auto &control : sim_server::drain()) {
+            auto it = bindings.find(control);
+            if (it == bindings.end()) {
+                std::cerr << "conHMI: simulate -- no binding for control " << control << std::endl;
+                continue;
+            }
+            const uint32_t key = navKeyToLvKey(it->second, 0);
+            if (key == 0) {
+                std::cerr << "conHMI: simulate -- unknown nav_key " << it->second
+                          << " for control " << control << std::endl;
+                continue;
+            }
+            lv_group_send_data(group, key);
+            std::cerr << "conHMI: simulate -- " << control << " -> " << it->second << std::endl;
+        }
+    });
 
     encoder1.stop(); encoder1Button.stop();
     encoder2.stop(); encoder2Button.stop();

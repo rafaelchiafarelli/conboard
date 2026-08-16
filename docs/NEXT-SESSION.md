@@ -193,10 +193,37 @@ only proof that ever worked on this exact unit.
   composes (wraps any `PanelDriver`, crops+offsets, everything above it in
   the stack — LVGL, AppShell — only ever sees the cropped size).
 - Phase 4a (WiFi list) is done and hardware-confirmed — see "What's built"
-  above. Still open: phase 4b (the activation/radio screens) and phase 5
-  (which physical control does what — the top-level menu exists but can't
-  actually be navigated by hand until the encoder/button GPIO lines above are
-  wired).
+  above. Phase 4b's activation screen is built (`activation_screen.cpp`),
+  not yet hardware-confirmed. Radio screen still open.
+- **Nav scheme (which physical control does what) — partially data-driven
+  now.** New `hmi_binding` table (`backend/harpia/conboard.harpia`, separate
+  from the rules-library domain — see its README's domain-shape table) maps
+  one `hmi_control` (`hc_encoder1_ccw`/`cw`/`press`, same for encoder2,
+  `hc_button1_press`, `hc_button2_press`) to one `hmi_nav_key`
+  (`nk_next`/`prev`/`select`/`back`/`up`/`down`). Full CRUD at
+  `/api/v1/hmi_binding` (harpia-generated, auth `X-User: hmi_binding` —
+  different from the hand-written `hmi` routes' looser check). `conHMI`
+  fetches it at startup (`fetchHmiBindings()` in `main.cpp`) and applies it
+  to the two standalone buttons (falls back to the old hardcoded ESC/NEXT if
+  a binding is missing, so an empty table doesn't regress real hardware).
+  **Both encoders still use LVGL's native ENCODER indev semantics on real
+  hardware** — their `hmi_binding` rows exist and are honored by
+  `/simulate` (below) but not by the real GPIO path yet; that needs a
+  custom keypad-style encoder adapter to replace LVGL's built-in one,
+  a separate decision not made this session. Real navigation by hand still
+  needs the encoder/button GPIO lines wired (see above).
+- **New: dev-only `/simulate` HTTP endpoint, opt-in via `CONHMI_SIM_PORT`.**
+  Lets any of the 8 `hmi_control` events be fired without real GPIO —
+  `curl -d '{"control":"hc_button1_press"}' http://host:PORT/simulate`.
+  Hand-rolled over POSIX sockets (`sim_server.cpp`), one route, no new
+  dependency; queues the control name, the LVGL-owning thread drains and
+  applies it via `lv_group_send_data()` once per `runLoop()` tick (LVGL
+  itself isn't thread safe, so the accept thread never touches it
+  directly). Verified end to end under QEMU this session: created
+  `hmi_binding` rows via curl, started `conHMI --panel null` pointed at
+  that backend, fired `/simulate` for a bound control (applied + logged),
+  an unbound control (logged "no binding", no crash), and garbage JSON
+  (400, no crash). Not yet tried on the real board.
 
 ## Persisting hardware config (durable across reinstalls)
 
@@ -217,7 +244,7 @@ sudo systemctl restart hmi.service
 | var | default | status |
 |---|---|---|
 | `CONHMI_REST_BASE` | `http://127.0.0.1:8080/api/v1` | fine as-is (same-host backend) |
-| `CONHMI_REST_PSWD_HASH` | `1bf812ac18b80d4a5ea4d51e6bfb7f58` | matches backend's compile-time hash |
+| `CONHMI_REST_PSWD_HASH` | `9f20d5d43738774941f9898b22cf2cf2` | matches backend's compile-time hash |
 | `CONHMI_SPI_DEVICE` | `/dev/spidev1.1` | **confirmed** |
 | `CONHMI_PANEL_SPI_SPEED_HZ` | `4000000` | **confirmed** |
 | `CONHMI_GPIO_CHIP` | `gpiochip0` | **confirmed** |
@@ -228,6 +255,7 @@ sudo systemctl restart hmi.service
 | `CONHMI_PANEL_ROTATION` | `270` | **confirmed** (2026-08-11) |
 | `CONHMI_WORK_X/Y_OFFSET`, `WIDTH`/`HEIGHT` | `0,0,320,240` (no crop) | **placeholder** — needs real enclosure measurements |
 | `CONHMI_ENC1_A`/`B`/`BTN`, `CONHMI_ENC2_A`/`B`/`BTN`, `CONHMI_BTN1`/`BTN2` | see above | **placeholder** — not wired yet |
+| `CONHMI_SIM_PORT` | unset (disabled) | dev-only; set to a port to enable the `/simulate` HTTP endpoint |
 
 ## How to build / deploy (this workstream)
 
@@ -574,8 +602,8 @@ sudo journalctl -u backend -f    # NOTE: needs sudo (backend runs as root)
 console at `/` and proxies `/websocket` → dispatcher `:40080` directly (the backend's
 own unimplemented `/ws` relay stub was removed 2026-08-13, see `backend/README.md`).
 REST is credential-gated (`X-User: <entity>`, `X-Pswd: <hash>`);
-hash = `1bf812ac18b80d4a5ea4d51e6bfb7f58` (bumped when `midi_mode` was added to the
-trigger message; regen via `backend/generate.sh`).
+hash = `9f20d5d43738774941f9898b22cf2cf2` (bumped when the `hmi_binding` table was
+added; regen via `backend/generate.sh`).
 
 ## Don't-relearn facts
 

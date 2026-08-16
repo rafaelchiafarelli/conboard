@@ -84,11 +84,12 @@ lv_indev_t *createButtonIndev(PushButton &button, uint32_t key, lv_group_t *grou
     return indev;
 }
 
-void runLoop(const std::atomic_bool &running, int periodMs)
+void runLoop(const std::atomic_bool &running, int periodMs, const std::function<void()> &onTick)
 {
     while (running.load(std::memory_order_relaxed)) {
         lv_tick_inc(periodMs);
         lv_timer_handler();
+        if (onTick) onTick();
         std::this_thread::sleep_for(std::chrono::milliseconds(periodMs));
     }
 }
