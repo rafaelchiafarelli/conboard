@@ -1,0 +1,1 @@
+-- hmi_control: enum, no table

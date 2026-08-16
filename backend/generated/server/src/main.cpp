@@ -8,8 +8,8 @@
 
 #include <zmq.hpp>
 
-#include "json/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_json.h"
-#include "zmq/trigger_1bf812ac18b80d4a5ea4d51e6bfb7f58_zmq.h"
+#include "json/trigger_9f20d5d43738774941f9898b22cf2cf2_json.h"
+#include "zmq/trigger_9f20d5d43738774941f9898b22cf2cf2_zmq.h"
 
 int main(int argc, char* argv[]) {
     const std::string endpoint = (argc > 1) ? argv[1] : "tcp://*:5599";

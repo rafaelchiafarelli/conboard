@@ -1,0 +1,1 @@
+-- hmi_nav_key: enum, no table

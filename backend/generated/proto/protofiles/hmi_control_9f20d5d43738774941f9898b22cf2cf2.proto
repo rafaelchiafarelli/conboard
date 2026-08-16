@@ -1,0 +1,11 @@
+syntax = "proto3";
+enum hmi_control {
+hc_encoder1_ccw = 0;
+hc_encoder1_cw = 1;
+hc_encoder1_press = 2;
+hc_encoder2_ccw = 3;
+hc_encoder2_cw = 4;
+hc_encoder2_press = 5;
+hc_button1_press = 6;
+hc_button2_press = 7;
+}

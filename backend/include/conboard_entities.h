@@ -35,6 +35,7 @@ void register_mode(Registrar&);
 void register_rule(Registrar&);
 void register_trigger(Registrar&);
 void register_output_action(Registrar&);
+void register_hmi_binding(Registrar&);
 
 // Axis C: deploy an authored profile to the realtime path. Not a harpia entity --
 // hand-written. POST <base>/deploy with a board JSON (the boards/*.json shape);

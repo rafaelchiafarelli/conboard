@@ -1,0 +1,11 @@
+syntax = "proto3";
+import "protofiles/hmi_control_9f20d5d43738774941f9898b22cf2cf2.proto";
+import "protofiles/hmi_nav_key_9f20d5d43738774941f9898b22cf2cf2.proto";
+message hmi_binding {
+int32 ID_9f20d5d43738774941f9898b22cf2cf2 = 1;
+hmi_control control = 2;
+hmi_nav_key nav_key = 3;
+string STATUS_9f20d5d43738774941f9898b22cf2cf2 = 4;
+string ERROR_9f20d5d43738774941f9898b22cf2cf2 = 5;
+string ORIGINATOR_9f20d5d43738774941f9898b22cf2cf2 = 6;
+}

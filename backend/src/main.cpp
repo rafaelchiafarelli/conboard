@@ -87,6 +87,7 @@ int main() {
         conboard::register_rule(reg);
         conboard::register_trigger(reg);
         conboard::register_output_action(reg);
+        conboard::register_hmi_binding(reg);
     } catch (const std::exception& e) {
         std::cerr << "[backend] entity registration failed: " << e.what() << "\n";
         return 1;

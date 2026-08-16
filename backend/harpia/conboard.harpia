@@ -59,6 +59,36 @@ enum midi_mode {
     mm_blink;
 }
 
+// hmi_control. one named physical event off the HMI panel local hardware,
+// LowLevel HMI, two rotary encoders (each with its own pushbutton) plus two
+// standalone pushbuttons. Not evdev, this hardware is read directly over
+// libgpiod, never through the kernel input subsystem.
+
+enum hmi_control {
+    hc_encoder1_ccw = 0;
+    hc_encoder1_cw;
+    hc_encoder1_press;
+    hc_encoder2_ccw;
+    hc_encoder2_cw;
+    hc_encoder2_press;
+    hc_button1_press;
+    hc_button2_press;
+}
+
+// hmi_nav_key. the LVGL group navigation key a bound control should send.
+// Mirrors the LV_KEY_ constants app_shell and lvgl_glue already build
+// screens against, so a binding is directly actionable with no extra
+// translation layer.
+
+enum hmi_nav_key {
+    nk_next = 0;
+    nk_prev;
+    nk_select;
+    nk_back;
+    nk_up;
+    nk_down;
+}
+
 // trigger. rule input, flattened MidiTrigger or EvdevTrigger.
 
 stream pull push event message trigger {
@@ -128,3 +158,14 @@ stream pull push event message board {
     repeteable output_action header_actions;
     repeteable mode modes;
 } board_table;
+
+// hmi_binding. maps one physical HMI control to one LVGL nav key. Data, not
+// compiled-in wiring, so which control does what on the panel is
+// configurable over REST without a conHMI rebuild. Global across screens
+// for now, conHMI shares one LVGL group across every pushed screen today,
+// see LowLevel/HMI/src/main.cpp.
+
+stream pull push event message hmi_binding {
+    hmi_control control;
+    hmi_nav_key nav_key;
+} hmi_binding_table;
