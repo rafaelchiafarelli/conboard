@@ -256,6 +256,46 @@ up on-device before each overwrite) and user-confirmed live both times — the s
 specifically checking hover cursor + edge-drag. `docs/next-sessions/02-live-monitor-css.md`
 removed now that its task is done.
 
+## Ethernet-gadget access — investigated, SHELVED (2026-08-16): blocked on zero3's USB endpoint budget
+Picked up the long-standing "install as an ethernet port" item (`README.md` "What
+is Missing?", carried in this file's Next list below). Plan: dual-config USB
+gadget, RNDIS (Windows) + ECM (Linux/macOS), added alongside the existing ACM
+serial + HID keyboard + mass-storage functions, following the pattern already
+scoped out in `docs/dev-snippets/rndis-ecm-adm.sh`. Branched
+`feat/ethernet-gadget-ecm` off `main`, wired ECM into
+`scripts/usb-composite-all.sh` (uncommenting the already-scaffolded `ecm.$N`
+function link), added a static IP + a `dnsmasq` instance scoped to `usb0` +
+a `udp/67` firewall allow (the original plan doc assumed no firewall change was
+needed — wrong: a DHCPDISCOVER arrives from a host with no address yet, so it
+can't match the existing established/related rule and needs its own ACCEPT).
+
+**Hardware-verified blocker, live on `192.168.7.4` (Orange Pi Zero 3, Allwinner
+H618, musb-hdrc USB controller):** adding ECM to the existing composite gadget
+failed the UDC bind outright — kernel log showed `unable to autoconfigure all
+endpoints` / `failed to start g1: -524`. Isolated by testing combinations
+directly against configfs: ACM+ECM alone binds fine (ACM 2 IN + 1 OUT, ECM 2 IN
++ 1 OUT = 4 IN + 2 OUT total) — and that's exactly the same endpoint total the
+*current* working gadget already uses (ACM 2 IN + 1 OUT, HID 1 IN, mass-storage
+1 IN + 1 OUT = 4 IN + 2 OUT). This SoC's musb-hdrc controller has hardware
+budget for exactly 4 IN + 2 OUT endpoints and no more. Adding HID on top of
+ACM+ECM (a 5th IN endpoint) fails immediately. So on this board, any USB config
+carrying the network function can only also carry ACM serial — never HID
+keyboard passthrough or mass-storage at the same time. This is a silicon limit,
+not a config/driver bug — not caught by the original plan doc's research because
+neither `docs/dev-snippets/rndis-ecm-adm.sh` (a different board) nor the
+half-wired `usb-composite-all.sh` scaffolding had ever exercised the endpoint
+budget.
+
+Presented the finding and two workaround shapes (split into two USB configs
+with no shared functions, or drop mass-storage permanently to free budget for
+HID+ECM+ACM together) — Rafael's call: shelve rather than redesign v1 around a
+keyboard/network tradeoff on this board. All code changes reverted (board
+restored to the known-good ACM+HID+mass-storage gadget, confirmed `configured`
+again); `docs/next-sessions/08-ethernet-gadget.md` dropped now that its plan hit
+a hardware wall rather than a to-do. Revisit only on a board whose USB device
+controller has more endpoint headroom (dwc2/dwc3-class controllers typically
+do) — see `README.md` "What is Missing?" for the current candidate list.
+
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
   hardware-verified (2026-08-11), no gamepad available yet (still true as of
@@ -267,5 +307,6 @@ removed now that its task is done.
   redeploy-recovery path on real hardware yet (still true as of 2026-08-15).
 * **mouse/keyboard output not firing** (above) — now the top item, blocks the core
   remap-a-device feature for two of four device kinds.
-* longer term: ethernet-gadget access, the local power-password login (design in
-  `backend/README.md`, never implemented).
+* longer term: the local power-password login (design in `backend/README.md`,
+  never implemented). Ethernet-gadget access was investigated and shelved
+  (above) — blocked on hardware, not a to-do.

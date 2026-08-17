@@ -1,3 +1,20 @@
+# conboard — ethernet-gadget access, SHELVED (2026-08-16)
+
+Investigated adding a USB-ethernet gadget (RNDIS+ECM) for driver-free network
+access to the console. **Blocked on hardware, not a to-do**: the Zero 3's
+musb-hdrc USB controller only has endpoint budget for 4 IN + 2 OUT total, which
+the current gadget (ACM+HID+mass-storage) already uses in full — adding a
+network function means *dropping* HID or mass-storage from that config, not
+adding on top. Confirmed live via configfs bind tests (`unable to autoconfigure
+all endpoints`, kernel `-524`) before any code was proposed for landing. All
+changes reverted; board back to its known-good state (`configured`,
+ACM+HID+mass-storage). Full writeup in [../NOTES.md](../NOTES.md).
+
+Next step, if picked back up: retarget a board with a dwc2/dwc3-class USB
+controller (more endpoint headroom than musb-hdrc) instead of the Zero 3.
+
+---
+
 # conboard — console bug hunt handoff (2026-08-14)
 
 Session driven by the user actually running the console against the real board
