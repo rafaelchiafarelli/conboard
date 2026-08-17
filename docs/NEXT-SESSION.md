@@ -1,3 +1,26 @@
+# conboard — HMI phase 4a merged + deployed (2026-08-16)
+
+`feat/hmi-phase4a-and-1to1-rules` merged into `main`, then built and deployed
+to `192.168.7.4`. Both features on that branch (synthetic 1:1 keyboard rules,
+HMI WiFi list screen) were already hardware-verified before merging — this
+deploy's own new finding is that the branch's `hmi_binding` DB table migrated
+onto the board's existing database with zero data loss (plain reinstall, no
+`--purge` needed — additive `CREATE TABLE IF NOT EXISTS` only), and that
+`hmi.service` runs the new binary cleanly on real hardware: encoders/buttons
+still correctly report unwired, and a `/simulate`-driven button press resolved
+correctly through the real `hmi_binding` table with no crash. Full writeup in
+[../NOTES.md](../NOTES.md).
+
+Activation screen (built on the same branch) is intentionally not being pushed
+further here — Rafael is designing its real GUI/UX separately. Radio screen,
+encoder/button physical wiring, and the nav-scheme decision are still open,
+tracked in `docs/next-sessions/06-hmi-phase4b.md` (unchanged by this session).
+
+A `dev` branch now exists (off this merge) as the integration target going
+forward — this writeup is the first thing on it, not `main`.
+
+---
+
 # conboard — ethernet-gadget access, SHELVED (2026-08-16)
 
 Investigated adding a USB-ethernet gadget (RNDIS+ECM) for driver-free network

@@ -349,6 +349,52 @@ a hardware wall rather than a to-do. Revisit only on a board whose USB device
 controller has more endpoint headroom (dwc2/dwc3-class controllers typically
 do) — see `README.md` "What is Missing?" for the current candidate list.
 
+## HMI phase 4a merged + deployed, hardware-verified (2026-08-16)
+Merged `feat/hmi-phase4a-and-1to1-rules` into `main` (both the synthetic 1:1
+keyboard rules and the WiFi list screen were already hardware-verified in the
+2026-08-15 session that produced this branch — see the sections above).
+`docs/next-sessions/04-synthetic-1to1-rules.md` and `05-hmi-wifi-screen.md`
+dropped as part of the merge, now that both are done.
+
+Deployed the merged `main` to `192.168.7.4` (`./build-cross.sh zero3` →
+`install-on-device.sh`, normal reinstall, not `--purge`) to confirm the branch's
+other change — a new `hmi_binding` table (backend schema) — migrates cleanly
+onto an existing on-device database. It does: `CREATE TABLE IF NOT EXISTS` is
+purely additive, no existing table's shape changed, so a plain reinstall is
+enough for this kind of schema change (worth checking case-by-case — a column
+change or rename would need `--purge`, this didn't). Confirmed on-device: the
+existing `WirelessMouse`/`WirelessKB` board rows survived untouched
+(`GET /api/v1/board` still returns them), and the new `GET /api/v1/hmi_binding`
+route works and already had 2 rows in it (left over from the branch's own
+QEMU-side testing, harmless).
+
+`hmi.service` restarted clean on the real ARM binary (not QEMU) with the new
+code: encoder/button GPIO lines still correctly report "no hardware, continuing
+without it" (physically unwired, as expected, see phase 4b below), and firing
+`POST /simulate` with `{"control":"hc_button2_press"}` correctly resolved
+through the real on-device `hmi_binding` table (`hc_button2_press -> nk_select`,
+logged), no crash. This is a step up from the branch's own "verified end to end
+under QEMU" claim — same code path, now proven on the real device/binary — but
+it's still not a substitute for someone looking at the physical panel while
+navigating, which needs either `/simulate` driving it live or the encoders/
+buttons actually wired. Neither happened this session.
+
+**Activation screen explicitly deferred, not abandoned**: the screen itself
+(built this branch, QEMU-verified, now also crash-free on real hardware via
+`/simulate`) renders the still-stubbed `GET /hmi/activation` fields — Rafael is
+doing the real GUI/UX design for this screen separately, outside this repo
+interaction, so no further code changes here until that direction exists. See
+`docs/next-sessions/06-hmi-phase4b.md`, unchanged, for the rest of what's open
+(radio screen data-source decision, encoder/button physical wiring, nav-scheme
+decision).
+
+**Workflow change, same day**: introduced a `dev` branch (off this merge
+commit) as the integration target going forward, at Rafael's direction — this
+deploy-verification writeup is the first thing landing there rather than
+directly on `main`. Not yet clear whether `dev` periodically merges to `main`
+or replaces it as the primary branch; ask before assuming either way next
+session.
+
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
   hardware-verified (2026-08-11), no gamepad available yet (still true as of
