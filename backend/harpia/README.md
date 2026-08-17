@@ -45,6 +45,7 @@ each with a `kind` discriminant enum plus optional per-variant fields:
 | `rule` | `Rule` | 1-to-1 FK `input` → `trigger`; 1-to-many `outputs` → `output_action`; `change_mode_*` |
 | `mode` | `Mode` | `mode_id`, `active`; 1-to-many `mode_header` + `rules` |
 | `board` | `Board` | device profile; `generics`/`tags` maps; 1-to-many `header_actions` + `modes` |
+| `hmi_binding` | none, HMI-only | not part of the rules-library domain above; maps one `hmi_control` (a named physical event off the LowLevel HMI panel, e.g. `hc_encoder1_ccw`) to one `hmi_nav_key` (an LVGL group nav key, e.g. `nk_next`). Global across screens for now. Read by conHMI over `GET /hmi_binding` so the panel's nav scheme is configurable over REST, not compiled in |
 
 Booleans are `int` (0/1) — harpia's scalar set is `int`/`string`. Primary keys
 (`ID_<hash>`) are **caller-assigned** (set before `create()`), which makes

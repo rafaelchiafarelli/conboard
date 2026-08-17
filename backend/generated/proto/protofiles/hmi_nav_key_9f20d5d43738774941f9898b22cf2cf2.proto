@@ -1,0 +1,9 @@
+syntax = "proto3";
+enum hmi_nav_key {
+nk_next = 0;
+nk_prev = 1;
+nk_select = 2;
+nk_back = 3;
+nk_up = 4;
+nk_down = 5;
+}

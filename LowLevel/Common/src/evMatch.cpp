@@ -43,8 +43,39 @@ const Symbol kSymbols[] = {
     {"KEY_RIGHTCTRL", EV_KEY_, 97},  {"KEY_LEFTSHIFT", EV_KEY_, 42},
     {"KEY_RIGHTSHIFT",EV_KEY_, 54},  {"KEY_LEFTALT",   EV_KEY_, 56},
     {"KEY_RIGHTALT",  EV_KEY_, 100}, {"KEY_LEFTMETA",  EV_KEY_, 125},
+    {"KEY_RIGHTMETA", EV_KEY_, 126}, {"KEY_CAPSLOCK",  EV_KEY_, 58},
     {"KEY_UP",        EV_KEY_, 103}, {"KEY_DOWN",      EV_KEY_, 108},
     {"KEY_LEFT",      EV_KEY_, 105}, {"KEY_RIGHT",     EV_KEY_, 106},
+    // --- keyboard function keys (EV_KEY) ---
+    {"KEY_F1",  EV_KEY_, 59}, {"KEY_F2",  EV_KEY_, 60}, {"KEY_F3",  EV_KEY_, 61},
+    {"KEY_F4",  EV_KEY_, 62}, {"KEY_F5",  EV_KEY_, 63}, {"KEY_F6",  EV_KEY_, 64},
+    {"KEY_F7",  EV_KEY_, 65}, {"KEY_F8",  EV_KEY_, 66}, {"KEY_F9",  EV_KEY_, 67},
+    {"KEY_F10", EV_KEY_, 68}, {"KEY_F11", EV_KEY_, 87}, {"KEY_F12", EV_KEY_, 88},
+    // --- keyboard punctuation (EV_KEY) ---
+    {"KEY_MINUS",      EV_KEY_, 12}, {"KEY_EQUAL",  EV_KEY_, 13},
+    {"KEY_LEFTBRACE",  EV_KEY_, 26}, {"KEY_RIGHTBRACE", EV_KEY_, 27},
+    {"KEY_SEMICOLON",  EV_KEY_, 39}, {"KEY_APOSTROPHE", EV_KEY_, 40},
+    {"KEY_GRAVE",      EV_KEY_, 41}, {"KEY_BACKSLASH",  EV_KEY_, 43},
+    {"KEY_COMMA",      EV_KEY_, 51}, {"KEY_DOT",        EV_KEY_, 52},
+    {"KEY_SLASH",      EV_KEY_, 53},
+    // --- keyboard navigation/editing (EV_KEY) ---
+    {"KEY_INSERT", EV_KEY_, 110}, {"KEY_DELETE",   EV_KEY_, 111},
+    {"KEY_HOME",   EV_KEY_, 102}, {"KEY_END",      EV_KEY_, 107},
+    {"KEY_PAGEUP", EV_KEY_, 104}, {"KEY_PAGEDOWN", EV_KEY_, 109},
+    // --- keyboard lock/system keys (EV_KEY) ---
+    {"KEY_NUMLOCK", EV_KEY_, 69}, {"KEY_SCROLLLOCK", EV_KEY_, 70},
+    {"KEY_SYSRQ",   EV_KEY_, 99}, {"KEY_PAUSE",      EV_KEY_, 119},
+    // --- keyboard numeric keypad (EV_KEY) ---
+    {"KEY_KP0", EV_KEY_, 82}, {"KEY_KP1", EV_KEY_, 79}, {"KEY_KP2", EV_KEY_, 80},
+    {"KEY_KP3", EV_KEY_, 81}, {"KEY_KP4", EV_KEY_, 75}, {"KEY_KP5", EV_KEY_, 76},
+    {"KEY_KP6", EV_KEY_, 77}, {"KEY_KP7", EV_KEY_, 71}, {"KEY_KP8", EV_KEY_, 72},
+    {"KEY_KP9", EV_KEY_, 73},
+    {"KEY_KPDOT",      EV_KEY_, 83}, {"KEY_KPSLASH", EV_KEY_, 98},
+    {"KEY_KPASTERISK", EV_KEY_, 55}, {"KEY_KPMINUS", EV_KEY_, 74},
+    {"KEY_KPPLUS",     EV_KEY_, 78}, {"KEY_KPENTER", EV_KEY_, 96},
+    {"KEY_KPEQUAL",    EV_KEY_, 117},
+    // --- keyboard menu/app key (EV_KEY) ---
+    {"KEY_COMPOSE", EV_KEY_, 127},
     // --- absolute axes (EV_ABS) ---
     {"ABS_X",  EV_ABS_, 0}, {"ABS_Y",  EV_ABS_, 1}, {"ABS_Z",  EV_ABS_, 2},
     {"ABS_RX", EV_ABS_, 3}, {"ABS_RY", EV_ABS_, 4}, {"ABS_RZ", EV_ABS_, 5},

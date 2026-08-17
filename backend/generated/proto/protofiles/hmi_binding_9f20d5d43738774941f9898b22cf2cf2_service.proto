@@ -1,0 +1,35 @@
+syntax = "proto3";
+package frameworkProtos;
+//standard protofile with error code and standard heartBeat messages
+import "protofiles/errorCode.proto";
+import "protofiles/heartBeat.proto";
+
+//user imports from harpia process
+import "protofiles/hmi_binding_9f20d5d43738774941f9898b22cf2cf2.proto";
+
+message hmi_binding_Message {
+    hmi_binding msg = 1;
+}
+//message for the standard functions 
+message hmi_binding_HeartBeat {
+    heartBeat hb = 1;
+}
+
+//message for the pullByID function
+message hmi_binding_ID {
+    int32 id = 1;
+}
+message hmi_binding_Stream {
+    int32 id = 1;
+    string name = 2;
+    // pagination (spec: "pagination" field modifier): limit <= 0 means
+    // unbounded (return everything, matching pre-pagination behavior).
+    int32 offset = 3;
+    int32 limit = 4;
+}
+service hmi_binding_Service {
+    rpc heartBeat(hmi_binding_HeartBeat) returns (hmi_binding_HeartBeat) {}
+    rpc streamSrc(hmi_binding_Stream ) returns (stream hmi_binding_Message) {}
+    rpc pullByID(hmi_binding_ID) returns (hmi_binding_Message) {}
+    rpc push(hmi_binding_Message) returns (errorCode) {}
+}

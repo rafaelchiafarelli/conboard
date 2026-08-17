@@ -256,6 +256,59 @@ up on-device before each overwrite) and user-confirmed live both times — the s
 specifically checking hover cursor + edge-drag. `docs/next-sessions/02-live-monitor-css.md`
 removed now that its task is done.
 
+## Synthetic 1:1 keyboard rules on hotplug — DONE + HARDWARE-VERIFIED (2026-08-15)
+Idea sized 2026-08-11 (see `docs/NEXT-SESSION.md`), built and verified same-day
+2026-08-15. A "Seed a full 1:1 rule set" checkbox in the console's Add-Device
+dialog (keyboard type only) generates one press-triggered rule per key across the
+standard keyboard layout (`frontend/console/src/model/oneToOneKeyboard.ts`, 105
+`KEY_*` entries), riding the existing create+deploy pipeline unchanged — no new
+backend/CRUD code, since a single nested `POST /api/v1/board` already cascades
+`modes`/`rules`/`triggers`/`output_actions`.
+
+Required extending `LowLevel/Common/src/evMatch.cpp`'s `kSymbols` from 52 to 105
+`KEY_*` entries so the newly-generated symbols actually *resolve* at deploy/
+runtime, not just get stored in the DB — the rules DB is only an authoring
+library; the running engine reads `boards/*.json` on deploy and resolves each
+trigger's `code` through `kSymbols` at load time, so an unresolved symbol
+silently no-ops (same failure shape as the mouse/keyboard parsing bug above).
+Along the way, discovered `kSymbols` actually lives in a **shared library**
+(`/conboard/lib/libcommon.so`), not statically in each per-device executable —
+`conKeyB` itself was byte-identical before/after the fix; only `libcommon.so`
+changed. Useful to know for any future `LowLevel/Common/` fix: the deployable
+unit is that one shared object.
+
+**Hardware-verified on `192.168.7.4`**: cross-built via `./build-cross.sh zero3`,
+backed up the board's existing `libcommon.so` and its `WirelessKB.json` test
+fixture, deployed the rebuilt library + the actual 105-rule generated board JSON
+via a direct `POST /api/v1/deploy` (same call the console makes). Watched the
+dispatcher's live event feed while physically pressing keys on the real wireless
+keyboard: `KEY_MINUS` and `KEY_F1` — both newly resolvable this session, unlike
+`KEY_A` which already worked before the fix — produced correct HID output.
+Board restored to its exact pre-session state afterward (fixture put back,
+diffed byte-identical); kept the rebuilt `libcommon.so` since it's a strict
+superset of the old symbol table.
+
+Also browser-verified the checkbox itself with headless Chromium (Playwright) —
+absent for non-keyboard types, present and correctly wired for keyboard, no
+console errors. That required one-time WSL2 environment setup (native Node 20+
+via `nvm`, since the OS-packaged Node is too old for current Playwright, plus
+Playwright's Chromium + its apt deps), now captured in `.claude/skills/run/
+SKILL.md` so it isn't rediscovered next session — includes a real gotcha hit
+along the way: `node_modules` installed under Windows' `node.exe` (also on
+`PATH` in this WSL setup) pulls the wrong-platform native Rollup binary and
+breaks `vite`.
+
+Deliberately excludes true mouse/joystick 1:1 HID **passthrough** (the bigger
+idea that prompted this one) — checked 2026-08-15 and still accurate:
+`oActions::mouse_fill_report`/`joystick_fill_report` already build correct
+report bytes, but `oMouse()`/`oJoystick()` (`LowLevel/Common/include/
+oActions.hpp`) are literal empty stubs, and the USB gadget composite
+(`scripts/usb-composite-all.sh`) only declares one HID interface, hardcoded as
+a keyboard — no mouse/joystick HID function exists in the gadget at all. Sized
+medium (new gadget HID function + wiring + real OTG-to-host-PC verification),
+not attempted. `docs/next-sessions/04-synthetic-1to1-rules.md` removed now
+that its task is done.
+
 ## Ethernet-gadget access — investigated, SHELVED (2026-08-16): blocked on zero3's USB endpoint budget
 Picked up the long-standing "install as an ethernet port" item (`README.md` "What
 is Missing?", carried in this file's Next list below). Plan: dual-config USB
@@ -308,5 +361,6 @@ do) — see `README.md` "What is Missing?" for the current candidate list.
 * **mouse/keyboard output not firing** (above) — now the top item, blocks the core
   remap-a-device feature for two of four device kinds.
 * longer term: the local power-password login (design in `backend/README.md`,
-  never implemented). Ethernet-gadget access was investigated and shelved
-  (above) — blocked on hardware, not a to-do.
+  never implemented); true mouse/joystick 1:1 HID passthrough (sized above,
+  under "Synthetic 1:1 keyboard rules"). Ethernet-gadget access was
+  investigated and shelved (above) — blocked on hardware, not a to-do.

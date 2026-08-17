@@ -1,0 +1,20 @@
+syntax = "proto3";
+import "protofiles/trigger_kind_9f20d5d43738774941f9898b22cf2cf2.proto";
+import "protofiles/midi_mode_9f20d5d43738774941f9898b22cf2cf2.proto";
+import "protofiles/trigger_edge_9f20d5d43738774941f9898b22cf2cf2.proto";
+message trigger {
+int32 ID_9f20d5d43738774941f9898b22cf2cf2 = 1;
+trigger_kind kind = 2;
+int32 b0 = 3;
+int32 b1 = 4;
+int32 b2 = 5;
+midi_mode midi_mode = 6;
+string code = 7;
+trigger_edge edge = 8;
+int32 value = 9;
+int32 erval = 10;
+int32 delay = 11;
+string STATUS_9f20d5d43738774941f9898b22cf2cf2 = 12;
+string ERROR_9f20d5d43738774941f9898b22cf2cf2 = 13;
+string ORIGINATOR_9f20d5d43738774941f9898b22cf2cf2 = 14;
+}

@@ -41,6 +41,33 @@ TEST_SUITE("evmatch") {
         CHECK(t.type == EV_REL_); CHECK(t.code == 8);
     }
 
+    TEST_CASE("resolveSymbol: full keyboard layout added for synthetic 1:1 rules") {
+        evTrigger t;
+        REQUIRE(resolveSymbol("KEY_F1", t));
+        CHECK(t.type == EV_KEY_); CHECK(t.code == 59);
+
+        REQUIRE(resolveSymbol("KEY_RIGHTMETA", t));
+        CHECK(t.type == EV_KEY_); CHECK(t.code == 126);
+
+        REQUIRE(resolveSymbol("KEY_CAPSLOCK", t));
+        CHECK(t.type == EV_KEY_); CHECK(t.code == 58);
+
+        REQUIRE(resolveSymbol("KEY_MINUS", t));
+        CHECK(t.type == EV_KEY_); CHECK(t.code == 12);
+
+        REQUIRE(resolveSymbol("KEY_DELETE", t));
+        CHECK(t.type == EV_KEY_); CHECK(t.code == 111);
+
+        REQUIRE(resolveSymbol("KEY_KP0", t));
+        CHECK(t.type == EV_KEY_); CHECK(t.code == 82);
+
+        REQUIRE(resolveSymbol("KEY_KPENTER", t));
+        CHECK(t.type == EV_KEY_); CHECK(t.code == 96);
+
+        REQUIRE(resolveSymbol("KEY_COMPOSE", t));
+        CHECK(t.type == EV_KEY_); CHECK(t.code == 127);
+    }
+
     TEST_CASE("resolveSymbol: unknown symbol fails and leaves out untouched") {
         evTrigger t; t.type = 99; t.code = 99;
         CHECK_FALSE(resolveSymbol("NOPE_X", t));

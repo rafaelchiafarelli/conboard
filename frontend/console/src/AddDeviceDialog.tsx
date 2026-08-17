@@ -7,6 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { fetchDevices, type AttachedDevice } from './api/client'
+import { buildOneToOneKeyboardRules } from './model/oneToOneKeyboard'
 import type { Board, DeviceType } from './model/rules'
 
 const TYPES: DeviceType[] = ['midi', 'joystick', 'keyboard', 'mouse']
@@ -17,7 +18,7 @@ const EXEC: Record<DeviceType, string> = {
   mouse: '/conboard/LowLevel/Mouse/build/conMouse',
 }
 
-function buildBoard(name: string, type: DeviceType, tags: Record<string, string>): Board {
+function buildBoard(name: string, type: DeviceType, tags: Record<string, string>, seed1to1: boolean): Board {
   const hasTags = Object.keys(tags).length > 0
   return {
     DEVICE: { timeout: 0, type, name, input: name, output: name },
@@ -28,7 +29,7 @@ function buildBoard(name: string, type: DeviceType, tags: Record<string, string>
       },
       actions: [],
     },
-    body: { modes: [{ id: 0, active: true, actions: [] }] },
+    body: { modes: [{ id: 0, active: true, actions: type === 'keyboard' && seed1to1 ? buildOneToOneKeyboardRules() : [] }] },
   }
 }
 
@@ -49,6 +50,7 @@ export default function AddDeviceDialog({
   const [pick, setPick] = useState<AttachedDevice | 'manual' | null>(null)
   const [name, setName] = useState('')
   const [type, setType] = useState<DeviceType | ''>(presetType ?? '')
+  const [seed1to1, setSeed1to1] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -84,7 +86,7 @@ export default function AddDeviceDialog({
     const isReal = pick !== null && pick !== 'manual'
     // Auto-deploy only when the picked device is actually attached; a manual entry is
     // just a library template with no hardware to deploy to.
-    onCreate(buildBoard(name.trim(), type, isReal ? pick.tags : {}), isReal)
+    onCreate(buildBoard(name.trim(), type, isReal ? pick.tags : {}, seed1to1), isReal)
   }
 
   return (
@@ -153,6 +155,18 @@ export default function AddDeviceDialog({
                   {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
+              {type === 'keyboard' && (
+                <div className="checkline">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={seed1to1}
+                      onChange={(e) => setSeed1to1(e.target.checked)}
+                    />{' '}
+                    Seed a full 1:1 rule set (every key types itself)
+                  </label>
+                </div>
+              )}
               {pick !== null && pick !== 'manual' && (
                 <span className="hint">This device is attached — it'll be deployed to the board automatically.</span>
               )}

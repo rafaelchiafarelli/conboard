@@ -73,7 +73,7 @@ the shared left edge with `cursor: ew-resize` feedback, rebuilt/redeployed to
 
 ---
 
-# conboard — local screen/buttons/encoders UI handoff (2026-08-10/11)
+# conboard — local screen/buttons/encoders UI handoff (2026-08-10/11, phase 4a 2026-08-15)
 
 New, **separate** workstream from the console-fixes milestone below — a small
 SPI TFT + 2 push buttons + 2 rotary encoders (each with its own pushbutton),
@@ -83,9 +83,10 @@ codebase (see the plan doc from the session that started this): no
 domain data over the backend's REST/JSON API — no local business logic.
 
 Scope was phases 1-3 of a 5-phase plan (dependencies + a screen-size-adaptable
-base component layer + a custom theme matching the console's palette); phases
-4-5 (the actual WiFi/activation/radio screens, deeper backend integration) are
-not started.
+base component layer + a custom theme matching the console's palette), plus
+now phase 4a (2026-08-15): the first real domain screen (WiFi list),
+hardware-confirmed. Phase 4b (activation/radio screens) and phase 5
+(encoder/button wiring, the real navigation scheme) are still not started.
 
 ## What's built
 
@@ -138,6 +139,24 @@ not started.
   the expected "no hardware?" warnings for the still-unwired encoders/buttons,
   and the dark theme background is confirmed visible by eye on the physical
   panel.
+- **Phase 4a (2026-08-15): the WiFi list screen — DONE, hardware-confirmed.**
+  New `LowLevel/HMI/include/wifi_screen.hpp` + `src/wifi_screen.cpp`: fetches
+  `GET /hmi/wifi/networks`, renders one `appshell` menu row per network
+  (`SSID  (signal%)`), with separate fallback `createInfoLabel` text for a
+  failed fetch vs. an empty/no-networks result. `main.cpp` now pushes a small
+  top-level menu ("Console URL", "WiFi") at startup instead of jumping
+  straight into the old console-url demo, so both screens are reachable
+  through one root — a minimal base for phase 4b's activation/radio entries
+  to slot into later. Also bumped the compiled-in default font from
+  Montserrat 14 to **Montserrat 18** (`lv_conf.h`) — 14 was unreadably small
+  for a scrollable list of real network names on the physical panel.
+  **Hardware-confirmed** on `192.168.7.4`: real nearby networks render
+  correctly with good row spacing (confirmed via a temporary combined
+  debug screen — console-url text as a header line above the WiFi list on
+  one screen, since there's no encoder/button hardware yet to navigate the
+  real top-level menu — reverted before committing, same pattern as phase
+  3's temporary demo menu). User feedback: layout works but isn't polished
+  yet ("not very pretty") — left for a future UI-design pass, not blocking.
 
 ## Hardware-confirmed facts (dev board: `rafael@192.168.7.4`, `orangepizero3`)
 
@@ -200,10 +219,38 @@ only proof that ever worked on this exact unit.
   measurements. See `LowLevel/HMI/include/clipped_panel.hpp` for how it
   composes (wraps any `PanelDriver`, crops+offsets, everything above it in
   the stack — LVGL, AppShell — only ever sees the cropped size).
-- Phases 4-5 not started: the actual WiFi/activation/radio screens, and which
-  physical control does what (nav scheme), are still open. (Phase 3, the
-  visual theme, is done and hardware-confirmed on the real ST7789 panel — see
-  "What's built" above.)
+- Phase 4a (WiFi list) is done and hardware-confirmed — see "What's built"
+  above. Phase 4b's activation screen is built (`activation_screen.cpp`),
+  not yet hardware-confirmed. Radio screen still open.
+- **Nav scheme (which physical control does what) — partially data-driven
+  now.** New `hmi_binding` table (`backend/harpia/conboard.harpia`, separate
+  from the rules-library domain — see its README's domain-shape table) maps
+  one `hmi_control` (`hc_encoder1_ccw`/`cw`/`press`, same for encoder2,
+  `hc_button1_press`, `hc_button2_press`) to one `hmi_nav_key`
+  (`nk_next`/`prev`/`select`/`back`/`up`/`down`). Full CRUD at
+  `/api/v1/hmi_binding` (harpia-generated, auth `X-User: hmi_binding` —
+  different from the hand-written `hmi` routes' looser check). `conHMI`
+  fetches it at startup (`fetchHmiBindings()` in `main.cpp`) and applies it
+  to the two standalone buttons (falls back to the old hardcoded ESC/NEXT if
+  a binding is missing, so an empty table doesn't regress real hardware).
+  **Both encoders still use LVGL's native ENCODER indev semantics on real
+  hardware** — their `hmi_binding` rows exist and are honored by
+  `/simulate` (below) but not by the real GPIO path yet; that needs a
+  custom keypad-style encoder adapter to replace LVGL's built-in one,
+  a separate decision not made this session. Real navigation by hand still
+  needs the encoder/button GPIO lines wired (see above).
+- **New: dev-only `/simulate` HTTP endpoint, opt-in via `CONHMI_SIM_PORT`.**
+  Lets any of the 8 `hmi_control` events be fired without real GPIO —
+  `curl -d '{"control":"hc_button1_press"}' http://host:PORT/simulate`.
+  Hand-rolled over POSIX sockets (`sim_server.cpp`), one route, no new
+  dependency; queues the control name, the LVGL-owning thread drains and
+  applies it via `lv_group_send_data()` once per `runLoop()` tick (LVGL
+  itself isn't thread safe, so the accept thread never touches it
+  directly). Verified end to end under QEMU this session: created
+  `hmi_binding` rows via curl, started `conHMI --panel null` pointed at
+  that backend, fired `/simulate` for a bound control (applied + logged),
+  an unbound control (logged "no binding", no crash), and garbage JSON
+  (400, no crash). Not yet tried on the real board.
 
 ## Persisting hardware config (durable across reinstalls)
 
@@ -224,7 +271,7 @@ sudo systemctl restart hmi.service
 | var | default | status |
 |---|---|---|
 | `CONHMI_REST_BASE` | `http://127.0.0.1:8080/api/v1` | fine as-is (same-host backend) |
-| `CONHMI_REST_PSWD_HASH` | `1bf812ac18b80d4a5ea4d51e6bfb7f58` | matches backend's compile-time hash |
+| `CONHMI_REST_PSWD_HASH` | `9f20d5d43738774941f9898b22cf2cf2` | matches backend's compile-time hash |
 | `CONHMI_SPI_DEVICE` | `/dev/spidev1.1` | **confirmed** |
 | `CONHMI_PANEL_SPI_SPEED_HZ` | `4000000` | **confirmed** |
 | `CONHMI_GPIO_CHIP` | `gpiochip0` | **confirmed** |
@@ -235,6 +282,7 @@ sudo systemctl restart hmi.service
 | `CONHMI_PANEL_ROTATION` | `270` | **confirmed** (2026-08-11) |
 | `CONHMI_WORK_X/Y_OFFSET`, `WIDTH`/`HEIGHT` | `0,0,320,240` (no crop) | **placeholder** — needs real enclosure measurements |
 | `CONHMI_ENC1_A`/`B`/`BTN`, `CONHMI_ENC2_A`/`B`/`BTN`, `CONHMI_BTN1`/`BTN2` | see above | **placeholder** — not wired yet |
+| `CONHMI_SIM_PORT` | unset (disabled) | dev-only; set to a port to enable the `/simulate` HTTP endpoint |
 
 ## How to build / deploy (this workstream)
 
@@ -315,54 +363,34 @@ list. This file is the **live punch list** — what's known broken or unverified
   Mouse-then-KB order that originally triggered the corruption — clean
   `WirelessKB`/`WirelessMouse` devnames on `/ws` every time.
 
-## Proposed feature (not started, sized 2026-08-11): synthetic 1:1 keyboard rules on hotplug
+## Synthetic 1:1 keyboard rules on hotplug — DONE + HARDWARE-VERIFIED (2026-08-15)
 
-Idea from the user: when a new keyboard is plugged in, auto-generate a full 1:1
-rule set (every `KEY_*` press → the same key typed) and write it straight into the
-rules DB — no HID-gadget/output-engine changes, purely populating
-`board`/`mode`/`rule`/`trigger`/`output_action` via the existing harpia CRUD.
-**Sized short** — deliberately scoped to skip the much bigger mouse/joystick HID
-passthrough idea (see below) that prompted this.
-
-Why it's short:
-- The DB-writing side needs nothing new: harpia already generates full CRUD for
-  `board`/`mode`/`rule`/`trigger`/`output_action`, exercised directly this session
-  (`POST /api/v1/board` etc.) with no issues.
-- The only new artifact is a static `KEY_*` → keyboard-output mapping table
-  (~100 entries, one-time, mechanical — data, not engineering).
-- Generating the rule set is then: for each `KEY_*` in the table, insert one
-  `trigger` (press, that code) + one `output_action` (type keyboard, same key) +
-  one `rule` linking them, under a `mode` under a `board` row for that device — all
-  through calls the backend already exposes.
-
-Open design question (needs a decision before writing code, not a difficulty
-issue): **where does "a new keyboard was plugged in" get noticed and trigger
-this?**
-- The **launcher** (udev-triggered C++, `LowLevel/launcher/`) calls the backend
-  REST API when it sees an unmatched keyboard-class device — closer to "fully
-  automatic," but new territory: the launcher today only touches
-  `boards/*.json` + systemd, never the DB (deliberately decoupled, see
-  "Don't-relearn facts" below).
-- The **console** does it explicitly — e.g. a "seed 1:1 rules" button in the
-  existing Add-Device dialog, reusing the `GET /devices` inventory already there.
-  Less new code, fits the current architecture cleanly, costs a click instead of
-  being silent.
-
-Either route also wants simple dedup (don't regenerate ~100 rows every time the
-same dongle reconnects) — a lookup-before-insert keyed on VID/PID or serial.
+Idea sized 2026-08-11, built and verified 2026-08-15. Full writeup:
+[next-sessions/04-synthetic-1to1-rules.md](next-sessions/04-synthetic-1to1-rules.md).
+Short version: a "Seed a full 1:1 rule set" checkbox in the console's Add-Device
+dialog (keyboard type only) generates all 105 `KEY_*` → keyboard-output rules via
+the existing harpia CRUD (`frontend/console/src/model/oneToOneKeyboard.ts`),
+riding the create+deploy pipeline unchanged. Required extending
+`LowLevel/Common/src/evMatch.cpp`'s `kSymbols` from 52 to 105 entries so the new
+symbols actually resolve at deploy/runtime (lives in `libcommon.so`, a shared
+library every LowLevel binary links — not statically in each executable).
+Hardware-verified on `192.168.7.4`: `KEY_MINUS` and `KEY_F1` (both newly
+resolvable) fired correct HID output on the real wireless-keyboard dongle; board
+restored to its pre-session state afterward.
 
 **Related, explicitly NOT this feature — true mouse/joystick 1:1 HID passthrough**
-(the bigger idea that came up first, deferred as out of scope for now): would need
-real HID output, not just DB rows. Checked this session:
-`oActions::mouse_fill_report`/`joystick_fill_report` (`LowLevel/Common/src/oActions.cpp`)
-already build correct report bytes, but the dispatch functions that would call them,
-`oMouse()`/`oJoystick()` (`LowLevel/Common/include/oActions.hpp`), are literal empty
-stubs (`virtual void oMouse(mouseActions){}`) — never wired to anything. Bigger gap:
-the USB gadget composite (`scripts/usb-composite-all.sh`) only declares **one** HID
-interface, hardcoded as a keyboard (protocol=1, boot-keyboard report descriptor) — no
-mouse/joystick HID function exists in the gadget at all yet. Sized medium (new gadget
-HID function + wiring + real OTG-to-host-PC verification, which is untested territory
-beyond keyboard), not attempted this session.
+(the bigger idea that came up first, deferred as out of scope): re-checked
+2026-08-15, still accurate. Would need real HID output, not just DB rows.
+`oActions::mouse_fill_report`/`joystick_fill_report` (`LowLevel/Common/src/
+oActions.cpp`) already build correct report bytes, but the dispatch functions
+that would call them, `oMouse()`/`oJoystick()` (`LowLevel/Common/include/
+oActions.hpp`), are literal empty stubs (`virtual void oMouse(mouseActions){}`)
+— never wired to anything. Bigger gap: the USB gadget composite (`scripts/
+usb-composite-all.sh`) only declares **one** HID interface, hardcoded as a
+keyboard (protocol=1, boot-keyboard report descriptor) — no mouse/joystick HID
+function exists in the gadget at all yet. Sized medium (new gadget HID function +
+wiring + real OTG-to-host-PC verification, untested territory beyond keyboard),
+not attempted.
 
 ## Still needs a dispatcher-side change
 
@@ -601,8 +629,8 @@ sudo journalctl -u backend -f    # NOTE: needs sudo (backend runs as root)
 console at `/` and proxies `/websocket` → dispatcher `:40080` directly (the backend's
 own unimplemented `/ws` relay stub was removed 2026-08-13, see `backend/README.md`).
 REST is credential-gated (`X-User: <entity>`, `X-Pswd: <hash>`);
-hash = `1bf812ac18b80d4a5ea4d51e6bfb7f58` (bumped when `midi_mode` was added to the
-trigger message; regen via `backend/generate.sh`).
+hash = `9f20d5d43738774941f9898b22cf2cf2` (bumped when the `hmi_binding` table was
+added; regen via `backend/generate.sh`).
 
 ## Don't-relearn facts
 

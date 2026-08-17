@@ -1,0 +1,13 @@
+syntax = "proto3";
+import "protofiles/output_action_9f20d5d43738774941f9898b22cf2cf2.proto";
+import "protofiles/rule_9f20d5d43738774941f9898b22cf2cf2.proto";
+message mode {
+int32 ID_9f20d5d43738774941f9898b22cf2cf2 = 1;
+int32 mode_id = 2;
+int32 active = 3;
+repeated output_action mode_header = 4;
+repeated rule rules = 5;
+string STATUS_9f20d5d43738774941f9898b22cf2cf2 = 6;
+string ERROR_9f20d5d43738774941f9898b22cf2cf2 = 7;
+string ORIGINATOR_9f20d5d43738774941f9898b22cf2cf2 = 8;
+}

@@ -50,6 +50,13 @@ npm run typecheck
 npm run build               # -> console/dist
 ```
 
+**WSL2 gotcha**: if Windows' `node.exe` is also reachable on `PATH` (common
+when Node is installed on the Windows side and WSL inherits it), running
+`npm install` under *that* Node instead of a Linux one installs the wrong
+platform's optional Rollup binary, and `vite` fails to start with `Cannot
+find module '@rollup/rollup-linux-x64-gnu'`. Fix: install a Linux Node (e.g.
+via `nvm`) and reinstall — `rm -rf node_modules && npm install` — under it.
+
 Talks to a real backend at `/api/v1` and `/ws` (proxy it or run one locally per
 [`../backend/README.md`](../backend/README.md)) — there is no mock/offline data
 provider anymore; the console seeds an empty backend from `src/fixtures/boards.ts`

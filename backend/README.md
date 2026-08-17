@@ -45,6 +45,11 @@ libpqxx.**
 ## Endpoints
 REST base `/api/v1` (configurable):
 - `GET/POST/PUT/DELETE /api/v1/{board,mode,rule,trigger,output_action}[/<id>]`
+- `GET/POST/PUT/DELETE /api/v1/hmi_binding[/<id>]` — HMI-only, not part of the
+  rules-library domain above; maps a physical panel control (`hmi_control`, e.g.
+  `hc_encoder1_ccw`) to an LVGL nav key (`hmi_nav_key`, e.g. `nk_next`). conHMI reads
+  it at startup so the panel's nav scheme is configurable over REST, not compiled in.
+  See `backend/harpia/README.md`'s domain-shape table.
 - `POST /api/v1/deploy` — **Axis C**: deploy an authored profile to the realtime path.
   Body is a board in the `boards/*.json` shape (what the frontend `Board` model
   serializes to). Writes it into `CONBOARD_BOARDS_DIR` (default `/conboard/boards`),
@@ -69,8 +74,9 @@ REST base `/api/v1` (configurable):
 MIDI triggers also carry an optional **operation mode** (`midiMode` on the wire,
 `mm_normal`/`mm_trigger_higher`/`mm_trigger_lower`/`mm_spot`/`mm_blink` — mirrors the
 firmware's `midi_action_mode`; `mm_normal` is the omitted zero-value). Added to
-`backend/harpia/conboard.harpia`; regenerating bumped the domain hash to
-`1bf812ac18b80d4a5ea4d51e6bfb7f58`.
+`backend/harpia/conboard.harpia`, along with the later `hmi_binding` table (see
+`backend/harpia/README.md`'s domain-shape table); each regeneration bumps the domain
+hash, currently `9f20d5d43738774941f9898b22cf2cf2`.
 
 Every generated REST route is **credential-gated**: requests must carry
 `X-User: <entity>` and `X-Pswd: <hash>` (the hash is the compile-time md5 of the domain,
