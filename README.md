@@ -135,12 +135,15 @@ are in that board's `HOW-TO-INSTALL.txt`.
 # What is Missing? (LowLevel device handlers)
 
 * generalized behavior 
-    * **investigated + SHELVED (2026-08-16)**: USB-ethernet gadget access (would
-      simplify first-time console access — plug in, get an IP, no WiFi setup
-      needed). Blocked on hardware: the Zero 3's musb-hdrc USB controller only
-      has endpoint budget for the current ACM+HID+mass-storage gadget, with no
-      room left for a network function too (hardware-verified, see NOTES.md).
-      Needs a board with a dwc2/dwc3-class USB controller instead.
+    * **IN PROGRESS (2026-08-16)**: USB-ethernet gadget access (would simplify
+      first-time console access — plug in, get an IP, no WiFi setup needed).
+      The Zero 3's musb-hdrc USB controller only has endpoint budget for the
+      current ACM+HID+mass-storage gadget, with no room left for a network
+      function too (hardware-verified) — `usb-composite-all.sh` now tries the
+      full gadget first and auto-falls-back to today's shape when the board
+      can't fit it, so existing boards are unaffected. Network function itself
+      only proven end-to-end on a board with more USB endpoint headroom (see
+      NOTES.md "Ethernet-gadget access" for the candidate list and sources).
     * launch/detection of a service is heavily dependent on user configuration, which is dangerous — the user should not have that power
     * **basic hardening landed + HARDWARE-VERIFIED (2026-08-12)**: nginx Basic Auth in
       front of the console (a real per-install password, generated on first install

@@ -1,17 +1,31 @@
-# conboard — ethernet-gadget access, SHELVED (2026-08-16)
+# conboard — ethernet-gadget access, auto-fallback landed (2026-08-16)
 
-Investigated adding a USB-ethernet gadget (RNDIS+ECM) for driver-free network
-access to the console. **Blocked on hardware, not a to-do**: the Zero 3's
-musb-hdrc USB controller only has endpoint budget for 4 IN + 2 OUT total, which
-the current gadget (ACM+HID+mass-storage) already uses in full — adding a
-network function means *dropping* HID or mass-storage from that config, not
+Adding a USB-ethernet gadget (ECM now, RNDIS later) hit a hardware wall on the
+Zero 3: its musb-hdrc USB controller only has endpoint budget for 4 IN + 2 OUT
+total, which the current gadget (ACM+HID+mass-storage) already uses in full —
+so a network function can only be added by *dropping* HID or mass-storage, not
 adding on top. Confirmed live via configfs bind tests (`unable to autoconfigure
-all endpoints`, kernel `-524`) before any code was proposed for landing. All
-changes reverted; board back to its known-good state (`configured`,
-ACM+HID+mass-storage). Full writeup in [../NOTES.md](../NOTES.md).
+all endpoints`, kernel `-524`).
 
-Next step, if picked back up: retarget a board with a dwc2/dwc3-class USB
-controller (more endpoint headroom than musb-hdrc) instead of the Zero 3.
+Rather than hand-picking function sets per board, `scripts/usb-composite-all.sh`
+now tries the full gadget (ACM+ECM+HID+mass-storage) first and auto-falls-back
+to today's reduced gadget (no network) if the UDC bind fails — recognizing the
+endpoint-budget limit live rather than needing a static board table.
+`usb-gadget-dhcp.service` (scoped `dnsmasq` on `usb0`) only starts when the
+fallback script found room for the network function
+(`ConditionPathExists=/run/conboard/usb-gadget-network`), and
+`scripts/conboard-firewall.sh` now allows `udp/67` on `usb0` for DHCP.
+
+**Hardware-verified on `192.168.7.4`**: full gadget correctly fails and falls
+back, gadget reaches `configured` with the same ACM+HID+mass-storage shape as
+before, `/run/conboard/usb-gadget-network` correctly absent, and
+`usb-gadget-dhcp.service` reports a clean systemd "skipped" (not failed) via
+its `ConditionPathExists`. Rest of the stack (dispatcher/backend/firewall)
+confirmed still healthy after. **Not yet verified**: the *full* scenario
+(network actually working end-to-end) — needs a board whose USB controller has
+enough endpoint headroom to take the "full gadget" branch instead of falling
+back. Rafael has a second, non-Zero Orange Pi lined up for that. Full writeup
++ candidate-board research in [../NOTES.md](../NOTES.md).
 
 ---
 

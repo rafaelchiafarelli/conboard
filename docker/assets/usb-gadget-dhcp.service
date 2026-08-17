@@ -1,0 +1,20 @@
+[Unit]
+Description=DHCP for the conboard USB-ethernet gadget (usb0 only, via dnsmasq)
+Documentation=https://github.com/rafaelchiafarelli/conboard
+After=usb-otg.service
+Requires=usb-otg.service
+BindsTo=usb-otg.service
+# usb-composite-all.sh writes this flag only when its endpoint-budget probe
+# found room to include the network function alongside ACM/HID/mass-storage
+# (see NOTES.md "Ethernet-gadget access") -- on a board where it didn't fit,
+# there's no usb0 to serve DHCP on, and systemd reports this unit as cleanly
+# "skipped" rather than failed.
+ConditionPathExists=/run/conboard/usb-gadget-network
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/dnsmasq --keep-in-foreground --conf-file=/conboard/scripts/usb-gadget-dnsmasq.conf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

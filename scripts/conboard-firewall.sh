@@ -35,6 +35,16 @@ iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 iptables -A INPUT -p tcp --dport "$SSH_PORT" -j ACCEPT   # remote admin access
 iptables -A INPUT -p tcp --dport 80 -j ACCEPT             # the console (nginx)
 iptables -A INPUT -p icmp -j ACCEPT                       # ping, for diagnostics
+# DHCP for the USB-ethernet gadget (usb-gadget-dhcp.service, only runs at all
+# when usb-composite-all.sh's endpoint-budget probe found room for it -- see
+# NOTES.md "Ethernet-gadget access"): a DHCPDISCOVER arrives on udp/67 from a
+# host with no address yet, so it can't be matched by an established/related
+# rule -- needs its own ACCEPT. Scoped to usb0 only, so this can't be used to
+# reach the DHCP server over WiFi/ethernet. The -i match is by name, not by an
+# interface that must already exist -- this firewall script runs before
+# usb-otg.service brings usb0 up (see install-on-device.sh), so the rule has
+# to be in place ahead of the interface, not conditional on it.
+iptables -A INPUT -i usb0 -p udp --dport 67 -j ACCEPT
 iptables -A INPUT -j DROP                                 # everything else
 
 echo "conboard-firewall: applied (ssh=$SSH_PORT, http=80, else dropped)."

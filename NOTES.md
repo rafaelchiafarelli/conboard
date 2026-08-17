@@ -256,7 +256,7 @@ up on-device before each overwrite) and user-confirmed live both times — the s
 specifically checking hover cursor + edge-drag. `docs/next-sessions/02-live-monitor-css.md`
 removed now that its task is done.
 
-## Ethernet-gadget access — investigated, SHELVED (2026-08-16): blocked on zero3's USB endpoint budget
+## Ethernet-gadget access — blocked on zero3, RESUMED with an auto-fallback (2026-08-16)
 Picked up the long-standing "install as an ethernet port" item (`README.md` "What
 is Missing?", carried in this file's Next list below). Plan: dual-config USB
 gadget, RNDIS (Windows) + ECM (Linux/macOS), added alongside the existing ACM
@@ -288,13 +288,60 @@ budget.
 
 Presented the finding and two workaround shapes (split into two USB configs
 with no shared functions, or drop mass-storage permanently to free budget for
-HID+ECM+ACM together) — Rafael's call: shelve rather than redesign v1 around a
-keyboard/network tradeoff on this board. All code changes reverted (board
-restored to the known-good ACM+HID+mass-storage gadget, confirmed `configured`
-again); `docs/next-sessions/08-ethernet-gadget.md` dropped now that its plan hit
-a hardware wall rather than a to-do. Revisit only on a board whose USB device
-controller has more endpoint headroom (dwc2/dwc3-class controllers typically
-do) — see `README.md` "What is Missing?" for the current candidate list.
+HID+ECM+ACM together). Initial call was to shelve rather than redesign v1
+around a keyboard/network tradeoff on this board — all code changes reverted
+(board restored to the known-good ACM+HID+mass-storage gadget, confirmed
+`configured` again), `docs/next-sessions/08-ethernet-gadget.md` dropped.
+
+**Candidate boards for a future retarget** (researched 2026-08-16, not yet
+hardware-verified — see Sources below for where each claim comes from):
+- **Raspberry Pi Zero / Zero W / Zero 2 W** (BCM2835/2710/2837, `dwc2`
+  controller, 8 usable endpoints) — best-documented exact match: the P4wnP1
+  toolkit runs RNDIS/ECM + HID + mass-storage together on exactly this
+  hardware. Pragmatic first pick if this gets retargeted.
+- **Raspberry Pi 4** — same `dwc2` family via its USB-C OTG port. (Pi 5 uses a
+  different chip, RP1, for USB — not confirmed either way.)
+- **USB Armory Mk II** (NXP i.MX6ULZ, ChipIdea controller) — worth calling out
+  specifically: `docs/dev-snippets/rndis-ecm-adm.sh`'s header traces back to
+  `ckuethe/usbarmory/wiki/USB-Gadgets`, i.e. conboard's *own* reference script
+  originates from this board. ChipIdea's stock `g_multi` gadget ships
+  RNDIS+ACM+mass-storage by default; other reports show HID+mass-storage
+  combos working too. No hard endpoint-count source found for it.
+- **BeagleBone Black / AI** (TI AM335x, TI's own `musb` glue — not the same
+  integration as Allwinner's) — HID, RNDIS, ACM, ECM, and mass-storage
+  confirmed "demonstrated working properly in multiple composite arrangements."
+- **Rockchip boards with a `dwc3` OTG controller** (RK3399/RK3568/RK3588-class
+  — Rock Pi 4, several Radxa/Orange Pi/NanoPi Rockchip models) — confirmed 7
+  IN + 6 OUT = 13 usable endpoints on RK3399 specifically. Massive headroom;
+  would fit every function conboard ships simultaneously with room to spare.
+
+**Avoid**: other Allwinner H-series boards (H3, H616, H618 — other Orange Pi
+Zero variants) — same constrained `musb-hdrc` glue. An independent report on
+the H3 specifically found it fails past 2 composite functions, same failure
+shape as zero3. (Allwinner's own D1/D1s RISC-V chip reportedly has 10
+endpoints, more headroom — but a different architecture, niche pick for
+conboard's arm64/armhf build pipeline.)
+
+Sources: [Raspberry Pi Zero / Windows 10 RNDIS composite gadget](https://gist.github.com/Gadgetoid/c52ee2e04f1cd1c0854c3e77360011e2) ·
+[P4wnP1-O2](https://packetwanderer.com/posts/p4wnp1-o2/) ·
+[Raspberry Pi Zero as Multiple USB Gadgets](https://irq5.io/2016/12/22/raspberry-pi-zero-as-multiple-usb-gadgets/) ·
+[musb-hdrc: can't add more than 2 functions to composite gadget](https://www.spinics.net/lists/linux-usb/msg163414.html) ·
+[USB Gadget/Configfs - linux-sunxi.org](https://linux-sunxi.org/USB_Gadget/Configfs) ·
+[Linux kernel Multifunction Composite Gadget docs](https://docs.kernel.org/usb/gadget_multi.html) ·
+[AM335x multifunction composite gadget docs](https://github.com/hvaibhav/am335x-linux/blob/master/Documentation/usb/gadget_multi.txt) ·
+[Synopsys DesignWare Core SuperSpeed USB 3.0 Controller docs](https://docs.kernel.org/driver-api/usb/dwc3.html) ·
+[dwc3 endpoint-direction fix patch (RK3399 IN/OUT counts)](https://www.spinics.net/lists/linux-usb/msg216597.html)
+
+**RESUMED (2026-08-16, same day): auto-detecting fallback instead of a board
+switch.** Rafael has a second, non-Zero Orange Pi to develop this on, but
+rather than hand-picking function sets per board, `usb-composite-all.sh` now
+*tries* the full gadget (ACM+ECM+HID+mass-storage) first and falls back to
+today's reduced gadget (ACM+HID+mass-storage, no network) only if the UDC bind
+fails — recognizing the endpoint-budget limitation live, at boot, on whatever
+board it's installed on, rather than needing a static per-board table. See the
+"USB gadget auto-fallback" entry further down for the implementation and
+hardware verification (proven on zero3, which is guaranteed to hit the
+fallback branch).
 
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
@@ -308,5 +355,5 @@ do) — see `README.md` "What is Missing?" for the current candidate list.
 * **mouse/keyboard output not firing** (above) — now the top item, blocks the core
   remap-a-device feature for two of four device kinds.
 * longer term: the local power-password login (design in `backend/README.md`,
-  never implemented). Ethernet-gadget access was investigated and shelved
-  (above) — blocked on hardware, not a to-do.
+  never implemented). Ethernet-gadget access is back in progress (above) —
+  hardware-blocked on zero3, resumed with an auto-detecting fallback.
