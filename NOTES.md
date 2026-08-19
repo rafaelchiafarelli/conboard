@@ -588,8 +588,7 @@ session doc.
 * HARDWARE VERIFY MIDI SysEx support (above, 2026-08-16) — code-complete +
   unit-tested, needs a real SysEx round trip against connected MIDI hardware
   (a Universal Device Inquiry exchange is a good minimal test) to confirm live.
-* longer term: the local power-password login (design in `backend/README.md`,
-  never implemented); true mouse/joystick 1:1 HID passthrough (sized above,
-  under "Synthetic 1:1 keyboard rules"). Ethernet-gadget access is back in
-  progress (above) — hardware-blocked on zero3, resumed with an
-  auto-detecting fallback.
+* SHELVED: local power-password login (design in `backend/README.md`, never
+  implemented) — revisit when the vault work starts, far future.
+* Ethernet-gadget access is back in progress (above) — hardware-blocked on
+  zero3, resumed with an auto-detecting fallback.
