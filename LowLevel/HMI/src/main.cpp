@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
     // hand-written backend/src/hmi.cpp routes (which only check X-Pswd),
     // "hmi_binding" for the harpia-generated hmi_binding CRUD (which checks
     // X-User == the entity name, like every generated route).
-    const std::string pswdHash = envOr("CONHMI_REST_PSWD_HASH", "9f20d5d43738774941f9898b22cf2cf2");
+    const std::string pswdHash = envOr("CONHMI_REST_PSWD_HASH", "7fb7af9d1e69abe2d7a6e81c4a2d0c2f");
     RestClient rest(restBase, "hmi", pswdHash);
     RestClient bindingsRest(restBase, "hmi_binding", pswdHash);
     const std::map<std::string, std::string> bindings = fetchHmiBindings(bindingsRest);

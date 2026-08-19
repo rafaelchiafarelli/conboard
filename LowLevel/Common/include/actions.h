@@ -7,6 +7,7 @@
 #include <ostream>
 #include <vector>
 #include <set>
+#include <cstdint>
 #include "keyNumber.hpp"
 #include "evTypes.hpp"   // evmatch::evTrigger, for evdev input rules
 #include <chrono>
@@ -55,13 +56,53 @@ typedef enum
     midi_trigger_lower = 2,
     midi_spot = 3,
     midi_blink = 4,
-    midi_nomode = 5
+    midi_sysex = 5,
+    midi_nomode = 6
 
 }midi_action_mode;
+
+// Lowercase hex, no separators, e.g. "f04312...f7" -- see docs/next-sessions/
+// 08-midi-sysex.md for why this shape (survives the ZMQ envelope's ";"-split
+// + space-strip framing untouched, since MIDI data bytes 0-127 can otherwise
+// collide with those delimiter characters).
+inline std::string hexEncode(const std::vector<uint8_t> &bytes) {
+    static const char *digits = "0123456789abcdef";
+    std::string out;
+    out.reserve(bytes.size() * 2);
+    for (uint8_t b : bytes) {
+        out.push_back(digits[(b >> 4) & 0xF]);
+        out.push_back(digits[b & 0xF]);
+    }
+    return out;
+}
+
+// Inverse of hexEncode(). Case-insensitive; an odd-length or non-hex input
+// yields an empty vector rather than reading past the string (defensive
+// against a garbage "sysex" field in a hand-edited board JSON).
+inline std::vector<uint8_t> hexDecode(const std::string &hex) {
+    auto nibble = [](char c) -> int {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        return -1;
+    };
+    std::vector<uint8_t> out;
+    if (hex.size() % 2 != 0) return out;
+    out.reserve(hex.size() / 2);
+    for (size_t i = 0; i < hex.size(); i += 2) {
+        int hi = nibble(hex[i]);
+        int lo = nibble(hex[i + 1]);
+        if (hi < 0 || lo < 0) return {};
+        out.push_back((uint8_t)((hi << 4) | lo));
+    }
+    return out;
+}
+
 class midiActions{
     public:
     midi_action_mode midi_mode = midi_normal;
     midiSignal midi;
+    std::vector<uint8_t> sysex;   // only meaningful when midi_mode == midi_sysex
     unsigned long int delay = 0;
     std::string str(){
         char c_str[14];
@@ -69,6 +110,9 @@ class midiActions{
         return std::string(c_str);
     };
     std::string ar_str(){
+        if (midi_mode == midi_sysex) {
+            return "SX:" + hexEncode(sysex);
+        }
         char c_str[14];
         std::sprintf(c_str,"[%d,%d,%d]",midi.byte[0],midi.byte[1],midi.byte[2]);
         return std::string(c_str);

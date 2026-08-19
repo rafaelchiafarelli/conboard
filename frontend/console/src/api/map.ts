@@ -38,6 +38,7 @@ function actionFromH(h: HOutputAction): OutputAction {
     return a
   }
   const a: MidiAction = { type: 'midi', b0: h.b0 ?? 0, b1: h.b1 ?? 0, b2: h.b2 ?? 0 }
+  if (h.sysex != null) a.sysex = h.sysex
   if (delay != null) a.delay = delay
   return a
 }
@@ -48,6 +49,7 @@ function triggerFromH(h: HTrigger, deviceType: DeviceType): Trigger {
     const t: Trigger = { type: 'midi', b0: h.b0 ?? 0, b1: h.b1 ?? 0, b2: h.b2 ?? 0 }
     // midiMode omitted on the wire => 0-value mm_normal; only set when non-normal.
     if (h.midiMode && MIDI_MODE[h.midiMode] !== 'normal') t.mode = MIDI_MODE[h.midiMode] as MidiMode
+    if (h.sysex != null) t.sysex = h.sysex
     if (h.delay != null) t.delay = h.delay
     return t
   }
@@ -122,7 +124,11 @@ export function counterAlloc(seed: Partial<Record<keyof Alloc, number>> = {}): A
 
 function actionToH(a: OutputAction, id: number): HOutputAction {
   const h: HOutputAction = { [ID_KEY]: id, kind: ACTION_KIND_R[a.type] }
-  if (a.type === 'midi') { h.b0 = a.b0; h.b1 = a.b1; h.b2 = a.b2; if (a.delay != null) h.delay = a.delay }
+  if (a.type === 'midi') {
+    h.b0 = a.b0; h.b1 = a.b1; h.b2 = a.b2
+    if (a.sysex != null) h.sysex = a.sysex
+    if (a.delay != null) h.delay = a.delay
+  }
   else if (a.type === 'keyboard') {
     h.data = a.data; h.keyType = KEY_TYPE_R[a.keyType]; h.hold = HOLD_MODE_R[a.hold]
     if (a.delay != null) h.delay = a.delay
@@ -140,6 +146,7 @@ function triggerToH(t: Trigger, id: number): HTrigger {
     const h: HTrigger = { [ID_KEY]: id, kind: 'tk_midi', b0: t.b0, b1: t.b1, b2: t.b2 }
     // Only emit midiMode when non-normal (mm_normal is the omitted 0-value).
     if (t.mode && t.mode !== 'normal') h.midiMode = MIDI_MODE_R[t.mode]
+    if (t.sysex != null) h.sysex = t.sysex
     if (t.delay != null) h.delay = t.delay
     return h
   }

@@ -71,10 +71,34 @@ export const MIDI_MODES: MidiModeInfo[] = [
   { value: 'trigger_lower', label: 'Trigger lower', hint: 'Fires when the incoming value drops BELOW the threshold below.', b2Label: 'Threshold (fire when below)' },
   { value: 'spot', label: 'Spot (value carry)', hint: 'Matches on status + data 1 only; the live value is carried through to the outputs.', b2Label: 'Value (ignored on match)', b2Ignored: true },
   { value: 'blink', label: 'Blink', hint: 'Matched like Normal; pair with an LED on/off MIDI output for blink feedback.', b2Label: 'Velocity / value (data 2)' },
+  { value: 'sysex', label: 'SysEx (exact)', hint: 'Ignores data 1/2 — fires only on an exact, byte-for-byte match of the SysEx message below.', b2Label: 'Velocity / value (unused)', b2Ignored: true },
 ]
 
 export function midiModeInfo(mode: MidiMode | undefined): MidiModeInfo {
   return MIDI_MODES.find((m) => m.value === (mode ?? 'normal')) ?? MIDI_MODES[0]
+}
+
+// ---- SysEx hex helpers ------------------------------------------------------
+// Wire shape is lowercase hex, no separators, framing bytes (f0..f7) included
+// (LowLevel/Common/include/actions.h hexEncode/hexDecode). The UI accepts
+// looser input (case-insensitive, optional spaces) and normalizes on save.
+
+/** True for a non-empty, even-length, hex-only string (spaces stripped first). */
+export function isValidSysexHex(input: string): boolean {
+  const hex = input.replace(/\s+/g, '')
+  return hex.length > 0 && hex.length % 2 === 0 && /^[0-9a-fA-F]+$/.test(hex)
+}
+
+/** Strip spaces and lowercase — the exact shape the firmware/DB expect. */
+export function normalizeSysexHex(input: string): string {
+  return input.replace(/\s+/g, '').toLowerCase()
+}
+
+/** True when normalized hex starts f0 and ends f7 — a real SysEx framing hint,
+ *  not enforced (some capture tools omit it), just surfaced as UI guidance. */
+export function looksLikeFramedSysex(input: string): boolean {
+  const hex = normalizeSysexHex(input)
+  return hex.startsWith('f0') && hex.endsWith('f7')
 }
 
 export function decodeMidi(b0: number, b1: number, b2: number): DecodedMidi {

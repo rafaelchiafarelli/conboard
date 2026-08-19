@@ -21,7 +21,7 @@
 // The HASH is the md5 of backend/harpia/conboard.harpia; it changes if the domain
 // changes. Keep it in sync with backend/generated (a single source of truth here).
 
-export const HASH = '9f20d5d43738774941f9898b22cf2cf2'
+export const HASH = '7fb7af9d1e69abe2d7a6e81c4a2d0c2f'
 export const ID_KEY = `ID${HASH}` as const
 
 export type Entity = 'board' | 'mode' | 'rule' | 'trigger' | 'output_action'
@@ -42,7 +42,7 @@ export const KEY_TYPE = { kt_text: 'text', kt_one_key: 'oneKey', kt_hot_key: 'ho
 export const HOLD_MODE = { hm_not_hold: 'not_hold', hm_hold: 'hold', hm_hold_once: 'hold_once' } as const
 export const MIDI_MODE = {
   mm_normal: 'normal', mm_trigger_higher: 'trigger_higher', mm_trigger_lower: 'trigger_lower',
-  mm_spot: 'spot', mm_blink: 'blink',
+  mm_spot: 'spot', mm_blink: 'blink', mm_sysex: 'sysex',
 } as const
 
 // invert a {harpiaName: literal} map into {literal: harpiaName}
@@ -67,6 +67,7 @@ export interface HTrigger extends HarpiaId {
   kind?: keyof typeof TRIGGER_KIND
   b0?: number; b1?: number; b2?: number
   midiMode?: keyof typeof MIDI_MODE
+  sysex?: string   // lowercase hex, no separators -- confirmed wire name (unlike erval, not mangled)
   code?: string
   edge?: keyof typeof TRIGGER_EDGE
   value?: number; erval?: number; delay?: number  // erval: harpia codegen mangled "interval" -> "erval" (see trigger.proto), not a typo
@@ -75,6 +76,7 @@ export interface HOutputAction extends HarpiaId {
   kind?: keyof typeof ACTION_KIND
   delay?: number
   b0?: number; b1?: number; b2?: number
+  sysex?: string
   data?: string
   keyType?: keyof typeof KEY_TYPE
   hold?: keyof typeof HOLD_MODE

@@ -442,6 +442,137 @@ directly on `main`. Not yet clear whether `dev` periodically merges to `main`
 or replaces it as the primary branch; ask before assuming either way next
 session.
 
+## FIXED, not hardware-verified — identical-MIDI-device separation (2026-08-16)
+Plan doc (`docs/next-sessions/09-midi-identical-device-separation.md`) removed
+now that Task items 1-3 are done; Task item 4 (hardware verification) remains
+open and is tracked in the "Next" list below instead.
+
+**A real launcher bug, worse than the doc's own guess.** The doc's "Start here"
+step 1 asked whether the launcher even spawns two `conMIDI` processes for two
+identical controllers today. Reading `LowLevel/launcher/src/main.cpp` (the
+`isEvdev` gate on per-instance service naming) showed it does not:
+`devType::midi` was explicitly excluded from per-instance naming (`joystick`/
+`keyboard`/`mouse` only), with a comment claiming MIDI "is unaffected and keeps
+the plain DevName." So two identical MIDI controllers produced the *same*
+systemd service name — the second unit's udev connect event just
+`systemctl restart`s the first unit's already-running service. **Only one
+`conMIDI` process ever ran at all**, not "two processes racing for one ALSA
+card" as the doc speculated.
+
+**Fix, mirroring evdev's already-working mechanism end to end** (same shape as
+`EvdevDevice::resolveNode()` / `condetect::nodeUnderUsbPath`, which already
+solves this exact problem for keyboard/mouse/joystick):
+- `LowLevel/launcher/src/main.cpp`: `devType::midi` added to the per-instance
+  condition (renamed `isEvdev` -> `isPerInstance`), so MIDI now gets a
+  serial-or-port-keyed service name + `-d <devpath>` on its `ExecStart`, exactly
+  like the other three device kinds.
+- `LowLevel/Common/include/deviceDetect.{hpp,cpp}`: new `alsaCardSysfsPath(int
+  card)` — the ALSA analog of the sysfs-path resolution `probeInput()` already
+  does for evdev nodes (`realpath("/sys/class/sound/cardN")`).
+- New `LowLevel/Common/{include,src}/midiPortMatch.*` (`midiportmatch::
+  pickPort`) — pure, ALSA-free, unit-tested (`tests/test_midiportmatch.cpp`, 6
+  cases, suite `midiport`): prefers the candidate whose name matches AND whose
+  sysfs path sits under the given USB devpath (reusing the already-tested
+  `condetect::nodeUnderUsbPath`), falling back unconditionally to the old
+  first-name-match so single-unit setups can't regress even if the devpath
+  heuristic doesn't land on real hardware.
+- `LowLevel/MIDI`: `raw_midi` gained `sysfsPath` (populated in `list_device()`);
+  `MIDI::MIDI()` takes a new optional `usbDevpath` param and calls
+  `midiportmatch::pickPort` instead of its old inline first-name-match loop;
+  `main.cpp` gained `-d`/`--devpath` argv parsing (mirrors `conKeyB` exactly).
+- Considered and rejected: wiring the existing-but-dead
+  `header.identifier.executable.port` JSON field (the doc floated this as
+  possibly simpler). Rejected because that field lives in the board profile
+  JSON, which is the *same file* shared by every physical unit of a controller
+  model — it structurally cannot hold a different value per physical instance,
+  so it can't solve identical-unit disambiguation. Left untouched, still dead.
+
+**Verified this session**: `./run-tests.sh` — 96 cases pass (was 90), including
+the new `midiport` suite. `./build-cross.sh zero3` — launcher, `conMIDI`, and
+`libcommon.so` all compile cleanly cross-compiled for zero3.
+
+**NOT verified — explicitly, per the doc's own honesty requirement**: no two
+identical MIDI controllers were available this session, and the only reachable
+board (`192.168.7.4`) currently has **no MIDI hardware attached at all**
+(`/proc/asound/cards` shows only onboard codecs) — so neither the dual-unit
+separation (the actual feature) nor the single-unit regression path (today's
+only tested configuration) has been checked live. Both remain open; do them
+first thing next time MIDI hardware is available, per Task item 4 and Done
+criteria in the plan doc.
+
+## MIDI SysEx support — code-complete + unit-tested, NOT hardware-verified (2026-08-16)
+
+Planned in `docs/next-sessions/08-midi-sysex.md`, built the same session. Every
+layer of the previous MIDI pipeline hard-assumed a fixed 3-byte message
+(`midiSignal`, `LowLevel/Common/include/actions.h`) — SysEx (`0xF0...0xF7`,
+arbitrary length) didn't fit anywhere, and `MIDI::in_func()` (`LowLevel/MIDI/
+src/midithread.cpp`) explicitly **discarded** any ALSA read over 4 bytes
+(`if (err > sizeof(midiSignal)) continue;`), meaning real SysEx traffic was
+silently eaten before this session, not just unmatched.
+
+**Design**: exact-match only (no prefix/wildcard) — a rule's `sysex` field is
+the full expected byte sequence, framing bytes included, as a lowercase hex
+string with no separators. Chosen because the wire envelope's `explode()`
+parser (`LowLevel/Common/src/zmq_coms.cpp`) splits on `;` and strips literal
+spaces — MIDI data bytes 0–127 can otherwise collide with those delimiter
+characters, and hex trivially avoids that.
+
+**What changed**:
+- `actions.h`: new `midi_sysex` mode, `midiActions.sysex` (`std::vector<uint8_t>`),
+  `hexEncode`/`hexDecode` helpers, `ar_str()` emits `"SX:<hex>"` for SysEx
+  instead of `[b0,b1,b2]`.
+- `midiMap.{hpp,cpp}`: new `matchesSysex()` (exact byte-for-byte); `matches()`
+  never matches a `midi_sysex` trigger and vice versa.
+- `MIDI::in_func()`: restructured to accumulate a variable-length message
+  across possibly-many `snd_rawmidi_read()` calls (a single read is capped at
+  256 bytes; real dumps commonly exceed that) once a `0xF0` is seen, stopping
+  at `0xF7` or a 64KB safety cap (a device that sends `0xF0` and never
+  terminates can't grow memory unboundedly). New `MIDI::processSysex()`
+  parallels the existing `processInput()` (report + match + enqueue).
+  **v1 simplification, stated in code comments**: assumes no System Real-Time
+  bytes (clock/start/stop) are interleaved mid-SysEx — real hardware
+  occasionally does this; unhandled today, flagged as a known gap to revisit
+  if hardware testing hits it.
+- `jsonParser.cpp`: `"sysex"` hex field on a `{"type":"midi",...}` object is
+  **authoritative over `"mode"`** when present — decodes and forces
+  `midi_mode = midi_sysex` regardless of what `"mode"` says, so a
+  missing/mismatched `"mode"` can't silently produce a dead 3-byte trigger
+  (the same failure shape as the keyboard/mouse trigger-parsing bug fixed
+  2026-08-15). Malformed hex (odd length, non-hex chars) decodes to an empty
+  vector rather than crashing or reading out of bounds.
+- `backend/harpia/conboard.harpia`: `mm_sysex` enum value, `optional string
+  sysex` on both `trigger` and `output_action`. Regenerated
+  (`backend/generate.sh`) — domain hash bumped `1bf812ac18b80d4a5ea4d51e6bfb7f58`
+  → `b13f689a5b6f99919ddaf4d1cc7eb7ac`; every hand-written `backend/src/*.cpp`
+  include + the frontend's `HASH` constant updated to match. Backend rebuilt
+  clean in the `harpia-build` image (needed `libudev-dev` installed in that
+  image — not present by default, install-and-retry worked, worth remembering
+  for next regen).
+- Console (`frontend/console/src/`): `model/rules.ts`/`model/midi.ts` gained
+  the `'sysex'` mode + hex helpers (`isValidSysexHex`, `normalizeSysexHex`,
+  `looksLikeFramedSysex`); `RuleEditor.tsx`'s MIDI trigger editor swaps to a
+  hex-input field in SysEx mode, the output editor gained a "Send as SysEx"
+  checkbox (output actions have no `mode` field, so presence of `sysex` itself
+  is the signal, matching `jsonParser.cpp`'s authoritative-field approach);
+  `api/harpia.ts`/`api/map.ts` thread `sysex` through both directions. Two
+  small new CSS hooks (`field.wide`, `input.invalid`) reusing existing
+  `--danger`/grid-span patterns — not a return to the live-monitor CSS work,
+  just the minimum needed for a usable hex field.
+
+**Verified this session**: `./run-tests.sh` — 99 cases pass (was 96, +3 new
+`jsonparser` sysex cases + 4 new `midi` suite cases), including exact-match
+edge cases (one-byte difference, missing terminator, extra trailing byte) and
+malformed-hex handling. Backend rebuilds clean against the regenerated schema
+(`harpia-build` image). `npm run typecheck` clean in `frontend/console/`.
+
+**NOT verified — no real SysEx round trip on hardware yet.** Same honesty
+requirement as every other unverified claim in this file: this is proven
+correct in isolation (unit tests, clean builds) but not against a real MIDI
+device. Do that first — a MIDI "Universal Device Inquiry"
+(`F0 7E 7F 06 01 F7` → identity reply) is a good baseline test that doesn't
+depend on a controller's undocumented custom SysEx vocabulary, per the
+session doc.
+
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
   hardware-verified (2026-08-11), no gamepad available yet (still true as of
@@ -451,6 +582,12 @@ session.
   against the DJ-Tech-4-Mix controller (`boards/Dj4Mix.json`) — written +
   unit-tested since 2026-08-11, no MIDI hardware available to confirm the
   redeploy-recovery path on real hardware yet (still true as of 2026-08-15).
+* HARDWARE VERIFY identical-MIDI-device separation (above, 2026-08-16) — fixed +
+  unit-tested, needs two identical MIDI controllers (or at least one, for the
+  single-unit regression check) to confirm live.
+* HARDWARE VERIFY MIDI SysEx support (above, 2026-08-16) — code-complete +
+  unit-tested, needs a real SysEx round trip against connected MIDI hardware
+  (a Universal Device Inquiry exchange is a good minimal test) to confirm live.
 * **mouse/keyboard output not firing** (above) — now the top item, blocks the core
   remap-a-device feature for two of four device kinds.
 * longer term: the local power-password login (design in `backend/README.md`,

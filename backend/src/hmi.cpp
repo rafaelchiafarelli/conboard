@@ -33,7 +33,7 @@
 namespace conboard {
 namespace {
 
-const char* const HASH = "9f20d5d43738774941f9898b22cf2cf2";
+const char* const HASH = "7fb7af9d1e69abe2d7a6e81c4a2d0c2f";
 
 void sendJson(crow::response& res, const rapidjson::StringBuffer& sb) {
     res.set_header("Content-Type", "application/json");

@@ -1,4 +1,5 @@
 #include "midithread.hpp"
+#include "midiPortMatch.hpp"
 
 #include <iostream>
 #include <stdlib.h>
@@ -12,20 +13,28 @@
 #include <algorithm>
 #include <unistd.h>
 
-MIDI::MIDI(string _jsonFileName, vector<raw_midi> hw_ports)
+MIDI::MIDI(string _jsonFileName, vector<raw_midi> hw_ports, string usbDevpath)
     : DeviceEngine(_jsonFileName)
 {
     memset(port_name, 0, PORT_NAME_SIZE);
+
+    // Identical-MIDI-device separation: prefer the card sitting under this
+    // process's bound USB port (usbDevpath, threaded in by the launcher) over a
+    // bare name match, so two units of the same controller model each bind their
+    // own card instead of both racing for whichever one enumerates first. Falls
+    // back to the old plain-name-match automatically when usbDevpath is empty or
+    // doesn't line up with anything -- single-unit setups see zero behavior
+    // change (LowLevel/Common/midiPortMatch.*).
+    std::vector<midiportmatch::PortCandidate> candidates;
     for (vector<raw_midi>::iterator ports_it = hw_ports.begin();
          ports_it != hw_ports.end();
          ports_it++)
     {
-        if (!json.DevName.compare(ports_it->name))
-        {
-            sprintf(port_name, "%s", ports_it->port.c_str());
-            break;
-        }
+        candidates.push_back({ports_it->name, ports_it->port, ports_it->sysfsPath});
     }
+    std::string picked = midiportmatch::pickPort(candidates, json.DevName, usbDevpath);
+    if (!picked.empty())
+        sprintf(port_name, "%s", picked.c_str());
 
     int err = 0;
     if ((err = snd_rawmidi_open(&input, &output, port_name, SND_RAWMIDI_NONBLOCK)) < 0)
@@ -61,8 +70,18 @@ void MIDI::emitNative(const devActions &out)
 {
     if (out.tp != devType::midi)
         return;
-    midiSignal sig = out.mAct.midi;   // local copy for the ALSA C API (out is const)
-    send_midi((char *)sig.byte, sizeof(midiSignal));
+    if (out.mAct.midi_mode == midi_sysex)
+    {
+        // Variable-length: send exactly the stored payload, not the fixed
+        // 4-byte midiSignal union (unused/zeroed for a sysex-typed output).
+        std::vector<uint8_t> payload = out.mAct.sysex;   // local copy, out is const
+        send_midi((char *)payload.data(), payload.size());
+    }
+    else
+    {
+        midiSignal sig = out.mAct.midi;   // local copy for the ALSA C API (out is const)
+        send_midi((char *)sig.byte, sizeof(midiSignal));
+    }
     if (out.mAct.delay != 0)
         std::this_thread::sleep_for(std::chrono::milliseconds(out.mAct.delay));
 }
@@ -98,6 +117,34 @@ void MIDI::processInput(midiSignal midiS)
             if (midimap::matches(it_act->in.mAct, midiS))
             {
                 enqueue(midimap::resolveOutputs(*it_act, midiS));
+                if (it_act->change_mode && it_act->change_to != -1)
+                {
+                    changeMode(it_act->change_to);
+                }
+            }
+        }
+    }
+}
+
+// Same shape as processInput(), for a complete SysEx message (0xF0..0xF7
+// inclusive) instead of a fixed 3-byte signal. Exact-match only -- see
+// midimap::matchesSysex() -- so no incoming-value pass-through into outputs
+// is needed (unlike spot/blink), same as midi_normal today.
+void MIDI::processSysex(std::vector<uint8_t> payload)
+{
+    midiActions tmp;
+    tmp.midi_mode = midi_sysex;
+    tmp.sysex = payload;
+    report(tmp.ar_str());
+
+    if (CurrentMode.is_active)
+    {
+        for (std::vector<Actions>::iterator it_act = CurrentMode.body_actions.begin();
+             it_act != CurrentMode.body_actions.end(); it_act++)
+        {
+            if (midimap::matchesSysex(it_act->in.mAct, payload))
+            {
+                enqueue(midimap::resolveOutputs(*it_act, midiSignal{}));
                 if (it_act->change_mode && it_act->change_to != -1)
                 {
                     changeMode(it_act->change_to);
@@ -172,6 +219,41 @@ void MIDI::in_func()
             }
 
             time = 0;
+
+            // SysEx: 0xF0 starts a variable-length message that can span more
+            // than one read (a single snd_rawmidi_read() here is capped at
+            // sizeof(buf) == 256 bytes; real dumps commonly exceed that).
+            // Once started, every subsequent read's bytes belong to the same
+            // message until a 0xF7 terminator (or the safety cap) ends it --
+            // this branch takes priority over the fixed-3-byte path below.
+            if (!inSysex_ && err > 0 && (unsigned char)buf[0] == 0xF0)
+            {
+                inSysex_ = true;
+                sysexBuf_.clear();
+            }
+            if (inSysex_)
+            {
+                for (int i = 0; i < err; i++)
+                {
+                    if (sysexBuf_.size() >= sysexCap_)
+                    {
+                        // no terminator before the cap -- abandon this message
+                        inSysex_ = false;
+                        sysexBuf_.clear();
+                        break;
+                    }
+                    sysexBuf_.push_back((uint8_t)buf[i]);
+                    if ((unsigned char)buf[i] == 0xF7)
+                    {
+                        inSysex_ = false;
+                        processSysex(std::move(sysexBuf_));
+                        sysexBuf_.clear();
+                        break;
+                    }
+                }
+                continue;
+            }
+
             if (err > sizeof(midiSignal))
             {
                 //investigate this to see if the number of bytes is constant.

@@ -1,3 +1,19 @@
+# conboard — identical-MIDI-device separation (2026-08-16)
+
+Session doc `docs/next-sessions/09-midi-identical-device-separation.md` removed
+(Task items 1-3 done). Full writeup in [../NOTES.md](../NOTES.md) under "FIXED,
+not hardware-verified — identical-MIDI-device separation" — short version: the
+launcher never gave MIDI per-instance service naming (excluded MIDI in the
+`isEvdev` check, so two identical controllers shared one systemd service and
+only one `conMIDI` process ever ran), now fixed the same way evdev already
+handles identical clones (USB-devpath binding). Code lands + unit-tested +
+cross-compiles clean; **no MIDI hardware was reachable this session** (not even
+a single unit), so neither the dual-unit separation nor the single-unit
+regression path has been proven live yet — do that first with real hardware
+(tracked in `NOTES.md`'s "Next" list).
+
+---
+
 # conboard — HMI phase 4a merged + deployed (2026-08-16)
 
 `feat/hmi-phase4a-and-1to1-rules` merged into `main`, then built and deployed
@@ -308,7 +324,7 @@ sudo systemctl restart hmi.service
 | var | default | status |
 |---|---|---|
 | `CONHMI_REST_BASE` | `http://127.0.0.1:8080/api/v1` | fine as-is (same-host backend) |
-| `CONHMI_REST_PSWD_HASH` | `9f20d5d43738774941f9898b22cf2cf2` | matches backend's compile-time hash |
+| `CONHMI_REST_PSWD_HASH` | `7fb7af9d1e69abe2d7a6e81c4a2d0c2f` | matches backend's compile-time hash |
 | `CONHMI_SPI_DEVICE` | `/dev/spidev1.1` | **confirmed** |
 | `CONHMI_PANEL_SPI_SPEED_HZ` | `4000000` | **confirmed** |
 | `CONHMI_GPIO_CHIP` | `gpiochip0` | **confirmed** |
@@ -666,8 +682,8 @@ sudo journalctl -u backend -f    # NOTE: needs sudo (backend runs as root)
 console at `/` and proxies `/websocket` → dispatcher `:40080` directly (the backend's
 own unimplemented `/ws` relay stub was removed 2026-08-13, see `backend/README.md`).
 REST is credential-gated (`X-User: <entity>`, `X-Pswd: <hash>`);
-hash = `9f20d5d43738774941f9898b22cf2cf2` (bumped when the `hmi_binding` table was
-added; regen via `backend/generate.sh`).
+hash = `7fb7af9d1e69abe2d7a6e81c4a2d0c2f` (bumped by merging `dev` + `hmi_binding`
+with `feat/midi-sysex`'s SysEx fields; regen via `backend/generate.sh`).
 
 ## Don't-relearn facts
 

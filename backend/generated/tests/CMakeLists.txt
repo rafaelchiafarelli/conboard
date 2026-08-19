@@ -48,7 +48,7 @@ add_library(harpia_tinyxml2 STATIC
 target_include_directories(harpia_tinyxml2 PUBLIC
     ${CMAKE_SOURCE_DIR}/third_party/tinyxml2)
 
-add_executable(trigger_test trigger_9f20d5d43738774941f9898b22cf2cf2_test.cpp)
+add_executable(trigger_test trigger_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_test.cpp)
 target_include_directories(trigger_test PRIVATE
     ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
@@ -69,7 +69,7 @@ if(WIN32)
 endif()
 add_test(NAME trigger_test COMMAND trigger_test)
 
-add_executable(output_action_test output_action_9f20d5d43738774941f9898b22cf2cf2_test.cpp)
+add_executable(output_action_test output_action_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_test.cpp)
 target_include_directories(output_action_test PRIVATE
     ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
@@ -90,7 +90,7 @@ if(WIN32)
 endif()
 add_test(NAME output_action_test COMMAND output_action_test)
 
-add_executable(rule_test rule_9f20d5d43738774941f9898b22cf2cf2_test.cpp)
+add_executable(rule_test rule_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_test.cpp)
 target_include_directories(rule_test PRIVATE
     ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
@@ -111,7 +111,7 @@ if(WIN32)
 endif()
 add_test(NAME rule_test COMMAND rule_test)
 
-add_executable(mode_test mode_9f20d5d43738774941f9898b22cf2cf2_test.cpp)
+add_executable(mode_test mode_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_test.cpp)
 target_include_directories(mode_test PRIVATE
     ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
@@ -132,7 +132,7 @@ if(WIN32)
 endif()
 add_test(NAME mode_test COMMAND mode_test)
 
-add_executable(board_test board_9f20d5d43738774941f9898b22cf2cf2_test.cpp)
+add_executable(board_test board_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_test.cpp)
 target_include_directories(board_test PRIVATE
     ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
@@ -153,7 +153,7 @@ if(WIN32)
 endif()
 add_test(NAME board_test COMMAND board_test)
 
-add_executable(hmi_binding_test hmi_binding_9f20d5d43738774941f9898b22cf2cf2_test.cpp)
+add_executable(hmi_binding_test hmi_binding_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_test.cpp)
 target_include_directories(hmi_binding_test PRIVATE
     ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
@@ -174,7 +174,7 @@ if(WIN32)
 endif()
 add_test(NAME hmi_binding_test COMMAND hmi_binding_test)
 
-add_executable(app_test app_9f20d5d43738774941f9898b22cf2cf2_test.cpp)
+add_executable(app_test app_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_test.cpp)
 target_include_directories(app_test PRIVATE
     ${HARPIA_TEST_PROTO_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/generated/cpp
