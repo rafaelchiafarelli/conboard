@@ -588,8 +588,6 @@ session doc.
 * HARDWARE VERIFY MIDI SysEx support (above, 2026-08-16) — code-complete +
   unit-tested, needs a real SysEx round trip against connected MIDI hardware
   (a Universal Device Inquiry exchange is a good minimal test) to confirm live.
-* **mouse/keyboard output not firing** (above) — now the top item, blocks the core
-  remap-a-device feature for two of four device kinds.
 * longer term: the local power-password login (design in `backend/README.md`,
   never implemented); true mouse/joystick 1:1 HID passthrough (sized above,
   under "Synthetic 1:1 keyboard rules"). Ethernet-gadget access is back in
