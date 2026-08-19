@@ -3,7 +3,7 @@ import { BOARDS as REAL_BOARDS } from './fixtures/boards'
 import { fetchBoards, saveBoard, createBoard, copyBoard, deleteBoard, deployBoard, undeployBoard, fetchDevices, ping, type AttachedDevice } from './api/client'
 import type { Board } from './model/rules'
 import { decodeMidi, splitStatus } from './model/midi'
-import { validateBoards, type Rule, type DeviceType } from './model/rules'
+import { validateBoards, modeLabel, type Rule, type Mode, type DeviceType } from './model/rules'
 import { liveBus } from './model/events'
 import RuleEditor from './RuleEditor'
 import Monitor from './Monitor'
@@ -53,8 +53,11 @@ function triggerSummary(input: Rule['input']): { badge: string; human: string; b
 }
 
 /** Colored chips summarizing a rule's outputs (and its mode switch), for the list. */
-function OutputSummary({ rule }: { rule: Rule }) {
-  if (rule.change_mode?.enable) return <span className="chip mode">⇄ mode {rule.change_mode.change_to}</span>
+function OutputSummary({ rule, modes }: { rule: Rule; modes: Mode[] }) {
+  if (rule.change_mode?.enable) {
+    const target = modes.find((m) => m.id === rule.change_mode!.change_to)
+    return <span className="chip mode">⇄ {target ? modeLabel(target) : `mode ${rule.change_mode.change_to}`}</span>
+  }
   if (rule.output.length === 0) return <span className="chip none">no output</span>
   const types = [...new Set(rule.output.map((o) => o.type))]
   return (
@@ -66,6 +69,30 @@ function OutputSummary({ rule }: { rule: Rule }) {
       ))}
       <span style={{ color: 'var(--ink-faint)' }}>{rule.output.length}×</span>
     </>
+  )
+}
+
+// Optional customer-facing mode name. Commits on blur/Enter (a structural board
+// edit, same as activateMode/addMode/deleteMode) rather than piggybacking on the
+// per-rule Save/Revert flow, whose Revert only snapshots the selected rule.
+function ModeNameField({ mode, onCommit }: { mode: Mode; onCommit: () => void }) {
+  const [value, setValue] = useState(mode.name ?? '')
+  const commit = () => {
+    const trimmed = value.trim()
+    if (trimmed === (mode.name ?? '')) return
+    mode.name = trimmed || undefined
+    onCommit()
+  }
+  return (
+    <input
+      className="mode-name"
+      type="text"
+      placeholder={`mode ${mode.id} (unnamed)`}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+    />
   )
 }
 
@@ -468,7 +495,7 @@ export default function App() {
                       </span>
                       <span className="dev-meta">
                         <span className="type-badge">{d.DEVICE.type}</span>
-                        mode {live ? live.id : '-'} live
+                        {live ? modeLabel(live) : 'mode -'} live
                       </span>
                     </button>
                   )
@@ -513,7 +540,7 @@ export default function App() {
                   onClick={() => select(devIdx, i, 0)}
                 >
                   <span className="dot" />
-                  mode {m.id}
+                  {modeLabel(m)}
                   {m.active ? ' · live' : ''}
                 </button>
               ))}
@@ -523,16 +550,17 @@ export default function App() {
             </div>
             {mode && (
               <div className="mode-ctl">
+                <ModeNameField key={mode.id} mode={mode} onCommit={() => { forceRender(); void persistDevice() }} />
                 {mode.active ? (
                   <span className="live-pill">
                     <span className="dot" />
-                    mode {mode.id} is live
+                    {modeLabel(mode)} is live
                   </span>
                 ) : (
                   <>
-                    <span className="live-note">Live: mode {liveMode ? liveMode.id : '—'}</span>
+                    <span className="live-note">Live: {liveMode ? modeLabel(liveMode) : '—'}</span>
                     <button className="activate" onClick={() => activateMode(modeIdx)}>
-                      ⏻ Activate mode {mode.id}
+                      ⏻ Activate {modeLabel(mode)}
                     </button>
                   </>
                 )}
@@ -543,8 +571,8 @@ export default function App() {
                 )}
                 {modes.length > 1 && (
                   <button className="mode-delete" onClick={() => deleteMode(modeIdx)}
-                          title={`Delete mode ${mode.id} and its rules`}>
-                    🗑 Delete mode {mode.id}
+                          title={`Delete ${modeLabel(mode)} and its rules`}>
+                    🗑 Delete {modeLabel(mode)}
                   </button>
                 )}
               </div>
@@ -611,7 +639,7 @@ export default function App() {
                   </span>
                   <span className="ritem-bytes">{t.bytes}</span>
                   <span className="ritem-out">
-                    <span className="ritem-arrow">→</span> <OutputSummary rule={r} />
+                    <span className="ritem-arrow">→</span> <OutputSummary rule={r} modes={modes} />
                   </span>
                 </button>
               )

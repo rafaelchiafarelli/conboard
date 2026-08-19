@@ -1,0 +1,13 @@
+syntax = "proto3";
+import "protofiles/trigger_5a67e5f27cce34a1ec5ac267a70f5d87.proto";
+import "protofiles/output_action_5a67e5f27cce34a1ec5ac267a70f5d87.proto";
+message rule {
+int32 ID_5a67e5f27cce34a1ec5ac267a70f5d87 = 1;
+trigger input = 2;
+repeated output_action outputs = 3;
+int32 change_mode_enable = 4;
+int32 change_mode_to = 5;
+string STATUS_5a67e5f27cce34a1ec5ac267a70f5d87 = 6;
+string ERROR_5a67e5f27cce34a1ec5ac267a70f5d87 = 7;
+string ORIGINATOR_5a67e5f27cce34a1ec5ac267a70f5d87 = 8;
+}

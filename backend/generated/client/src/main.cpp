@@ -10,8 +10,8 @@
 
 #include <zmq.hpp>
 
-#include "json/trigger_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_json.h"
-#include "zmq/trigger_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_zmq.h"
+#include "json/trigger_5a67e5f27cce34a1ec5ac267a70f5d87_json.h"
+#include "zmq/trigger_5a67e5f27cce34a1ec5ac267a70f5d87_zmq.h"
 #ifdef HARPIA_DEMO_CURVE
 #include "harpia_zmq_curve_keys.h"
 #endif

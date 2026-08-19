@@ -2,8 +2,8 @@
 // headers (see include/conboard_entities.h for why one entity per TU).
 #include "conboard_entities.h"
 
-#include "rest/hmi_binding_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_rest.h"
-#include "grpc/hmi_binding_7fb7af9d1e69abe2d7a6e81c4a2d0c2f_grpc.h"
+#include "rest/hmi_binding_5a67e5f27cce34a1ec5ac267a70f5d87_rest.h"
+#include "grpc/hmi_binding_5a67e5f27cce34a1ec5ac267a70f5d87_grpc.h"
 
 namespace conboard {
 

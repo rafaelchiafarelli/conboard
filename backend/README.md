@@ -76,7 +76,7 @@ MIDI triggers also carry an optional **operation mode** (`midiMode` on the wire,
 firmware's `midi_action_mode`; `mm_normal` is the omitted zero-value). Added to
 `backend/harpia/conboard.harpia`, along with the later `hmi_binding` table (see
 `backend/harpia/README.md`'s domain-shape table); each regeneration bumps the domain
-hash, currently `7fb7af9d1e69abe2d7a6e81c4a2d0c2f`.
+hash, currently `5a67e5f27cce34a1ec5ac267a70f5d87`.
 
 Every generated REST route is **credential-gated**: requests must carry
 `X-User: <entity>` and `X-Pswd: <hash>` (the hash is the compile-time md5 of the domain,

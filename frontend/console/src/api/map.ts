@@ -80,6 +80,7 @@ function modeFromH(h: HMode, deviceType: DeviceType): Mode {
     active: !!h.active,
     actions: (h.rules ?? []).map((r) => ruleFromH(r, deviceType)),
   }
+  if (h.name) m.name = h.name
   if (h.modeHeader?.length) m.mode_header = { actions: h.modeHeader.map(actionFromH) }
   return m
 }
@@ -170,6 +171,7 @@ export function boardToH(b: Board, alloc: Alloc): HBoard {
       [ID_KEY]: alloc.mode(),
       modeId: m.id,
       active: m.active ? 1 : 0,
+      name: m.name,
       modeHeader: (m.mode_header?.actions ?? []).map((a) => actionToH(a, alloc.action())),
       rules: m.actions.map((r) => {
         const hr: HRule = {

@@ -15,6 +15,7 @@ import type {
   HoldMode,
   OutputAction,
 } from './model/rules'
+import { modeLabel } from './model/rules'
 import {
   decodeMidi,
   MESSAGE_NAMES,
@@ -639,7 +640,7 @@ function ModeSwitchSection({ board, rule, onEdit }: { board: Board; rule: Rule; 
           <select value={target} onChange={(e) => setTarget(Number(e.target.value))} disabled={!on}>
             {board.body.modes.map((m) => (
               <option key={m.id} value={m.id}>
-                mode {m.id}
+                {modeLabel(m)}
                 {m.active ? ' · live' : ''}
               </option>
             ))}

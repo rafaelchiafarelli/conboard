@@ -21,7 +21,7 @@
 // The HASH is the md5 of backend/harpia/conboard.harpia; it changes if the domain
 // changes. Keep it in sync with backend/generated (a single source of truth here).
 
-export const HASH = '7fb7af9d1e69abe2d7a6e81c4a2d0c2f'
+export const HASH = '5a67e5f27cce34a1ec5ac267a70f5d87'
 export const ID_KEY = `ID${HASH}` as const
 
 export type Entity = 'board' | 'mode' | 'rule' | 'trigger' | 'output_action'
@@ -92,6 +92,7 @@ export interface HRule extends HarpiaId {
 export interface HMode extends HarpiaId {
   modeId?: number
   active?: number
+  name?: string
   modeHeader?: HOutputAction[]
   rules?: HRule[]
 }

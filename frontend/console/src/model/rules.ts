@@ -120,10 +120,19 @@ export interface Rule {
 export interface Mode {
   id: number
   active: boolean
+  /** Customer-facing display label, e.g. "Live set". Optional -- falls back to
+   *  "mode {id}" everywhere it's shown. Authoring-only; the device engine
+   *  matches by id, never reads this. */
+  name?: string
   /** Actions fired on entering the mode (LED/handshake feedback on the device). */
   mode_header?: { actions: OutputAction[] }
   /** The rules: trigger → output mappings. */
   actions: Rule[]
+}
+
+/** Display label for a mode -- its name if set, else "mode {id}". */
+export function modeLabel(m: Mode): string {
+  return m.name?.trim() || `mode ${m.id}`
 }
 
 export interface DeviceIdentity {

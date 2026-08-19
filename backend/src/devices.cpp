@@ -33,7 +33,7 @@
 namespace conboard {
 namespace {
 
-const char* const HASH = "7fb7af9d1e69abe2d7a6e81c4a2d0c2f";
+const char* const HASH = "5a67e5f27cce34a1ec5ac267a70f5d87";
 
 std::string env_or(const char* k, const std::string& d) {
     const char* v = std::getenv(k);

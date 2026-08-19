@@ -324,7 +324,7 @@ sudo systemctl restart hmi.service
 | var | default | status |
 |---|---|---|
 | `CONHMI_REST_BASE` | `http://127.0.0.1:8080/api/v1` | fine as-is (same-host backend) |
-| `CONHMI_REST_PSWD_HASH` | `7fb7af9d1e69abe2d7a6e81c4a2d0c2f` | matches backend's compile-time hash |
+| `CONHMI_REST_PSWD_HASH` | `5a67e5f27cce34a1ec5ac267a70f5d87` | matches backend's compile-time hash |
 | `CONHMI_SPI_DEVICE` | `/dev/spidev1.1` | **confirmed** |
 | `CONHMI_PANEL_SPI_SPEED_HZ` | `4000000` | **confirmed** |
 | `CONHMI_GPIO_CHIP` | `gpiochip0` | **confirmed** |
@@ -682,7 +682,7 @@ sudo journalctl -u backend -f    # NOTE: needs sudo (backend runs as root)
 console at `/` and proxies `/websocket` → dispatcher `:40080` directly (the backend's
 own unimplemented `/ws` relay stub was removed 2026-08-13, see `backend/README.md`).
 REST is credential-gated (`X-User: <entity>`, `X-Pswd: <hash>`);
-hash = `7fb7af9d1e69abe2d7a6e81c4a2d0c2f` (bumped by merging `dev` + `hmi_binding`
+hash = `5a67e5f27cce34a1ec5ac267a70f5d87` (bumped by merging `dev` + `hmi_binding`
 with `feat/midi-sysex`'s SysEx fields; regen via `backend/generate.sh`).
 
 ## Don't-relearn facts
