@@ -107,6 +107,8 @@ header .stage { margin-left: auto; font-family: var(--mono); font-size: 10.5px; 
 .mode-tab.active { color: var(--ink); border-color: var(--accent-dim); background: var(--raise); }
 .mode-tab .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); margin-right: 6px; }
 .mode-tab.live .dot { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.mode-tab.new { background: transparent; border-style: dashed; color: var(--ink-faint); }
+.mode-tab.new:hover { color: var(--accent); border-color: var(--accent-dim); }
 
 .mode-ctl { display: flex; align-items: center; gap: 10px; margin-top: 11px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; }
 .mode-ctl .live-pill { display: inline-flex; align-items: center; gap: 6px; color: var(--ok); }

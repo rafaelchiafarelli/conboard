@@ -212,6 +212,17 @@ export default function App() {
     forceRender()
     void persistDevice()
   }
+  // Add a new, empty mode to the current device (any device type -- the shared
+  // DeviceEngine/EvdevDevice + jsonParser stack already handles multi-mode
+  // generically, this was purely a missing console control). New mode starts
+  // inactive; the existing "Activate mode" control switches to it explicitly.
+  const addMode = () => {
+    if (!device) return
+    const nextId = device.body.modes.length ? Math.max(...device.body.modes.map((m) => m.id)) + 1 : 0
+    device.body.modes.push({ id: nextId, active: false, actions: [] })
+    select(devIdx, device.body.modes.length - 1, 0)
+    void persistDevice()
+  }
 
   // ---- board-level library operations (create / copy A->B / delete) ---------
   const addBoardLocal = (b: Board, id: number | null) => {
@@ -491,6 +502,9 @@ export default function App() {
                   {m.active ? ' · live' : ''}
                 </button>
               ))}
+              <button className="mode-tab new" onClick={addMode} title="Add a new mode to this device">
+                + mode
+              </button>
             </div>
             {mode && (
               <div className="mode-ctl">
