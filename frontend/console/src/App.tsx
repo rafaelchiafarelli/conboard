@@ -223,6 +223,21 @@ export default function App() {
     select(devIdx, device.body.modes.length - 1, 0)
     void persistDevice()
   }
+  // Delete a mode. Always keeps at least one mode (a device with zero modes has
+  // no rules at all -- see the "no modes" empty state below) and always keeps
+  // exactly one active: DeviceEngine::startEngine() only ever picks up a mode
+  // flagged active, so deleting the live one without promoting another would
+  // leave the on-device CurrentMode empty -- silently inert, same failure shape
+  // as an unresolved trigger symbol. No confirm dialog, matching onDelete's rule
+  // deletion above -- Revert only covers the rule field snapshot, not this.
+  const deleteMode = (i: number) => {
+    if (!device || device.body.modes.length <= 1) return
+    const wasActive = device.body.modes[i].active
+    device.body.modes.splice(i, 1)
+    if (wasActive) device.body.modes[0].active = true
+    select(devIdx, Math.min(i, device.body.modes.length - 1), 0)
+    void persistDevice()
+  }
 
   // ---- board-level library operations (create / copy A->B / delete) ---------
   const addBoardLocal = (b: Board, id: number | null) => {
@@ -525,6 +540,12 @@ export default function App() {
                   <span className="entry-note">
                     {entryCount} entry action{entryCount !== 1 ? 's' : ''} on enter
                   </span>
+                )}
+                {modes.length > 1 && (
+                  <button className="mode-delete" onClick={() => deleteMode(modeIdx)}
+                          title={`Delete mode ${mode.id} and its rules`}>
+                    🗑 Delete mode {mode.id}
+                  </button>
                 )}
               </div>
             )}
