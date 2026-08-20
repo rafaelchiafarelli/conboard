@@ -336,9 +336,8 @@ function EvdevTriggerFields({ input, onEdit }: { input: EvdevTrigger; onEdit: ()
 /* ---------------- outputs ---------------- */
 
 function OutputsSection({ rule, onEdit }: { rule: Rule; onEdit: () => void }) {
-  const add = (type: OutputAction['type']) => {
+  const add = (type: 'keyboard' | 'midi') => {
     if (type === 'keyboard') rule.output.push({ type: 'keyboard', keyType: 'text', data: '', hold: 'not_hold' })
-    else if (type === 'mouse') rule.output.push({ type: 'mouse' })
     else rule.output.push({ type: 'midi', b0: 144, b1: 0, b2: 127 })
     onEdit()
   }
@@ -381,9 +380,6 @@ function OutputsSection({ rule, onEdit }: { rule: Rule; onEdit: () => void }) {
         <div className="add-out">
           <button className="kbd" onClick={() => add('keyboard')}>
             <span className="d" />＋ keyboard
-          </button>
-          <button className="mouse" onClick={() => add('mouse')}>
-            <span className="d" />＋ mouse
           </button>
           <button className="midi" onClick={() => add('midi')}>
             <span className="d" />＋ midi
