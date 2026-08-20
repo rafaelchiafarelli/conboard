@@ -573,6 +573,91 @@ device. Do that first — a MIDI "Universal Device Inquiry"
 depend on a controller's undocumented custom SysEx vocabulary, per the
 session doc.
 
+## Branch consolidation — dev is now the working branch (2026-08-19)
+Repo had accumulated ~20 remote branches; audited each with `git merge-base
+--is-ancestor` rather than by name. Found only 3 were actually live: `dev`
+(1 commit ahead of `main`), `feat/ethernet-gadget-ecm`, `feat/midi-sysex`.
+The other ~16 (`refactor/backend-cpp-postgres`, `integration/console-fixes`,
+`feature/backend-wireup`, etc.) turned out to be one single linear chain that
+forked from `main` at `898d0bb` ("compiling, changing stuff", 2022-01-15) —
+predating the entire current board-centric rewrite. Diffing that chain's tip
+against current `main` showed 403 files, +4535/−50056 — merging it would
+have deleted most of the current codebase. `features/react_flask` was an
+even older, unrelated 2021 prototype. All ~17 dead/already-merged branches
+tag-archived (`archive/<name>`, pushed) then deleted from `origin`, so the
+history is recoverable but the branch list is clean.
+
+Merged the 2 live feature branches into `dev`: `feat/ethernet-gadget-ecm`
+(docs-only conflicts, straightforward) and `feat/midi-sysex` — harder, since
+both `dev` and that branch had independently regenerated harpia code from
+different schema edits (dev's `hmi_binding`, midi-sysex's `mm_sysex`/`sysex`
+fields), so every generated file's hash suffix differed even for untouched
+entities. Resolved by merging the schema (clean, non-overlapping edits),
+rebuilding the `harpia-build` Docker image, regenerating fresh (hash
+`9f20d5d4...`/`b13f689a...` → combined `7fb7af9d1e69abe2d7a6e81c4a2d0c2f`),
+and fixing up the ~9 hand-written hash references. Full `./build-cross.sh
+zero3` clean afterward. `main` stays as the stable rollback point (only
+already-merged branches went into it this session); `dev` is where ongoing
+work happens now, `v1.0.0-pre-beta` and the `milestone-*` tags mark releases.
+
+## Mode management — add/delete/name a mode, all device types (2026-08-19)
+Console created exactly one hardcoded mode per device (`AddDeviceDialog.tsx`,
+`id: 0`) with no way to add, remove, or name another one — for any device
+type. Found by Rafael walking through the console live and asking where the
+mode picker was for keyboards. The runtime was never the gap: `EvdevDevice::
+runRules()` / `DeviceEngine::changeMode()` already handle multi-mode
+operation generically for keyboard/mouse/joystick exactly as MIDI does
+(`CurrentMode.body_actions` filtering; `jsonParser.cpp` parses the whole
+`body.modes` array, not just index 0) — this was purely a missing console
+control.
+
+**Add + delete mode** (`App.tsx`): a dashed `+ mode` tab pushes a new empty
+mode (next sequential id, inactive) and selects it; `🗑 Delete mode` removes
+one. Two guards, since `DeviceEngine::startEngine()` only ever picks up a
+mode flagged active on boot: hidden once only one mode remains (a device
+needs at least one to have any rules), and deleting the currently-active
+mode auto-promotes another to active so a deploy never ends up with zero
+active modes (would leave `CurrentMode` empty — silently inert, same failure
+shape as an unresolved trigger symbol elsewhere in this codebase).
+Browser-verified (Playwright) on an MIDI device (delete inactive, delete
+active → promotion) and a keyboard device (last-mode guard, delete after
+adding a second) — no console errors either way.
+
+**Name a mode**: new optional `name` field on the `mode` entity
+(`backend/harpia/conboard.harpia`) — authoring-only label, the engine still
+matches by `mode_id` and never reads it. Regenerated (`backend/generate.sh`)
+— domain hash bumped `7fb7af9d1e69abe2d7a6e81c4a2d0c2f` →
+`5a67e5f27cce34a1ec5ac267a70f5d87`; every hand-written hash reference updated
+(`backend/src/*.cpp`, `frontend/console/src/api/harpia.ts`, `LowLevel/HMI/
+src/main.cpp`, `backend/README.md`, `docs/NEXT-SESSION.md`). Threaded
+through the console via a `modeLabel()` helper (falls back to `mode {id}`
+when unset) used everywhere a mode is shown: the mode-tab strip, the device
+rail's live-mode summary, the "Change to" mode-switch dropdown, and the
+rule-list mode-switch chip. Commits on blur/Enter, same as the other
+structural mode edits (add/delete/activate) — deliberately not routed
+through the per-rule Save/Revert flow, whose Revert only snapshots the
+selected rule and would silently not undo a name change. `./build-cross.sh
+zero3` clean against the regenerated schema.
+
+## Keyboard-only output: mouse dropped as an output-action type (2026-08-19)
+Console's output-action picker offered keyboard, mouse, and midi on any
+rule regardless of device type — but no HID mouse gadget exists (`scripts/
+usb-composite-all.sh` only ever declares a keyboard HID interface, see
+"Synthetic 1:1 keyboard rules" above) and mouse output was never actually
+used: checked before touching anything, zero fixture boards reference it as
+an output. Removed the "+ mouse" button from `RuleEditor.tsx`'s
+`OutputsSection`. Kept `MouseFields`/badge/decode paths intact — defensive,
+so any mouse output already present in loaded board data still renders and
+edits correctly, it just can't be newly added.
+
+MIDI output stayed untouched — checked before removing anything, and it
+turned out not to be "output to the PC" at all: it's feedback to the MIDI
+device itself. Arduino Micro's real fixture drives an LED boot-chase over
+staggered MIDI Note On messages in its own header actions, and 203 real
+`"output"` blocks across the bundled boards reference `type:"midi"`.
+Stripping it would have broken real, shipped behavior for a request that was
+actually about mouse.
+
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
   hardware-verified (2026-08-11), no gamepad available yet (still true as of
@@ -588,6 +673,11 @@ session doc.
 * HARDWARE VERIFY MIDI SysEx support (above, 2026-08-16) — code-complete +
   unit-tested, needs a real SysEx round trip against connected MIDI hardware
   (a Universal Device Inquiry exchange is a good minimal test) to confirm live.
+* DEPLOY-VERIFY mode management (above, 2026-08-19) — add/delete/name a mode
+  cross-build clean + browser-verified against fixtures in the dev server,
+  not yet exercised against a real deployed backend/board: create, delete,
+  and rename a mode through the actual REST API and confirm the schema
+  regen's new `name` field round-trips through a live `mode` table.
 * SHELVED: local power-password login (design in `backend/README.md`, never
   implemented) — revisit when the vault work starts, far future.
 * Ethernet-gadget access is back in progress (above) — hardware-blocked on

@@ -1,3 +1,35 @@
+# conboard — branch cleanup, mode management, keyboard-only output (2026-08-19)
+
+Three threads this session, full writeups in [../NOTES.md](../NOTES.md):
+
+**Branch consolidation.** ~20 remote branches audited by ancestry, not by
+name — only `dev` + 2 feature branches were actually live, the other ~17
+were a single dead chain forked from `main` back in 2022 (before the current
+rewrite) plus one unrelated old prototype. Tag-archived and deleted; merged
+the 2 live branches into `dev` (the MIDI one needed a real harpia schema
+merge + regen, not just git). `main` stays the stable rollback point, `dev`
+is where work happens now.
+
+**Mode management.** Console could only ever have one mode per device, for
+every device type — found live, walking through the console. Added `+ mode`
+/ `🗑 Delete mode` controls (`App.tsx`) with guards so a device is never left
+with zero modes or zero *active* modes, plus an optional customer-facing
+`name` field on the `mode` entity (schema change, regen, domain hash bumped,
+threaded through every place a mode is shown in the console). The
+matching/mode-switch engine underneath was already generic across
+keyboard/mouse/joystick/MIDI — this was purely a missing console control,
+no `LowLevel/` changes needed. Cross-build clean (zero3), browser-verified
+with Playwright; **not yet exercised against a real deployed backend** (see
+`NOTES.md`'s "Next" list).
+
+**Keyboard-only output.** Dropped mouse as an addable output-action type
+(`RuleEditor.tsx`) — no HID mouse gadget exists and no fixture board used it.
+Checked before touching MIDI output too: it's not "output to the PC" at all,
+it's feedback to the MIDI device itself (Arduino Micro's own LED boot-chase),
+and 203 real output blocks depend on it — left untouched.
+
+---
+
 # conboard — identical-MIDI-device separation (2026-08-16)
 
 Session doc `docs/next-sessions/09-midi-identical-device-separation.md` removed
