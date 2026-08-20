@@ -682,3 +682,16 @@ actually about mouse.
   implemented) — revisit when the vault work starts, far future.
 * Ethernet-gadget access is back in progress (above) — hardware-blocked on
   zero3, resumed with an auto-detecting fallback.
+
+## Don't-relearn facts (folded from the stale `milestone-2026-08-10` section of
+`docs/NEXT-SESSION.md`, 2026-08-20 — the rest of that section was superseded by
+later sessions or duplicated in README.md/backend/README.md and dropped, but
+these weren't documented anywhere else)
+* **Build**: emulated arm64 via QEMU; backend build `-j` capped (`BACKEND_JOBS`,
+  currently 8 — many-core hosts OOM the emulated protobuf/gRPC compiles at higher
+  values → exit 126).
+* **CRLF**: `.gitattributes` forces LF; a fresh Windows/WSL clone must renormalize
+  (`git config core.autocrlf false && git rm --cached -r . && git reset --hard`).
+* Frontend↔harpia JSON: camelCase fields, `ID<hash>` caller-assigned PK unique per
+  table, enums as names, zero values omitted. Mapping in
+  `frontend/console/src/api/{harpia,map,client}.ts`.
