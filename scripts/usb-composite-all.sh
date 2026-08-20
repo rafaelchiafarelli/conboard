@@ -49,8 +49,8 @@ mkdir -p strings/0x409
 # device-tree strings carry a trailing NUL; strip it to avoid the
 # "command substitution: ignored null byte in input" warning.
 echo "$(tr -d '\0' < /proc/device-tree/serial-number)" > strings/0x409/serialnumber
-echo `uname -r` > strings/0x409/manufacturer 
-echo `hostname -s` > strings/0x409/product 
+echo `uname -r` > strings/0x409/manufacturer
+echo `hostname -s` > strings/0x409/product
 
 N="usb0"
 mkdir -p functions/acm.gs0
@@ -78,10 +78,10 @@ echo -ne \\x05\\x01\\x09\\x06\\xa1\\x01\\x05\\x07\\x19\\xe0\\x29\\xe7\\x15\\x00\
 
 C=1
 mkdir -p configs/c.$C/strings/0x409
-echo "Config $C: ECM network" > configs/c.$C/strings/0x409/configuration 
-echo 250 > configs/c.$C/MaxPower 
+echo "Config $C: composite" > configs/c.$C/strings/0x409/configuration
+echo 250 > configs/c.$C/MaxPower
 ln -s functions/acm.gs0 configs/c.$C/
-#ln -s functions/ecm.$N configs/c.$C/
+ln -s functions/ecm.$N configs/c.$C/
 ln -s functions/mass_storage.$N configs/c.$C/
 ln -s functions/hid.$N configs/c.$C/
 
@@ -92,11 +92,51 @@ if [ -z "$udc" ]; then
 	echo "ERROR: no USB Device Controller under /sys/class/udc (OTG not enabled?)" >&2
 	exit 1
 fi
-echo "binding gadget to UDC: $udc"
-echo "$udc" > UDC
 
-#ifconfig $N 10.0.0.1 netmask 255.255.255.252 up
-#route add -net default gw 10.0.0.2
+# Some USB device controllers (Allwinner's musb-hdrc, at least on the H616/H618
+# used by the Zero 3 -- see NOTES.md "Ethernet-gadget access", 2026-08-16) only
+# have hardware budget for a small number of endpoints -- not enough for
+# ACM+ECM+HID+mass-storage all at once, even though each pair of those
+# functions fits fine alone. Rather than hardcoding which boards can afford the
+# network function, just try the full gadget and recognize the failure live:
+# if the bind fails, drop the network function (the newest/most optional piece)
+# and retry with the same gadget shape this board has always shipped with. `-e`
+# is deliberately suspended around the bind attempts (both go through `if`, an
+# `-e`-exempt context) so a failed first attempt doesn't kill the script.
+echo "binding gadget to UDC: $udc (full: acm+ecm+hid+mass_storage)"
+HAS_NETWORK=1
+if ! echo "$udc" > UDC 2>/tmp/usb-otg-bind-err; then
+	echo "full gadget failed to bind -- likely an endpoint-budget limit, not a real error:" >&2
+	cat /tmp/usb-otg-bind-err >&2
+	echo "retrying without the network function (acm+hid+mass_storage only)..."
+	rm -f configs/c.$C/ecm.$N
+	HAS_NETWORK=0
+	if ! echo "$udc" > UDC 2>/tmp/usb-otg-bind-err; then
+		echo "ERROR: gadget failed to bind even without the network function:" >&2
+		cat /tmp/usb-otg-bind-err >&2
+		exit 1
+	fi
+	echo "bound: reduced gadget (no network -- this USB controller's endpoint budget is too small for ECM alongside HID+mass-storage)"
+else
+	echo "bound: full gadget (network enabled)"
+fi
+rm -f /tmp/usb-otg-bind-err
+
+# Tell usb-gadget-dhcp.service (ConditionPathExists=) whether there's a usb0
+# to serve DHCP on at all -- written fresh every boot/run, /run is tmpfs so a
+# stale flag from a previous boot can never linger past a reboot.
+mkdir -p /run/conboard
+if [ "$HAS_NETWORK" = "1" ]; then
+	touch /run/conboard/usb-gadget-network
+	# Static IP on the board's side of the ECM link, independent of whatever
+	# the host does with it. No net-tools on this image -- use iproute2, not
+	# ifconfig.
+	ip addr add 10.55.0.1/24 dev $N
+	ip link set $N up
+else
+	rm -f /run/conboard/usb-gadget-network
+fi
+
 echo "done. "
 #echo "initializing demo menu..."
 #while 1; do

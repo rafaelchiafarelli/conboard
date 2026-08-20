@@ -1,0 +1,9 @@
+syntax = "proto3";
+enum midi_mode {
+mm_normal = 0;
+mm_trigger_higher = 1;
+mm_trigger_lower = 2;
+mm_spot = 3;
+mm_blink = 4;
+mm_sysex = 5;
+}

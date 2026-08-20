@@ -25,10 +25,15 @@ bool matches(const midiActions &trigger, const midiSignal &incoming) {
         case midi_blink:
             return t[0] == in[0] && t[1] == in[1] && t[2] == in[2];
 
+        case midi_sysex:
         case midi_nomode:
         default:
             return false;
     }
+}
+
+bool matchesSysex(const midiActions &trigger, const std::vector<uint8_t> &incoming) {
+    return trigger.midi_mode == midi_sysex && trigger.sysex == incoming;
 }
 
 std::vector<devActions> resolveOutputs(const Actions &action, const midiSignal &incoming) {

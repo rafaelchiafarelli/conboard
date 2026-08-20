@@ -1,0 +1,21 @@
+syntax = "proto3";
+import "protofiles/trigger_kind_5a67e5f27cce34a1ec5ac267a70f5d87.proto";
+import "protofiles/midi_mode_5a67e5f27cce34a1ec5ac267a70f5d87.proto";
+import "protofiles/trigger_edge_5a67e5f27cce34a1ec5ac267a70f5d87.proto";
+message trigger {
+int32 ID_5a67e5f27cce34a1ec5ac267a70f5d87 = 1;
+trigger_kind kind = 2;
+int32 b0 = 3;
+int32 b1 = 4;
+int32 b2 = 5;
+midi_mode midi_mode = 6;
+string sysex = 7;
+string code = 8;
+trigger_edge edge = 9;
+int32 value = 10;
+int32 erval = 11;
+int32 delay = 12;
+string STATUS_5a67e5f27cce34a1ec5ac267a70f5d87 = 13;
+string ERROR_5a67e5f27cce34a1ec5ac267a70f5d87 = 14;
+string ORIGINATOR_5a67e5f27cce34a1ec5ac267a70f5d87 = 15;
+}

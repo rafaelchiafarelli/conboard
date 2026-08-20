@@ -15,7 +15,18 @@ import type {
   HoldMode,
   OutputAction,
 } from './model/rules'
-import { decodeMidi, MESSAGE_NAMES, isCC, splitStatus, makeStatus, MIDI_MODES, midiModeInfo } from './model/midi'
+import { modeLabel } from './model/rules'
+import {
+  decodeMidi,
+  MESSAGE_NAMES,
+  isCC,
+  splitStatus,
+  makeStatus,
+  MIDI_MODES,
+  midiModeInfo,
+  isValidSysexHex,
+  looksLikeFramedSysex,
+} from './model/midi'
 import {
   KEY_TOKEN_GROUPS,
   codeGroupsFor,
@@ -158,11 +169,39 @@ function TriggerSection({ rule, onEdit }: { rule: Rule; onEdit: () => void }) {
   )
 }
 
+/** Hex-string editor for a SysEx payload, shared by the trigger and output-action
+ *  editors. Minimal validation on purpose (even-length hex is enough to save) — a
+ *  soft inline hint nudges toward real f0..f7 framing without hard-blocking it. */
+function SysexHexField({ value, onChange }: { value: string | undefined; onChange: (hex: string) => void }) {
+  const raw = value ?? ''
+  const valid = raw.length === 0 || isValidSysexHex(raw)
+  return (
+    <div className="field wide">
+      <label>SysEx (hex)</label>
+      <input
+        type="text"
+        placeholder="f07e7f0601f7"
+        value={raw}
+        className={valid ? undefined : 'invalid'}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <span className="hint">
+        {!valid
+          ? 'Hex only, even number of characters (spaces are stripped on save).'
+          : raw.length > 0 && !looksLikeFramedSysex(raw)
+            ? 'A real SysEx message usually starts f0 and ends f7 — not enforced, just a hint.'
+            : 'Lowercase hex, no separators — matched byte-for-byte, framing bytes included.'}
+      </span>
+    </div>
+  )
+}
+
 function MidiTriggerFields({ input, onEdit }: { input: MidiTrigger; onEdit: () => void }) {
   const { channel } = splitStatus(input.b0)
   const cc = isCC(input.b0)
   const d = decodeMidi(input.b0, input.b1, input.b2)
   const mi = midiModeInfo(input.mode)
+  const sysex = input.mode === 'sysex'
 
   const patch = (p: Partial<MidiTrigger>) => {
     Object.assign(input, p)
@@ -173,39 +212,43 @@ function MidiTriggerFields({ input, onEdit }: { input: MidiTrigger; onEdit: () =
   return (
     <>
       <div className="fields">
-        <div className="field">
-          <label>Message</label>
-          <select
-            value={input.b0 & 0xf0}
-            onChange={(e) => patch({ b0: makeStatus(Number(e.target.value), channel) })}
-          >
-            {Object.entries(MESSAGE_NAMES).map(([hex, name]) => (
-              <option key={hex} value={Number(hex)}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Channel</label>
-          <select value={channel} onChange={(e) => patch({ b0: makeStatus(input.b0 & 0xf0, Number(e.target.value)) })}>
-            {Array.from({ length: 16 }, (_, i) => (
-              <option key={i} value={i + 1}>
-                ch {i + 1}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>{cc ? 'CC number' : 'Note (data 1)'}</label>
-          <input type="number" min={0} max={127} value={input.b1} onChange={(e) => patch({ b1: clamp(e.target.value) })} />
-        </div>
-        <div className="field">
-          <label>{cc ? mi.b2Label.replace('Velocity / value (data 2)', 'Value') : mi.b2Label}</label>
-          <input type="number" min={0} max={127} value={input.b2}
-                 className={mi.b2Ignored ? 'dim' : undefined}
-                 onChange={(e) => patch({ b2: clamp(e.target.value) })} />
-        </div>
+        {!sysex && (
+          <>
+            <div className="field">
+              <label>Message</label>
+              <select
+                value={input.b0 & 0xf0}
+                onChange={(e) => patch({ b0: makeStatus(Number(e.target.value), channel) })}
+              >
+                {Object.entries(MESSAGE_NAMES).map(([hex, name]) => (
+                  <option key={hex} value={Number(hex)}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>Channel</label>
+              <select value={channel} onChange={(e) => patch({ b0: makeStatus(input.b0 & 0xf0, Number(e.target.value)) })}>
+                {Array.from({ length: 16 }, (_, i) => (
+                  <option key={i} value={i + 1}>
+                    ch {i + 1}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>{cc ? 'CC number' : 'Note (data 1)'}</label>
+              <input type="number" min={0} max={127} value={input.b1} onChange={(e) => patch({ b1: clamp(e.target.value) })} />
+            </div>
+            <div className="field">
+              <label>{cc ? mi.b2Label.replace('Velocity / value (data 2)', 'Value') : mi.b2Label}</label>
+              <input type="number" min={0} max={127} value={input.b2}
+                     className={mi.b2Ignored ? 'dim' : undefined}
+                     onChange={(e) => patch({ b2: clamp(e.target.value) })} />
+            </div>
+          </>
+        )}
         <div className="field">
           <label>Operation mode</label>
           <select value={input.mode ?? 'normal'}
@@ -216,14 +259,17 @@ function MidiTriggerFields({ input, onEdit }: { input: MidiTrigger; onEdit: () =
           </select>
           <span className="hint">{mi.hint}</span>
         </div>
+        {sysex && <SysexHexField value={input.sysex} onChange={(hex) => patch({ sysex: hex })} />}
       </div>
-      <div className="bytechip">
-        raw bytes <span className="raw">{input.b0} {input.b1} {input.b2}</span> ·{' '}
-        <b>
-          {d.human} · {d.detail}
-        </b>
-        {input.mode && input.mode !== 'normal' && <span className="mode-tag">{mi.label}</span>}
-      </div>
+      {!sysex && (
+        <div className="bytechip">
+          raw bytes <span className="raw">{input.b0} {input.b1} {input.b2}</span> ·{' '}
+          <b>
+            {d.human} · {d.detail}
+          </b>
+          {input.mode && input.mode !== 'normal' && <span className="mode-tag">{mi.label}</span>}
+        </div>
+      )}
     </>
   )
 }
@@ -290,9 +336,8 @@ function EvdevTriggerFields({ input, onEdit }: { input: EvdevTrigger; onEdit: ()
 /* ---------------- outputs ---------------- */
 
 function OutputsSection({ rule, onEdit }: { rule: Rule; onEdit: () => void }) {
-  const add = (type: OutputAction['type']) => {
+  const add = (type: 'keyboard' | 'midi') => {
     if (type === 'keyboard') rule.output.push({ type: 'keyboard', keyType: 'text', data: '', hold: 'not_hold' })
-    else if (type === 'mouse') rule.output.push({ type: 'mouse' })
     else rule.output.push({ type: 'midi', b0: 144, b1: 0, b2: 127 })
     onEdit()
   }
@@ -335,9 +380,6 @@ function OutputsSection({ rule, onEdit }: { rule: Rule; onEdit: () => void }) {
         <div className="add-out">
           <button className="kbd" onClick={() => add('keyboard')}>
             <span className="d" />＋ keyboard
-          </button>
-          <button className="mouse" onClick={() => add('mouse')}>
-            <span className="d" />＋ mouse
           </button>
           <button className="midi" onClick={() => add('midi')}>
             <span className="d" />＋ midi
@@ -469,6 +511,7 @@ function HotKeyBuilder({ data, onChange }: { data: string; onChange: (d: string)
 
 function MidiOutputFields({ out, onEdit }: { out: MidiAction; onEdit: () => void }) {
   const d = decodeMidi(out.b0, out.b1, out.b2)
+  const sysex = out.sysex !== undefined
   const patch = (p: Partial<MidiAction>) => {
     Object.assign(out, p)
     onEdit()
@@ -476,24 +519,42 @@ function MidiOutputFields({ out, onEdit }: { out: MidiAction; onEdit: () => void
   const num = (v: string, max: number) => Math.max(0, Math.min(max, Number(v) || 0))
   return (
     <>
-      <div className="field">
-        <label>b0 status</label>
-        <input type="number" min={0} max={255} value={out.b0} onChange={(e) => patch({ b0: num(e.target.value, 255) })} />
+      <div className="checkline">
+        <label>
+          <input
+            type="checkbox"
+            checked={sysex}
+            // toggling off clears sysex (omitted from JSON, see MidiAction.sysex),
+            // toggling on starts it empty so SysexHexField's placeholder shows
+            onChange={(e) => patch({ sysex: e.target.checked ? '' : undefined })}
+          />{' '}
+          Send as SysEx
+        </label>
       </div>
-      <div className="field">
-        <label>b1 data</label>
-        <input type="number" min={0} max={127} value={out.b1} onChange={(e) => patch({ b1: num(e.target.value, 127) })} />
-      </div>
-      <div className="field">
-        <label>b2 data</label>
-        <input type="number" min={0} max={127} value={out.b2} onChange={(e) => patch({ b2: num(e.target.value, 127) })} />
-      </div>
-      <div className="field">
-        <label>Decoded</label>
-        <span className="hint" style={{ paddingTop: 9 }}>
-          {d.human} · {d.detail}
-        </span>
-      </div>
+      {sysex ? (
+        <SysexHexField value={out.sysex} onChange={(hex) => patch({ sysex: hex })} />
+      ) : (
+        <>
+          <div className="field">
+            <label>b0 status</label>
+            <input type="number" min={0} max={255} value={out.b0} onChange={(e) => patch({ b0: num(e.target.value, 255) })} />
+          </div>
+          <div className="field">
+            <label>b1 data</label>
+            <input type="number" min={0} max={127} value={out.b1} onChange={(e) => patch({ b1: num(e.target.value, 127) })} />
+          </div>
+          <div className="field">
+            <label>b2 data</label>
+            <input type="number" min={0} max={127} value={out.b2} onChange={(e) => patch({ b2: num(e.target.value, 127) })} />
+          </div>
+          <div className="field">
+            <label>Decoded</label>
+            <span className="hint" style={{ paddingTop: 9 }}>
+              {d.human} · {d.detail}
+            </span>
+          </div>
+        </>
+      )}
     </>
   )
 }
@@ -575,7 +636,7 @@ function ModeSwitchSection({ board, rule, onEdit }: { board: Board; rule: Rule; 
           <select value={target} onChange={(e) => setTarget(Number(e.target.value))} disabled={!on}>
             {board.body.modes.map((m) => (
               <option key={m.id} value={m.id}>
-                mode {m.id}
+                {modeLabel(m)}
                 {m.active ? ' · live' : ''}
               </option>
             ))}

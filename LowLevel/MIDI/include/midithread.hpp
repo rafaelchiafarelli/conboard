@@ -38,18 +38,24 @@ class raw_midi{
         string devName;
         string sub_name;
         string name;
+        string sysfsPath;   // resolved /sys/class/sound/cardN path (condetect::alsaCardSysfsPath)
         int sub;
         int card;
         int device;
     friend std::ostream& operator<<(std::ostream &os, const raw_midi &dt){
-        os<<"port:"<<dt.port<<" devName:"<<dt.devName<<" sub_name:"<<dt.sub_name<<" name:"<<dt.name;
+        os<<"port:"<<dt.port<<" devName:"<<dt.devName<<" sub_name:"<<dt.sub_name<<" name:"<<dt.name
+          <<" sysfsPath:"<<dt.sysfsPath;
         return os;
     };
 };
 
 class MIDI : public DeviceEngine {
     public:
-        MIDI(string jsonFileName, vector<raw_midi> hw_ports);
+        // usbDevpath: the launcher-captured udev DEVPATH of this device's physical
+        // USB port, used to pick the right card when two units of the same
+        // controller model are connected (see LowLevel/Common/midiPortMatch.*).
+        // Empty (the default) reproduces the old plain-name-match behavior.
+        MIDI(string jsonFileName, vector<raw_midi> hw_ports, string usbDevpath = "");
         ~MIDI() override;
 
         // Stop the reader, then tear down the engine. Idempotent.
@@ -69,7 +75,8 @@ class MIDI : public DeviceEngine {
 
     private:
         void in_func();                         // ALSA rawmidi reader thread
-        void processInput(midiSignal midiS);    // report + match + enqueue
+        void processInput(midiSignal midiS);    // report + match + enqueue (3-byte messages)
+        void processSysex(std::vector<uint8_t> payload); // report + match + enqueue (SysEx)
         void send_midi(char *send_data, size_t send_data_length);
 
         std::thread   *in_thread = nullptr;
@@ -79,6 +86,17 @@ class MIDI : public DeviceEngine {
         // Reader idle budget. Kept for parity with the original reader loop; its
         // value is inconsequential (both branches on a poll timeout `continue`).
         int            timeout = 0;
+
+        // SysEx accumulation across possibly-multiple snd_rawmidi_read() calls
+        // (a single ALSA read is capped at 256 bytes, real SysEx dumps commonly
+        // exceed that). inSysex_ is true from the read that saw a leading 0xF0
+        // until the read that sees the terminating 0xF7. sysexCap_ bounds memory
+        // growth if a device sends 0xF0 and never terminates (malfunction, or a
+        // real-time byte stream this v1 doesn't try to filter out mid-message --
+        // see docs/next-sessions/08-midi-sysex.md's stated v1 simplification).
+        bool                 inSysex_ = false;
+        std::vector<uint8_t> sysexBuf_;
+        static constexpr size_t sysexCap_ = 64 * 1024;
 };
 
 #endif

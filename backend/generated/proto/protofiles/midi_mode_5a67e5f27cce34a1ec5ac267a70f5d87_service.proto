@@ -1,0 +1,35 @@
+syntax = "proto3";
+package frameworkProtos;
+//standard protofile with error code and standard heartBeat messages
+import "protofiles/errorCode.proto";
+import "protofiles/heartBeat.proto";
+
+//user imports from harpia process
+import "protofiles/midi_mode_5a67e5f27cce34a1ec5ac267a70f5d87.proto";
+
+message midi_mode_Message {
+    midi_mode msg = 1;
+}
+//message for the standard functions 
+message midi_mode_HeartBeat {
+    heartBeat hb = 1;
+}
+
+//message for the pullByID function
+message midi_mode_ID {
+    int32 id = 1;
+}
+message midi_mode_Stream {
+    int32 id = 1;
+    string name = 2;
+    // pagination (spec: "pagination" field modifier): limit <= 0 means
+    // unbounded (return everything, matching pre-pagination behavior).
+    int32 offset = 3;
+    int32 limit = 4;
+}
+service midi_mode_Service {
+    rpc heartBeat(midi_mode_HeartBeat) returns (midi_mode_HeartBeat) {}
+    rpc streamSrc(midi_mode_Stream ) returns (stream midi_mode_Message) {}
+    rpc pullByID(midi_mode_ID) returns (midi_mode_Message) {}
+    rpc push(midi_mode_Message) returns (errorCode) {}
+}

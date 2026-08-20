@@ -309,7 +309,7 @@ medium (new gadget HID function + wiring + real OTG-to-host-PC verification),
 not attempted. `docs/next-sessions/04-synthetic-1to1-rules.md` removed now
 that its task is done.
 
-## Ethernet-gadget access — investigated, SHELVED (2026-08-16): blocked on zero3's USB endpoint budget
+## Ethernet-gadget access — blocked on zero3, RESUMED with an auto-fallback (2026-08-16)
 Picked up the long-standing "install as an ethernet port" item (`README.md` "What
 is Missing?", carried in this file's Next list below). Plan: dual-config USB
 gadget, RNDIS (Windows) + ECM (Linux/macOS), added alongside the existing ACM
@@ -341,13 +341,322 @@ budget.
 
 Presented the finding and two workaround shapes (split into two USB configs
 with no shared functions, or drop mass-storage permanently to free budget for
-HID+ECM+ACM together) — Rafael's call: shelve rather than redesign v1 around a
-keyboard/network tradeoff on this board. All code changes reverted (board
-restored to the known-good ACM+HID+mass-storage gadget, confirmed `configured`
-again); `docs/next-sessions/08-ethernet-gadget.md` dropped now that its plan hit
-a hardware wall rather than a to-do. Revisit only on a board whose USB device
-controller has more endpoint headroom (dwc2/dwc3-class controllers typically
-do) — see `README.md` "What is Missing?" for the current candidate list.
+HID+ECM+ACM together). Initial call was to shelve rather than redesign v1
+around a keyboard/network tradeoff on this board — all code changes reverted
+(board restored to the known-good ACM+HID+mass-storage gadget, confirmed
+`configured` again), `docs/next-sessions/08-ethernet-gadget.md` dropped.
+
+**Candidate boards for a future retarget** (researched 2026-08-16, not yet
+hardware-verified — see Sources below for where each claim comes from):
+- **Raspberry Pi Zero / Zero W / Zero 2 W** (BCM2835/2710/2837, `dwc2`
+  controller, 8 usable endpoints) — best-documented exact match: the P4wnP1
+  toolkit runs RNDIS/ECM + HID + mass-storage together on exactly this
+  hardware. Pragmatic first pick if this gets retargeted.
+- **Raspberry Pi 4** — same `dwc2` family via its USB-C OTG port. (Pi 5 uses a
+  different chip, RP1, for USB — not confirmed either way.)
+- **USB Armory Mk II** (NXP i.MX6ULZ, ChipIdea controller) — worth calling out
+  specifically: `docs/dev-snippets/rndis-ecm-adm.sh`'s header traces back to
+  `ckuethe/usbarmory/wiki/USB-Gadgets`, i.e. conboard's *own* reference script
+  originates from this board. ChipIdea's stock `g_multi` gadget ships
+  RNDIS+ACM+mass-storage by default; other reports show HID+mass-storage
+  combos working too. No hard endpoint-count source found for it.
+- **BeagleBone Black / AI** (TI AM335x, TI's own `musb` glue — not the same
+  integration as Allwinner's) — HID, RNDIS, ACM, ECM, and mass-storage
+  confirmed "demonstrated working properly in multiple composite arrangements."
+- **Rockchip boards with a `dwc3` OTG controller** (RK3399/RK3568/RK3588-class
+  — Rock Pi 4, several Radxa/Orange Pi/NanoPi Rockchip models) — confirmed 7
+  IN + 6 OUT = 13 usable endpoints on RK3399 specifically. Massive headroom;
+  would fit every function conboard ships simultaneously with room to spare.
+
+**Avoid**: other Allwinner H-series boards (H3, H616, H618 — other Orange Pi
+Zero variants) — same constrained `musb-hdrc` glue. An independent report on
+the H3 specifically found it fails past 2 composite functions, same failure
+shape as zero3. (Allwinner's own D1/D1s RISC-V chip reportedly has 10
+endpoints, more headroom — but a different architecture, niche pick for
+conboard's arm64/armhf build pipeline.)
+
+Sources: [Raspberry Pi Zero / Windows 10 RNDIS composite gadget](https://gist.github.com/Gadgetoid/c52ee2e04f1cd1c0854c3e77360011e2) ·
+[P4wnP1-O2](https://packetwanderer.com/posts/p4wnp1-o2/) ·
+[Raspberry Pi Zero as Multiple USB Gadgets](https://irq5.io/2016/12/22/raspberry-pi-zero-as-multiple-usb-gadgets/) ·
+[musb-hdrc: can't add more than 2 functions to composite gadget](https://www.spinics.net/lists/linux-usb/msg163414.html) ·
+[USB Gadget/Configfs - linux-sunxi.org](https://linux-sunxi.org/USB_Gadget/Configfs) ·
+[Linux kernel Multifunction Composite Gadget docs](https://docs.kernel.org/usb/gadget_multi.html) ·
+[AM335x multifunction composite gadget docs](https://github.com/hvaibhav/am335x-linux/blob/master/Documentation/usb/gadget_multi.txt) ·
+[Synopsys DesignWare Core SuperSpeed USB 3.0 Controller docs](https://docs.kernel.org/driver-api/usb/dwc3.html) ·
+[dwc3 endpoint-direction fix patch (RK3399 IN/OUT counts)](https://www.spinics.net/lists/linux-usb/msg216597.html)
+
+**RESUMED (2026-08-16, same day): auto-detecting fallback instead of a board
+switch.** Rafael has a second, non-Zero Orange Pi to develop this on, but
+rather than hand-picking function sets per board, `usb-composite-all.sh` now
+*tries* the full gadget (ACM+ECM+HID+mass-storage) first and falls back to
+today's reduced gadget (ACM+HID+mass-storage, no network) only if the UDC bind
+fails — recognizing the endpoint-budget limitation live, at boot, on whatever
+board it's installed on, rather than needing a static per-board table. See the
+"USB gadget auto-fallback" entry further down for the implementation and
+hardware verification (proven on zero3, which is guaranteed to hit the
+fallback branch).
+
+## HMI phase 4a merged + deployed, hardware-verified (2026-08-16)
+Merged `feat/hmi-phase4a-and-1to1-rules` into `main` (both the synthetic 1:1
+keyboard rules and the WiFi list screen were already hardware-verified in the
+2026-08-15 session that produced this branch — see the sections above).
+`docs/next-sessions/04-synthetic-1to1-rules.md` and `05-hmi-wifi-screen.md`
+dropped as part of the merge, now that both are done.
+
+Deployed the merged `main` to `192.168.7.4` (`./build-cross.sh zero3` →
+`install-on-device.sh`, normal reinstall, not `--purge`) to confirm the branch's
+other change — a new `hmi_binding` table (backend schema) — migrates cleanly
+onto an existing on-device database. It does: `CREATE TABLE IF NOT EXISTS` is
+purely additive, no existing table's shape changed, so a plain reinstall is
+enough for this kind of schema change (worth checking case-by-case — a column
+change or rename would need `--purge`, this didn't). Confirmed on-device: the
+existing `WirelessMouse`/`WirelessKB` board rows survived untouched
+(`GET /api/v1/board` still returns them), and the new `GET /api/v1/hmi_binding`
+route works and already had 2 rows in it (left over from the branch's own
+QEMU-side testing, harmless).
+
+`hmi.service` restarted clean on the real ARM binary (not QEMU) with the new
+code: encoder/button GPIO lines still correctly report "no hardware, continuing
+without it" (physically unwired, as expected, see phase 4b below), and firing
+`POST /simulate` with `{"control":"hc_button2_press"}` correctly resolved
+through the real on-device `hmi_binding` table (`hc_button2_press -> nk_select`,
+logged), no crash. This is a step up from the branch's own "verified end to end
+under QEMU" claim — same code path, now proven on the real device/binary — but
+it's still not a substitute for someone looking at the physical panel while
+navigating, which needs either `/simulate` driving it live or the encoders/
+buttons actually wired. Neither happened this session.
+
+**Activation screen explicitly deferred, not abandoned**: the screen itself
+(built this branch, QEMU-verified, now also crash-free on real hardware via
+`/simulate`) renders the still-stubbed `GET /hmi/activation` fields — Rafael is
+doing the real GUI/UX design for this screen separately, outside this repo
+interaction, so no further code changes here until that direction exists. See
+`docs/next-sessions/06-hmi-phase4b.md`, unchanged, for the rest of what's open
+(radio screen data-source decision, encoder/button physical wiring, nav-scheme
+decision).
+
+**Workflow change, same day**: introduced a `dev` branch (off this merge
+commit) as the integration target going forward, at Rafael's direction — this
+deploy-verification writeup is the first thing landing there rather than
+directly on `main`. Not yet clear whether `dev` periodically merges to `main`
+or replaces it as the primary branch; ask before assuming either way next
+session.
+
+## FIXED, not hardware-verified — identical-MIDI-device separation (2026-08-16)
+Plan doc (`docs/next-sessions/09-midi-identical-device-separation.md`) removed
+now that Task items 1-3 are done; Task item 4 (hardware verification) remains
+open and is tracked in the "Next" list below instead.
+
+**A real launcher bug, worse than the doc's own guess.** The doc's "Start here"
+step 1 asked whether the launcher even spawns two `conMIDI` processes for two
+identical controllers today. Reading `LowLevel/launcher/src/main.cpp` (the
+`isEvdev` gate on per-instance service naming) showed it does not:
+`devType::midi` was explicitly excluded from per-instance naming (`joystick`/
+`keyboard`/`mouse` only), with a comment claiming MIDI "is unaffected and keeps
+the plain DevName." So two identical MIDI controllers produced the *same*
+systemd service name — the second unit's udev connect event just
+`systemctl restart`s the first unit's already-running service. **Only one
+`conMIDI` process ever ran at all**, not "two processes racing for one ALSA
+card" as the doc speculated.
+
+**Fix, mirroring evdev's already-working mechanism end to end** (same shape as
+`EvdevDevice::resolveNode()` / `condetect::nodeUnderUsbPath`, which already
+solves this exact problem for keyboard/mouse/joystick):
+- `LowLevel/launcher/src/main.cpp`: `devType::midi` added to the per-instance
+  condition (renamed `isEvdev` -> `isPerInstance`), so MIDI now gets a
+  serial-or-port-keyed service name + `-d <devpath>` on its `ExecStart`, exactly
+  like the other three device kinds.
+- `LowLevel/Common/include/deviceDetect.{hpp,cpp}`: new `alsaCardSysfsPath(int
+  card)` — the ALSA analog of the sysfs-path resolution `probeInput()` already
+  does for evdev nodes (`realpath("/sys/class/sound/cardN")`).
+- New `LowLevel/Common/{include,src}/midiPortMatch.*` (`midiportmatch::
+  pickPort`) — pure, ALSA-free, unit-tested (`tests/test_midiportmatch.cpp`, 6
+  cases, suite `midiport`): prefers the candidate whose name matches AND whose
+  sysfs path sits under the given USB devpath (reusing the already-tested
+  `condetect::nodeUnderUsbPath`), falling back unconditionally to the old
+  first-name-match so single-unit setups can't regress even if the devpath
+  heuristic doesn't land on real hardware.
+- `LowLevel/MIDI`: `raw_midi` gained `sysfsPath` (populated in `list_device()`);
+  `MIDI::MIDI()` takes a new optional `usbDevpath` param and calls
+  `midiportmatch::pickPort` instead of its old inline first-name-match loop;
+  `main.cpp` gained `-d`/`--devpath` argv parsing (mirrors `conKeyB` exactly).
+- Considered and rejected: wiring the existing-but-dead
+  `header.identifier.executable.port` JSON field (the doc floated this as
+  possibly simpler). Rejected because that field lives in the board profile
+  JSON, which is the *same file* shared by every physical unit of a controller
+  model — it structurally cannot hold a different value per physical instance,
+  so it can't solve identical-unit disambiguation. Left untouched, still dead.
+
+**Verified this session**: `./run-tests.sh` — 96 cases pass (was 90), including
+the new `midiport` suite. `./build-cross.sh zero3` — launcher, `conMIDI`, and
+`libcommon.so` all compile cleanly cross-compiled for zero3.
+
+**NOT verified — explicitly, per the doc's own honesty requirement**: no two
+identical MIDI controllers were available this session, and the only reachable
+board (`192.168.7.4`) currently has **no MIDI hardware attached at all**
+(`/proc/asound/cards` shows only onboard codecs) — so neither the dual-unit
+separation (the actual feature) nor the single-unit regression path (today's
+only tested configuration) has been checked live. Both remain open; do them
+first thing next time MIDI hardware is available, per Task item 4 and Done
+criteria in the plan doc.
+
+## MIDI SysEx support — code-complete + unit-tested, NOT hardware-verified (2026-08-16)
+
+Planned in `docs/next-sessions/08-midi-sysex.md`, built the same session. Every
+layer of the previous MIDI pipeline hard-assumed a fixed 3-byte message
+(`midiSignal`, `LowLevel/Common/include/actions.h`) — SysEx (`0xF0...0xF7`,
+arbitrary length) didn't fit anywhere, and `MIDI::in_func()` (`LowLevel/MIDI/
+src/midithread.cpp`) explicitly **discarded** any ALSA read over 4 bytes
+(`if (err > sizeof(midiSignal)) continue;`), meaning real SysEx traffic was
+silently eaten before this session, not just unmatched.
+
+**Design**: exact-match only (no prefix/wildcard) — a rule's `sysex` field is
+the full expected byte sequence, framing bytes included, as a lowercase hex
+string with no separators. Chosen because the wire envelope's `explode()`
+parser (`LowLevel/Common/src/zmq_coms.cpp`) splits on `;` and strips literal
+spaces — MIDI data bytes 0–127 can otherwise collide with those delimiter
+characters, and hex trivially avoids that.
+
+**What changed**:
+- `actions.h`: new `midi_sysex` mode, `midiActions.sysex` (`std::vector<uint8_t>`),
+  `hexEncode`/`hexDecode` helpers, `ar_str()` emits `"SX:<hex>"` for SysEx
+  instead of `[b0,b1,b2]`.
+- `midiMap.{hpp,cpp}`: new `matchesSysex()` (exact byte-for-byte); `matches()`
+  never matches a `midi_sysex` trigger and vice versa.
+- `MIDI::in_func()`: restructured to accumulate a variable-length message
+  across possibly-many `snd_rawmidi_read()` calls (a single read is capped at
+  256 bytes; real dumps commonly exceed that) once a `0xF0` is seen, stopping
+  at `0xF7` or a 64KB safety cap (a device that sends `0xF0` and never
+  terminates can't grow memory unboundedly). New `MIDI::processSysex()`
+  parallels the existing `processInput()` (report + match + enqueue).
+  **v1 simplification, stated in code comments**: assumes no System Real-Time
+  bytes (clock/start/stop) are interleaved mid-SysEx — real hardware
+  occasionally does this; unhandled today, flagged as a known gap to revisit
+  if hardware testing hits it.
+- `jsonParser.cpp`: `"sysex"` hex field on a `{"type":"midi",...}` object is
+  **authoritative over `"mode"`** when present — decodes and forces
+  `midi_mode = midi_sysex` regardless of what `"mode"` says, so a
+  missing/mismatched `"mode"` can't silently produce a dead 3-byte trigger
+  (the same failure shape as the keyboard/mouse trigger-parsing bug fixed
+  2026-08-15). Malformed hex (odd length, non-hex chars) decodes to an empty
+  vector rather than crashing or reading out of bounds.
+- `backend/harpia/conboard.harpia`: `mm_sysex` enum value, `optional string
+  sysex` on both `trigger` and `output_action`. Regenerated
+  (`backend/generate.sh`) — domain hash bumped `1bf812ac18b80d4a5ea4d51e6bfb7f58`
+  → `b13f689a5b6f99919ddaf4d1cc7eb7ac`; every hand-written `backend/src/*.cpp`
+  include + the frontend's `HASH` constant updated to match. Backend rebuilt
+  clean in the `harpia-build` image (needed `libudev-dev` installed in that
+  image — not present by default, install-and-retry worked, worth remembering
+  for next regen).
+- Console (`frontend/console/src/`): `model/rules.ts`/`model/midi.ts` gained
+  the `'sysex'` mode + hex helpers (`isValidSysexHex`, `normalizeSysexHex`,
+  `looksLikeFramedSysex`); `RuleEditor.tsx`'s MIDI trigger editor swaps to a
+  hex-input field in SysEx mode, the output editor gained a "Send as SysEx"
+  checkbox (output actions have no `mode` field, so presence of `sysex` itself
+  is the signal, matching `jsonParser.cpp`'s authoritative-field approach);
+  `api/harpia.ts`/`api/map.ts` thread `sysex` through both directions. Two
+  small new CSS hooks (`field.wide`, `input.invalid`) reusing existing
+  `--danger`/grid-span patterns — not a return to the live-monitor CSS work,
+  just the minimum needed for a usable hex field.
+
+**Verified this session**: `./run-tests.sh` — 99 cases pass (was 96, +3 new
+`jsonparser` sysex cases + 4 new `midi` suite cases), including exact-match
+edge cases (one-byte difference, missing terminator, extra trailing byte) and
+malformed-hex handling. Backend rebuilds clean against the regenerated schema
+(`harpia-build` image). `npm run typecheck` clean in `frontend/console/`.
+
+**NOT verified — no real SysEx round trip on hardware yet.** Same honesty
+requirement as every other unverified claim in this file: this is proven
+correct in isolation (unit tests, clean builds) but not against a real MIDI
+device. Do that first — a MIDI "Universal Device Inquiry"
+(`F0 7E 7F 06 01 F7` → identity reply) is a good baseline test that doesn't
+depend on a controller's undocumented custom SysEx vocabulary, per the
+session doc.
+
+## Branch consolidation — dev is now the working branch (2026-08-19)
+Repo had accumulated ~20 remote branches; audited each with `git merge-base
+--is-ancestor` rather than by name. Found only 3 were actually live: `dev`
+(1 commit ahead of `main`), `feat/ethernet-gadget-ecm`, `feat/midi-sysex`.
+The other ~16 (`refactor/backend-cpp-postgres`, `integration/console-fixes`,
+`feature/backend-wireup`, etc.) turned out to be one single linear chain that
+forked from `main` at `898d0bb` ("compiling, changing stuff", 2022-01-15) —
+predating the entire current board-centric rewrite. Diffing that chain's tip
+against current `main` showed 403 files, +4535/−50056 — merging it would
+have deleted most of the current codebase. `features/react_flask` was an
+even older, unrelated 2021 prototype. All ~17 dead/already-merged branches
+tag-archived (`archive/<name>`, pushed) then deleted from `origin`, so the
+history is recoverable but the branch list is clean.
+
+Merged the 2 live feature branches into `dev`: `feat/ethernet-gadget-ecm`
+(docs-only conflicts, straightforward) and `feat/midi-sysex` — harder, since
+both `dev` and that branch had independently regenerated harpia code from
+different schema edits (dev's `hmi_binding`, midi-sysex's `mm_sysex`/`sysex`
+fields), so every generated file's hash suffix differed even for untouched
+entities. Resolved by merging the schema (clean, non-overlapping edits),
+rebuilding the `harpia-build` Docker image, regenerating fresh (hash
+`9f20d5d4...`/`b13f689a...` → combined `7fb7af9d1e69abe2d7a6e81c4a2d0c2f`),
+and fixing up the ~9 hand-written hash references. Full `./build-cross.sh
+zero3` clean afterward. `main` stays as the stable rollback point (only
+already-merged branches went into it this session); `dev` is where ongoing
+work happens now, `v1.0.0-pre-beta` and the `milestone-*` tags mark releases.
+
+## Mode management — add/delete/name a mode, all device types (2026-08-19)
+Console created exactly one hardcoded mode per device (`AddDeviceDialog.tsx`,
+`id: 0`) with no way to add, remove, or name another one — for any device
+type. Found by Rafael walking through the console live and asking where the
+mode picker was for keyboards. The runtime was never the gap: `EvdevDevice::
+runRules()` / `DeviceEngine::changeMode()` already handle multi-mode
+operation generically for keyboard/mouse/joystick exactly as MIDI does
+(`CurrentMode.body_actions` filtering; `jsonParser.cpp` parses the whole
+`body.modes` array, not just index 0) — this was purely a missing console
+control.
+
+**Add + delete mode** (`App.tsx`): a dashed `+ mode` tab pushes a new empty
+mode (next sequential id, inactive) and selects it; `🗑 Delete mode` removes
+one. Two guards, since `DeviceEngine::startEngine()` only ever picks up a
+mode flagged active on boot: hidden once only one mode remains (a device
+needs at least one to have any rules), and deleting the currently-active
+mode auto-promotes another to active so a deploy never ends up with zero
+active modes (would leave `CurrentMode` empty — silently inert, same failure
+shape as an unresolved trigger symbol elsewhere in this codebase).
+Browser-verified (Playwright) on an MIDI device (delete inactive, delete
+active → promotion) and a keyboard device (last-mode guard, delete after
+adding a second) — no console errors either way.
+
+**Name a mode**: new optional `name` field on the `mode` entity
+(`backend/harpia/conboard.harpia`) — authoring-only label, the engine still
+matches by `mode_id` and never reads it. Regenerated (`backend/generate.sh`)
+— domain hash bumped `7fb7af9d1e69abe2d7a6e81c4a2d0c2f` →
+`5a67e5f27cce34a1ec5ac267a70f5d87`; every hand-written hash reference updated
+(`backend/src/*.cpp`, `frontend/console/src/api/harpia.ts`, `LowLevel/HMI/
+src/main.cpp`, `backend/README.md`, `docs/NEXT-SESSION.md`). Threaded
+through the console via a `modeLabel()` helper (falls back to `mode {id}`
+when unset) used everywhere a mode is shown: the mode-tab strip, the device
+rail's live-mode summary, the "Change to" mode-switch dropdown, and the
+rule-list mode-switch chip. Commits on blur/Enter, same as the other
+structural mode edits (add/delete/activate) — deliberately not routed
+through the per-rule Save/Revert flow, whose Revert only snapshots the
+selected rule and would silently not undo a name change. `./build-cross.sh
+zero3` clean against the regenerated schema.
+
+## Keyboard-only output: mouse dropped as an output-action type (2026-08-19)
+Console's output-action picker offered keyboard, mouse, and midi on any
+rule regardless of device type — but no HID mouse gadget exists (`scripts/
+usb-composite-all.sh` only ever declares a keyboard HID interface, see
+"Synthetic 1:1 keyboard rules" above) and mouse output was never actually
+used: checked before touching anything, zero fixture boards reference it as
+an output. Removed the "+ mouse" button from `RuleEditor.tsx`'s
+`OutputsSection`. Kept `MouseFields`/badge/decode paths intact — defensive,
+so any mouse output already present in loaded board data still renders and
+edits correctly, it just can't be newly added.
+
+MIDI output stayed untouched — checked before removing anything, and it
+turned out not to be "output to the PC" at all: it's feedback to the MIDI
+device itself. Arduino Micro's real fixture drives an LED boot-chase over
+staggered MIDI Note On messages in its own header actions, and 203 real
+`"output"` blocks across the bundled boards reference `type:"midi"`.
+Stripping it would have broken real, shipped behavior for a request that was
+actually about mouse.
 
 ## Next (pre-release cleanup, 2026-08-12)
 * HARDWARE TEST `conJoyS` (joystick) — built + unit-tested, keyboard/mouse already
@@ -358,9 +667,18 @@ do) — see `README.md` "What is Missing?" for the current candidate list.
   against the DJ-Tech-4-Mix controller (`boards/Dj4Mix.json`) — written +
   unit-tested since 2026-08-11, no MIDI hardware available to confirm the
   redeploy-recovery path on real hardware yet (still true as of 2026-08-15).
-* **mouse/keyboard output not firing** (above) — now the top item, blocks the core
-  remap-a-device feature for two of four device kinds.
-* longer term: the local power-password login (design in `backend/README.md`,
-  never implemented); true mouse/joystick 1:1 HID passthrough (sized above,
-  under "Synthetic 1:1 keyboard rules"). Ethernet-gadget access was
-  investigated and shelved (above) — blocked on hardware, not a to-do.
+* HARDWARE VERIFY identical-MIDI-device separation (above, 2026-08-16) — fixed +
+  unit-tested, needs two identical MIDI controllers (or at least one, for the
+  single-unit regression check) to confirm live.
+* HARDWARE VERIFY MIDI SysEx support (above, 2026-08-16) — code-complete +
+  unit-tested, needs a real SysEx round trip against connected MIDI hardware
+  (a Universal Device Inquiry exchange is a good minimal test) to confirm live.
+* DEPLOY-VERIFY mode management (above, 2026-08-19) — add/delete/name a mode
+  cross-build clean + browser-verified against fixtures in the dev server,
+  not yet exercised against a real deployed backend/board: create, delete,
+  and rename a mode through the actual REST API and confirm the schema
+  regen's new `name` field round-trips through a live `mode` table.
+* SHELVED: local power-password login (design in `backend/README.md`, never
+  implemented) — revisit when the vault work starts, far future.
+* Ethernet-gadget access is back in progress (above) — hardware-blocked on
+  zero3, resumed with an auto-detecting fallback.

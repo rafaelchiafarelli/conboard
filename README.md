@@ -135,12 +135,15 @@ are in that board's `HOW-TO-INSTALL.txt`.
 # What is Missing? (LowLevel device handlers)
 
 * generalized behavior 
-    * **investigated + SHELVED (2026-08-16)**: USB-ethernet gadget access (would
-      simplify first-time console access — plug in, get an IP, no WiFi setup
-      needed). Blocked on hardware: the Zero 3's musb-hdrc USB controller only
-      has endpoint budget for the current ACM+HID+mass-storage gadget, with no
-      room left for a network function too (hardware-verified, see NOTES.md).
-      Needs a board with a dwc2/dwc3-class USB controller instead.
+    * **IN PROGRESS (2026-08-16)**: USB-ethernet gadget access (would simplify
+      first-time console access — plug in, get an IP, no WiFi setup needed).
+      The Zero 3's musb-hdrc USB controller only has endpoint budget for the
+      current ACM+HID+mass-storage gadget, with no room left for a network
+      function too (hardware-verified) — `usb-composite-all.sh` now tries the
+      full gadget first and auto-falls-back to today's shape when the board
+      can't fit it, so existing boards are unaffected. Network function itself
+      only proven end-to-end on a board with more USB endpoint headroom (see
+      NOTES.md "Ethernet-gadget access" for the candidate list and sources).
     * launch/detection of a service is heavily dependent on user configuration, which is dangerous — the user should not have that power
     * **basic hardening landed + HARDWARE-VERIFIED (2026-08-12)**: nginx Basic Auth in
       front of the console (a real per-install password, generated on first install
@@ -155,10 +158,20 @@ are in that board's `HOW-TO-INSTALL.txt`.
       on-screen prompt, no lockout escalation. See `docs/NEXT-SESSION.md` for the full
       verification writeup, including two bugs the hardware pass itself caught.
 * midi device
-    * SysEx commands are not working
-    * multiple commands and multiple actions can overrun the system (pre-existing 10-slot reporting-queue overflow, `STACKED_IO_MSG`)
-    * not yet migrated onto the shared `DeviceEngine` (still uses its own orchestration)
-    * identical-MIDI separation not done — it's ALSA (binds by name), so it needs ALSA-card binding rather than the evdev per-port mechanism
+    * **migrated onto the shared `DeviceEngine` — DONE** (`refactor(MIDI): migrate MIDI
+      handler onto DeviceEngine`); `conMIDI`'s `MIDI` class is a thin `DeviceEngine`
+      subclass like the evdev handlers, adding only its ALSA reader thread and
+      device-native (raw-MIDI) output. Was stale in this list.
+    * **reporting-queue overflow — RELIEVED** (`STACKED_IO_MSG` 10→64 + drop-oldest,
+      load-tested 2026-08-15 — see `NOTES.md`); was stale in this list, applies to all
+      device kinds, not MIDI-specific.
+    * SysEx — **fixed in code, not yet hardware-verified** (2026-08-16): hex-encoded
+      SysEx payload support end to end — `midi_sysex` trigger/output mode, exact
+      byte-for-byte matching (`matchesSysex()`), variable-length ALSA read/write
+      (`MIDI::in_func()` now accumulates across reads instead of discarding anything
+      over 4 bytes), board-JSON `"sysex"` field, harpia schema + console UI. No SysEx
+      round trip proven on real hardware yet — see `docs/next-sessions/08-midi-sysex.md`.
+    * identical-MIDI separation — **fixed in code, not yet hardware-verified** (2026-08-16): the launcher now gives MIDI the same per-instance service naming + `-d <devpath>` treatment evdev already had (`devType::midi` was excluded before — the actual bug, since it meant only one `conMIDI` process ever ran for two identical units, not just a card-binding race), and `MIDI::MIDI()` picks the ALSA card under that devpath (`LowLevel/Common/midiPortMatch.*`, unit-tested) instead of a bare first-name-match. No two identical MIDI controllers (or any MIDI hardware at all) were available to prove this live — see `NOTES.md`.
 * joystick (input)
     * built + unit-tested + compiles, but **not yet exercised on real hardware** — no gamepad available in the session that hardware-verified keyboard/mouse
 

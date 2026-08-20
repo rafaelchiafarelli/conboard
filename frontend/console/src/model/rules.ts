@@ -24,8 +24,10 @@ export type DeviceType = 'midi' | 'joystick' | 'keyboard' | 'mouse'
  *  - trigger_lower    — b0/b1 match; fires when the incoming b2 is BELOW the b2 threshold
  *  - spot            — b0/b1 match; b2 is NOT matched — the live value is carried to outputs
  *  - blink           — matched like normal; paired with an LED on/off output for blink feedback
+ *  - sysex           — b0/b1/b2 ignored; exact byte-for-byte match against `sysex` instead
+ *                      (see docs/next-sessions/08-midi-sysex.md — no prefix/wildcard matching)
  */
-export type MidiMode = 'normal' | 'trigger_higher' | 'trigger_lower' | 'spot' | 'blink'
+export type MidiMode = 'normal' | 'trigger_higher' | 'trigger_lower' | 'spot' | 'blink' | 'sysex'
 
 /** A raw MIDI message: status byte + two data bytes. */
 export interface MidiTrigger {
@@ -34,6 +36,9 @@ export interface MidiTrigger {
   b1: number // data 1 — note number or CC number
   b2: number // data 2 — velocity/CC value, or a threshold (trigger_higher/lower), or ignored (spot)
   mode?: MidiMode // operation mode; absent = normal
+  // Lowercase hex, no separators, framing bytes (f0..f7) included. Only
+  // meaningful when mode === 'sysex'; b0/b1/b2 above are unused in that case.
+  sysex?: string
   delay?: number
 }
 
@@ -66,6 +71,9 @@ export interface MidiAction {
   b0: number
   b1: number
   b2: number
+  // Lowercase hex, no separators, framing bytes included — see MidiTrigger.sysex.
+  // Presence implies a SysEx output (b0/b1/b2 above are unused in that case).
+  sysex?: string
   delay?: number
 }
 
@@ -112,10 +120,19 @@ export interface Rule {
 export interface Mode {
   id: number
   active: boolean
+  /** Customer-facing display label, e.g. "Live set". Optional -- falls back to
+   *  "mode {id}" everywhere it's shown. Authoring-only; the device engine
+   *  matches by id, never reads this. */
+  name?: string
   /** Actions fired on entering the mode (LED/handshake feedback on the device). */
   mode_header?: { actions: OutputAction[] }
   /** The rules: trigger → output mappings. */
   actions: Rule[]
+}
+
+/** Display label for a mode -- its name if set, else "mode {id}". */
+export function modeLabel(m: Mode): string {
+  return m.name?.trim() || `mode ${m.id}`
 }
 
 export interface DeviceIdentity {

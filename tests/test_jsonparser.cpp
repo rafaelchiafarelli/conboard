@@ -70,6 +70,61 @@ TEST_SUITE("json") {
         CHECK(modes[0].body_actions[2].in.mAct.midi_mode == midi_blink);
     }
 
+    TEST_CASE("midi sysex: input trigger, hex-decoded and mode forced to sysex") {
+        std::vector<ModeType> modes; std::vector<Actions> header;
+        jsonParser jp("", &modes, &header);
+        // "mode" deliberately omitted -- presence of "sysex" alone must be
+        // authoritative (see jsonParser.cpp's case devType::midi comment).
+        bool ok = jp.ReloadFromString(R"({
+            "DEVICE": {"type":"midi","name":"x"},
+            "body": {"modes":[{"id":0,"active":true,"actions":[
+                {"input":{"type":"midi","sysex":"f07e7f0601f7"},"output":[]}
+            ]}]}
+        })", &modes, &header);
+
+        REQUIRE(ok);
+        REQUIRE(modes[0].body_actions.size() == 1);
+        const Actions &a = modes[0].body_actions[0];
+        CHECK(a.in.mAct.midi_mode == midi_sysex);
+        std::vector<uint8_t> expect = {0xf0, 0x7e, 0x7f, 0x06, 0x01, 0xf7};
+        CHECK(a.in.mAct.sysex == expect);
+    }
+
+    TEST_CASE("midi sysex: output action, hex-decoded independently of the trigger") {
+        std::vector<ModeType> modes; std::vector<Actions> header;
+        jsonParser jp("", &modes, &header);
+        bool ok = jp.ReloadFromString(R"({
+            "DEVICE": {"type":"midi","name":"x"},
+            "body": {"modes":[{"id":0,"active":true,"actions":[
+                {"input":{"type":"midi","b0":1,"b1":1,"b2":1},
+                 "output":[{"type":"midi","sysex":"f0430c0201017f00f7"}]}
+            ]}]}
+        })", &modes, &header);
+
+        REQUIRE(ok);
+        const devActions &out = modes[0].body_actions[0].out[0];
+        CHECK(out.tp == midi);
+        CHECK(out.mAct.midi_mode == midi_sysex);
+        std::vector<uint8_t> expect = {0xf0, 0x43, 0x0c, 0x02, 0x01, 0x01, 0x7f, 0x00, 0xf7};
+        CHECK(out.mAct.sysex == expect);
+    }
+
+    TEST_CASE("midi sysex: malformed hex (odd length) decodes to empty, not a crash") {
+        std::vector<ModeType> modes; std::vector<Actions> header;
+        jsonParser jp("", &modes, &header);
+        bool ok = jp.ReloadFromString(R"({
+            "DEVICE": {"type":"midi","name":"x"},
+            "body": {"modes":[{"id":0,"active":true,"actions":[
+                {"input":{"type":"midi","sysex":"f0abc"},"output":[]}
+            ]}]}
+        })", &modes, &header);
+
+        REQUIRE(ok);
+        const Actions &a = modes[0].body_actions[0];
+        CHECK(a.in.mAct.midi_mode == midi_sysex);   // "sysex" key present is still authoritative
+        CHECK(a.in.mAct.sysex.empty());             // but the malformed hex decoded to nothing
+    }
+
     TEST_CASE("change_mode: enable + change_to parsed") {
         std::vector<ModeType> modes; std::vector<Actions> header;
         jsonParser jp("", &modes, &header);

@@ -1,17 +1,102 @@
-# conboard — ethernet-gadget access, SHELVED (2026-08-16)
+# conboard — branch cleanup, mode management, keyboard-only output (2026-08-19)
 
-Investigated adding a USB-ethernet gadget (RNDIS+ECM) for driver-free network
-access to the console. **Blocked on hardware, not a to-do**: the Zero 3's
-musb-hdrc USB controller only has endpoint budget for 4 IN + 2 OUT total, which
-the current gadget (ACM+HID+mass-storage) already uses in full — adding a
-network function means *dropping* HID or mass-storage from that config, not
+Three threads this session, full writeups in [../NOTES.md](../NOTES.md):
+
+**Branch consolidation.** ~20 remote branches audited by ancestry, not by
+name — only `dev` + 2 feature branches were actually live, the other ~17
+were a single dead chain forked from `main` back in 2022 (before the current
+rewrite) plus one unrelated old prototype. Tag-archived and deleted; merged
+the 2 live branches into `dev` (the MIDI one needed a real harpia schema
+merge + regen, not just git). `main` stays the stable rollback point, `dev`
+is where work happens now.
+
+**Mode management.** Console could only ever have one mode per device, for
+every device type — found live, walking through the console. Added `+ mode`
+/ `🗑 Delete mode` controls (`App.tsx`) with guards so a device is never left
+with zero modes or zero *active* modes, plus an optional customer-facing
+`name` field on the `mode` entity (schema change, regen, domain hash bumped,
+threaded through every place a mode is shown in the console). The
+matching/mode-switch engine underneath was already generic across
+keyboard/mouse/joystick/MIDI — this was purely a missing console control,
+no `LowLevel/` changes needed. Cross-build clean (zero3), browser-verified
+with Playwright; **not yet exercised against a real deployed backend** (see
+`NOTES.md`'s "Next" list).
+
+**Keyboard-only output.** Dropped mouse as an addable output-action type
+(`RuleEditor.tsx`) — no HID mouse gadget exists and no fixture board used it.
+Checked before touching MIDI output too: it's not "output to the PC" at all,
+it's feedback to the MIDI device itself (Arduino Micro's own LED boot-chase),
+and 203 real output blocks depend on it — left untouched.
+
+---
+
+# conboard — identical-MIDI-device separation (2026-08-16)
+
+Session doc `docs/next-sessions/09-midi-identical-device-separation.md` removed
+(Task items 1-3 done). Full writeup in [../NOTES.md](../NOTES.md) under "FIXED,
+not hardware-verified — identical-MIDI-device separation" — short version: the
+launcher never gave MIDI per-instance service naming (excluded MIDI in the
+`isEvdev` check, so two identical controllers shared one systemd service and
+only one `conMIDI` process ever ran), now fixed the same way evdev already
+handles identical clones (USB-devpath binding). Code lands + unit-tested +
+cross-compiles clean; **no MIDI hardware was reachable this session** (not even
+a single unit), so neither the dual-unit separation nor the single-unit
+regression path has been proven live yet — do that first with real hardware
+(tracked in `NOTES.md`'s "Next" list).
+
+---
+
+# conboard — HMI phase 4a merged + deployed (2026-08-16)
+
+`feat/hmi-phase4a-and-1to1-rules` merged into `main`, then built and deployed
+to `192.168.7.4`. Both features on that branch (synthetic 1:1 keyboard rules,
+HMI WiFi list screen) were already hardware-verified before merging — this
+deploy's own new finding is that the branch's `hmi_binding` DB table migrated
+onto the board's existing database with zero data loss (plain reinstall, no
+`--purge` needed — additive `CREATE TABLE IF NOT EXISTS` only), and that
+`hmi.service` runs the new binary cleanly on real hardware: encoders/buttons
+still correctly report unwired, and a `/simulate`-driven button press resolved
+correctly through the real `hmi_binding` table with no crash. Full writeup in
+[../NOTES.md](../NOTES.md).
+
+Activation screen (built on the same branch) is intentionally not being pushed
+further here — Rafael is designing its real GUI/UX separately. Radio screen,
+encoder/button physical wiring, and the nav-scheme decision are still open,
+tracked in `docs/next-sessions/06-hmi-phase4b.md` (unchanged by this session).
+
+A `dev` branch now exists (off this merge) as the integration target going
+forward — this writeup is the first thing on it, not `main`.
+
+---
+
+# conboard — ethernet-gadget access, auto-fallback landed (2026-08-16)
+
+Adding a USB-ethernet gadget (ECM now, RNDIS later) hit a hardware wall on the
+Zero 3: its musb-hdrc USB controller only has endpoint budget for 4 IN + 2 OUT
+total, which the current gadget (ACM+HID+mass-storage) already uses in full —
+so a network function can only be added by *dropping* HID or mass-storage, not
 adding on top. Confirmed live via configfs bind tests (`unable to autoconfigure
-all endpoints`, kernel `-524`) before any code was proposed for landing. All
-changes reverted; board back to its known-good state (`configured`,
-ACM+HID+mass-storage). Full writeup in [../NOTES.md](../NOTES.md).
+all endpoints`, kernel `-524`).
 
-Next step, if picked back up: retarget a board with a dwc2/dwc3-class USB
-controller (more endpoint headroom than musb-hdrc) instead of the Zero 3.
+Rather than hand-picking function sets per board, `scripts/usb-composite-all.sh`
+now tries the full gadget (ACM+ECM+HID+mass-storage) first and auto-falls-back
+to today's reduced gadget (no network) if the UDC bind fails — recognizing the
+endpoint-budget limit live rather than needing a static board table.
+`usb-gadget-dhcp.service` (scoped `dnsmasq` on `usb0`) only starts when the
+fallback script found room for the network function
+(`ConditionPathExists=/run/conboard/usb-gadget-network`), and
+`scripts/conboard-firewall.sh` now allows `udp/67` on `usb0` for DHCP.
+
+**Hardware-verified on `192.168.7.4`**: full gadget correctly fails and falls
+back, gadget reaches `configured` with the same ACM+HID+mass-storage shape as
+before, `/run/conboard/usb-gadget-network` correctly absent, and
+`usb-gadget-dhcp.service` reports a clean systemd "skipped" (not failed) via
+its `ConditionPathExists`. Rest of the stack (dispatcher/backend/firewall)
+confirmed still healthy after. **Not yet verified**: the *full* scenario
+(network actually working end-to-end) — needs a board whose USB controller has
+enough endpoint headroom to take the "full gadget" branch instead of falling
+back. Rafael has a second, non-Zero Orange Pi lined up for that. Full writeup
++ candidate-board research in [../NOTES.md](../NOTES.md).
 
 ---
 
@@ -271,7 +356,7 @@ sudo systemctl restart hmi.service
 | var | default | status |
 |---|---|---|
 | `CONHMI_REST_BASE` | `http://127.0.0.1:8080/api/v1` | fine as-is (same-host backend) |
-| `CONHMI_REST_PSWD_HASH` | `9f20d5d43738774941f9898b22cf2cf2` | matches backend's compile-time hash |
+| `CONHMI_REST_PSWD_HASH` | `5a67e5f27cce34a1ec5ac267a70f5d87` | matches backend's compile-time hash |
 | `CONHMI_SPI_DEVICE` | `/dev/spidev1.1` | **confirmed** |
 | `CONHMI_PANEL_SPI_SPEED_HZ` | `4000000` | **confirmed** |
 | `CONHMI_GPIO_CHIP` | `gpiochip0` | **confirmed** |
@@ -629,8 +714,8 @@ sudo journalctl -u backend -f    # NOTE: needs sudo (backend runs as root)
 console at `/` and proxies `/websocket` → dispatcher `:40080` directly (the backend's
 own unimplemented `/ws` relay stub was removed 2026-08-13, see `backend/README.md`).
 REST is credential-gated (`X-User: <entity>`, `X-Pswd: <hash>`);
-hash = `9f20d5d43738774941f9898b22cf2cf2` (bumped when the `hmi_binding` table was
-added; regen via `backend/generate.sh`).
+hash = `5a67e5f27cce34a1ec5ac267a70f5d87` (bumped by merging `dev` + `hmi_binding`
+with `feat/midi-sysex`'s SysEx fields; regen via `backend/generate.sh`).
 
 ## Don't-relearn facts
 

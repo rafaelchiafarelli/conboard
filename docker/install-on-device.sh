@@ -31,7 +31,7 @@ esac
 
 echo "== stopping any running conboard services =="
 # Includes retired units (frontend, old backend) so a re-install cleans them up.
-for unit in usb-otg launcher dispatcher backend hmi frontend conboard-firewall; do
+for unit in usb-otg usb-gadget-dhcp launcher dispatcher backend hmi frontend conboard-firewall; do
     systemctl stop "${unit}.service" 2>/dev/null || true
 done
 
@@ -77,6 +77,11 @@ install -m 644 /conboard/LowLevel/dispatcher/assets/dispatcher.service /etc/syst
 install -m 644 /conboard/backend/assets/backend.service                /etc/systemd/system/
 install -m 644 /conboard/LowLevel/HMI/assets/hmi.service               /etc/systemd/system/
 install -m 644 /conboard/docker/assets/conboard-firewall.service       /etc/systemd/system/
+if command -v dnsmasq >/dev/null 2>&1; then
+    install -m 644 /conboard/docker/assets/usb-gadget-dhcp.service /etc/systemd/system/
+else
+    echo "  WARNING: dnsmasq not found -- the USB-ethernet gadget (usb0), if this board's USB controller has room for it, won't hand out an IP. Install dnsmasq-base (NOT the 'dnsmasq' metapackage -- that one auto-enables its own system-wide DNS resolver you don't want here) and re-run this script." >&2
+fi
 systemctl daemon-reload
 
 echo "== installing udev rule + event handler =="
@@ -137,6 +142,7 @@ fi
 
 echo "== enabling services (start on boot) =="
 systemctl enable usb-otg.service dispatcher.service launcher.service backend.service conboard-firewall.service
+[ -f /etc/systemd/system/usb-gadget-dhcp.service ] && systemctl enable usb-gadget-dhcp.service
 # hmi.service (the screen/buttons/encoders UI) is installed but deliberately NOT
 # enabled/started here: it needs the physical SPI panel + GPIO wiring to init()
 # successfully, which most boards running this installer today don't have yet.
@@ -148,7 +154,8 @@ systemctl enable usb-otg.service dispatcher.service launcher.service backend.ser
 # the two jobs (the installer hangs). Start as plain, separate jobs instead.
 echo "== starting services =="
 systemctl start conboard-firewall.service   # before opening anything up to the network
-systemctl start usb-otg.service       # brings up the USB gadget now
+systemctl start usb-otg.service       # brings up the USB gadget now (network function best-effort, see usb-gadget-dhcp.service)
+[ -f /etc/systemd/system/usb-gadget-dhcp.service ] && systemctl start usb-gadget-dhcp.service
 systemctl start dispatcher.service
 systemctl start backend.service       # management API (REST/gRPC) over SQLite
 
@@ -165,6 +172,7 @@ echo "Done. Attached devices are handled now; the launcher also runs at boot and
 echo "Quick checks:"
 echo "  ls /sys/class/udc            # must be non-empty for USB gadget to bind"
 echo "  systemctl status usb-otg.service dispatcher.service launcher.service backend.service"
+echo "  systemctl status usb-gadget-dhcp.service     # DHCP for usb0, if this board's USB controller has endpoint room for the network function"
 echo "  iptables -L INPUT -n              # confirm the firewall allowlist (ssh/80 only)"
 echo "  curl -s localhost:8080/healthz   # backend management API (direct)"
 echo "  curl -s localhost/healthz        # via nginx (same origin as the UI)"

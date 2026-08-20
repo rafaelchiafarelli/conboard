@@ -19,6 +19,7 @@
 
 #include "midithread.hpp"
 #include "runDevice.hpp"
+#include "deviceDetect.hpp"
 #include <chrono>
 #include <string>
 #include <atomic>
@@ -99,6 +100,7 @@ static void list_device(snd_ctl_t *ctl, int card, int device)
 		m.card = card;
 		m.device = device;
 		m.sub = sub;
+		m.sysfsPath = condetect::alsaCardSysfsPath(card);
 		snd_rawmidi_info_set_stream(info, sub < subs_in ?
 					    SND_RAWMIDI_STREAM_INPUT :
 					    SND_RAWMIDI_STREAM_OUTPUT);
@@ -188,18 +190,19 @@ static void device_list(void)
 
 int main(int argc, char *argv[])
 {
-	static const char short_options[] = "x:";
+	static const char short_options[] = "x:d:";
 	static const struct option long_options[] = {
-		{"json", 1, NULL, 'x'},
+		{"json",    1, NULL, 'x'},
+		{"devpath", 1, NULL, 'd'},   // USB DEVPATH of the physical port (launcher sets this)
 		{ }
 	};
 
 	if(argc < 2)
 	{
-		cout<<"error, must specifi json. Usage ./midi -x \"/home/user/file.json\""<<endl;
+		cout<<"error, must specifi json. Usage ./midi -x \"/home/user/file.json\" [-d <usb-devpath>]"<<endl;
 		return -1;
 	}
-    string jsonFileName;
+    string jsonFileName, usbDevpath;
 	int c;
 	while ((c = getopt_long(argc,
 							argv,
@@ -209,6 +212,9 @@ int main(int argc, char *argv[])
 		switch (c) {
 		case 'x':
 			jsonFileName = string(optarg);
+			break;
+		case 'd':
+			usbDevpath = string(optarg);
 			break;
 		default:
 			cout<<"Try more information."<<endl;
@@ -221,7 +227,7 @@ int main(int argc, char *argv[])
 	// construction stay here.
 	return condev::runDevice([&]{
 		device_list();
-		return new MIDI(jsonFileName, hw_ports);
+		return new MIDI(jsonFileName, hw_ports, usbDevpath);
 	});
 }
 

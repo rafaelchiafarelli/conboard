@@ -54,6 +54,7 @@ copy 644 LowLevel/dispatcher/assets/dispatcher.service
 copy 644 backend/assets/backend.service
 copy 644 LowLevel/HMI/assets/hmi.service
 copy 644 docker/assets/conboard-firewall.service
+copy 644 docker/assets/usb-gadget-dhcp.service
 copy 755 docker/assets/conboard-password.sh
 
 # --- udev rule + hotplug handler ---------------------------------------------
@@ -66,6 +67,7 @@ copy 644 LowLevel/dispatcher/assets/config.json
 # --- gadget scripts + board definitions --------------------------------------
 mkdir -p "$STAGE/scripts" "$STAGE/boards"
 cp "$SRC"/scripts/*.sh "$STAGE/scripts/"
+copy 644 scripts/usb-gadget-dnsmasq.conf
 cp "$SRC"/boards/*.json "$STAGE/boards/" 2>/dev/null || true
 
 # --- console UI: built SPA bundle + nginx site -------------------------------

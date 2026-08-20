@@ -387,6 +387,7 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 			ret.mAct.midi.byte[1] = 0;
 			ret.mAct.midi.byte[2] = 0;
 			ret.mAct.midi_mode = midi_normal;
+			ret.mAct.sysex.clear();
 			if(act.HasMember("b0"))
 			{
 				if(act["b0"].IsInt())
@@ -422,6 +423,26 @@ devActions jsonParser::parseIO(rapidjson::Value& act)
 					}else if(!mode_str.compare("blink"))
 					{
 						ret.mAct.midi_mode = midi_blink;
+					}else if(!mode_str.compare("sysex"))
+					{
+						ret.mAct.midi_mode = midi_sysex;
+					}
+				}
+			}
+			// "sysex" (lowercase hex, no separators -- see actions.h hexDecode())
+			// is authoritative over "mode" when present: a rule authored with a
+			// SysEx payload is a SysEx rule regardless of what "mode" says, so a
+			// mismatched/missing "mode" field can't silently produce a 3-byte
+			// trigger that never matches.
+			if(act.HasMember("sysex"))
+			{
+				if(act["sysex"].IsString())
+				{
+					std::string hex = act["sysex"].GetString();
+					if(!hex.empty())
+					{
+						ret.mAct.sysex = hexDecode(hex);
+						ret.mAct.midi_mode = midi_sysex;
 					}
 				}
 			}

@@ -57,6 +57,7 @@ enum midi_mode {
     mm_trigger_lower;
     mm_spot;
     mm_blink;
+    mm_sysex;
 }
 
 // hmi_control. one named physical event off the HMI panel local hardware,
@@ -97,6 +98,9 @@ stream pull push event message trigger {
     optional int b1;
     optional int b2;
     optional midi_mode midi_mode;
+    // lowercase hex, no separators, framing bytes included. see actions.h
+    // hexDecode and docs/next-sessions/08-midi-sysex.md.
+    optional string sysex;
     optional string code;
     optional trigger_edge edge;
     optional int value;
@@ -113,6 +117,7 @@ stream pull push event message output_action {
     optional int b0;
     optional int b1;
     optional int b2;
+    optional string sysex;
     optional string data;
     optional key_type key_type;
     optional hold_mode hold;
@@ -139,6 +144,10 @@ stream pull push event message rule {
 stream pull push event message mode {
     int mode_id;
     int active;
+    // customer-facing display name, e.g. "Live set" or "Studio session".
+    // Purely an authoring/UI label -- the runtime engine matches by mode_id,
+    // never reads this field.
+    optional string name;
     repeteable output_action mode_header;
     repeteable rule rules;
 } mode_table;

@@ -86,4 +86,45 @@ TEST_SUITE("midi") {
         auto normalAct = action(midi_normal, 0x90, 42, 100);
         CHECK(resolveOutputs(normalAct, sig(0x90, 42, 100))[0].spot == -1); // devActions default
     }
+
+    // --- SysEx: exact byte-for-byte match only, matchesSysex() not matches() ---
+
+    TEST_CASE("matches() never matches a midi_sysex trigger, even with a lookalike b0/b1/b2") {
+        midiActions t;
+        t.midi_mode = midi_sysex;
+        t.sysex = {0xF0, 0x7E, 0x7F, 0xF7};
+        CHECK_FALSE(matches(t, sig(0, 0, 0)));
+    }
+
+    TEST_CASE("matchesSysex: exact match required, any byte difference fails") {
+        midiActions t;
+        t.midi_mode = midi_sysex;
+        t.sysex = {0xF0, 0x43, 0x12, 0x00, 0xF7};
+
+        CHECK(matchesSysex(t, {0xF0, 0x43, 0x12, 0x00, 0xF7}));
+        CHECK_FALSE(matchesSysex(t, {0xF0, 0x43, 0x12, 0x01, 0xF7}));  // one byte differs
+        CHECK_FALSE(matchesSysex(t, {0xF0, 0x43, 0x12, 0x00}));       // missing terminator
+        CHECK_FALSE(matchesSysex(t, {0xF0, 0x43, 0x12, 0x00, 0xF7, 0x00})); // extra trailing byte
+    }
+
+    TEST_CASE("matchesSysex: a non-sysex trigger never matches, regardless of payload") {
+        midiActions t;
+        t.midi_mode = midi_normal;
+        t.sysex = {0xF0, 0x43, 0xF7};   // stray data, should be irrelevant
+        CHECK_FALSE(matchesSysex(t, {0xF0, 0x43, 0xF7}));
+    }
+
+    TEST_CASE("resolveOutputs: sysex mode leaves spot untouched, like normal") {
+        Actions a;
+        a.in.mAct.midi_mode = midi_sysex;
+        a.in.mAct.sysex = {0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7};
+        a.in.tp = midi;
+        devActions out;
+        out.tp = midi;
+        a.out.push_back(out);
+
+        auto outs = resolveOutputs(a, midiSignal{});
+        REQUIRE(outs.size() == 1);
+        CHECK(outs[0].spot == -1);
+    }
 }
